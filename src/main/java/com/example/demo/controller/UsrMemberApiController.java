@@ -20,6 +20,7 @@ public class UsrMemberApiController {
     private Rq rq;
 
     private final MemberService memberService;
+
     private final HttpSession session;
 
     @PostMapping("/join")
@@ -31,7 +32,7 @@ public class UsrMemberApiController {
         long newId = memberService.doJoin(
                 dto.getLoginId(), dto.getLoginPw(),
                 dto.getName(), dto.getNickName(),
-                dto.getCellPhone(), dto.getEmail()
+                dto.getEmail()
         );
 
         if (newId < 1)
@@ -88,7 +89,7 @@ public class UsrMemberApiController {
         memberService.modifyMember(
                 id, dto.getLoginId(), dto.getLoginPw(),
                 dto.getName(), dto.getNickName(),
-                dto.getCellPhone(), dto.getEmail()
+                dto.getEmail()
         );
         return ResponseEntity.ok(ResultData.from("S-1","정보가 수정되었습니다"));
     }

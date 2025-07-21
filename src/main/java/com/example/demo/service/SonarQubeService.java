@@ -40,15 +40,15 @@ public class SonarQubeService {
         for (int i = 0; i < retryCount; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-                System.out.println("✅ 분석 결과 가져오기 성공");
+                System.out.println("분석 결과 가져오기 성공");
                 return response.getBody();
             } catch (HttpClientErrorException.NotFound e) {
-                System.out.println("⏳ 분석 대기 중... " + (i + 1) + "/" + retryCount);
+                System.out.println("분석 대기 중... " + (i + 1) + "/" + retryCount);
                 Thread.sleep(delay);
             }
         }
 
-        throw new RuntimeException("❌ 분석 결과를 가져오지 못했습니다: " + projectKey);
+        throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
     public void deleteProject(String projectKey) {
@@ -87,7 +87,7 @@ public class SonarQubeService {
         try {
             createSonarPropertiesFile(projectDir, projectKey);
 
-            System.out.println("📁 Sonar 분석 디렉토리: " + projectDir.getAbsolutePath());
+            System.out.println("Sonar 분석 디렉토리: " + projectDir.getAbsolutePath());
 
             ProcessBuilder pb = new ProcessBuilder("sonar-scanner");
             pb.directory(projectDir);
@@ -104,20 +104,20 @@ public class SonarQubeService {
             Thread.sleep(3000); // 결과 수신 대기
 
             String resultJson = getAnalysisResult(projectKey);
-            System.out.println("📊 분석 결과: " + resultJson);
+            System.out.println("분석 결과: " + resultJson);
 
             deleteProject(projectKey); // ✅ SonarQube 서버에서 삭제
-            System.out.println("🧹 Sonar 프로젝트 삭제 완료: " + projectKey);
+            System.out.println("Sonar 프로젝트 삭제 완료: " + projectKey);
 
             return resultJson;
 
         } catch (Exception e) {
             e.printStackTrace();
-            return "❌ 분석 실패: " + e.getMessage();
+            return "분석 실패: " + e.getMessage();
 
         } finally {
             deleteDirectoryRecursively(projectDir); // ✅ 로컬 디렉토리 삭제
-            System.out.println("🧹 임시 디렉토리 삭제 완료: " + projectDir.getAbsolutePath());
+            System.out.println("임시 디렉토리 삭제 완료: " + projectDir.getAbsolutePath());
         }
     }
 

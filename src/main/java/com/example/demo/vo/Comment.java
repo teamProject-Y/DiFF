@@ -22,9 +22,7 @@ public class Comment {
 
     private String extra_writer;
 
-    private int extra_goodReactionPoint;
-    private int extra_badReactionPoint;
-    private int extra_sumReactionPoint;
+    private int extra_ReactionPoint;
 
     private boolean userCanModify;
     private boolean userCanDelete;

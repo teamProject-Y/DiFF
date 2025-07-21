@@ -5,144 +5,129 @@
 
 <mapper namespace="com.example.demo.repository.ArticleRepository">
 
-    <insert id="writeArticle" parameterType="map">
-        INSERT INTO article
-        SET
-            regDate = NOW(),
-		updateDate = NOW(),
-		title = #{title},
-            body = #{body},
-            memberId = #{memberId},
-            boardId = #{boardId}
-    </insert>
+<!--    <insert id="writeArticle" parameterType="map">-->
+<!--        INSERT INTO article-->
+<!--        SET-->
+<!--            regDate = NOW(),-->
+<!--		updateDate = NOW(),-->
+<!--		title = #{title},-->
+<!--            body = #{body},-->
+<!--            memberId = #{memberId},-->
+<!--            boardId = #{boardId}-->
+<!--    </insert>-->
 
-    <delete id="deleteArticle" parameterType="int">
-        DELETE FROM article
-        WHERE id = #{id}
-    </delete>
+<!--    <delete id="deleteArticle" parameterType="int">-->
+<!--        DELETE FROM article-->
+<!--        WHERE id = #{id}-->
+<!--    </delete>-->
 
-    <update id="modifyArticle" parameterType="map">
-        UPDATE article
-        <set>
-            <if test="title != null and title != ''">title = #{title},</if>
-            <if test="body != null and body != ''">`body` = #{body},</if>
-            updateDate = NOW()
-        </set>
-        WHERE id = #{id}
-    </update>
+<!--    <update id="modifyArticle" parameterType="map">-->
+<!--        UPDATE article-->
+<!--        <set>-->
+<!--            <if test="title != null and title != ''">title = #{title},</if>-->
+<!--            <if test="body != null and body != ''">`body` = #{body},</if>-->
+<!--            updateDate = NOW()-->
+<!--        </set>-->
+<!--        WHERE id = #{id}-->
+<!--    </update>-->
 
-    <select id="getArticleById" parameterType="int"
-            resultType="com.example.demo.vo.Article">
-        SELECT *
-        FROM article
-        WHERE id = #{id}
-    </select>
+<!--    <select id="getArticleById" parameterType="int"-->
+<!--            resultType="com.example.demo.vo.Article">-->
+<!--        SELECT *-->
+<!--        FROM article-->
+<!--        WHERE id = #{id}-->
+<!--    </select>-->
 
-    <select id="getArticleForPrint" parameterType="int"
-            resultType="com.example.demo.vo.Article">
-        SELECT A.*, M.nickName, B.code AS extra_boardCode,
-        IFNULL(SUM(R.point), 0) AS 'extra_sumReactionPoint',
-        <!-- 			&gt = > &lt = < -->
-        IFNULL(SUM(IF(R.point &gt; 0, R.point, 0)), 0) AS 'extra_goodReactionPoint',
-        IFNULL(SUM(IF(R.point &lt; 0, R.point, 0)) * -1, 0) AS 'extra_badReactionPoint'
-        FROM article A
-        JOIN `member` M
-        ON A.memberId = M.id
-        JOIN board B
-        ON A.boardId = B.id
-        LEFT JOIN reactionPoint R
-        ON A.id = R.relId
-        WHERE A.id = #{id}
-        GROUP BY A.id
-        ORDER BY A.id DESC;
-    </select>
+<!--    <select id="getArticleForPrint" parameterType="int"-->
+<!--            resultType="com.example.demo.vo.Article">-->
+<!--        SELECT A.*, M.nickName,-->
+<!--        IFNULL(SUM(R.point), 0) AS 'extra_ReactionPoint'-->
+<!--        FROM article A-->
+<!--        JOIN `member` M-->
+<!--        ON A.memberId = M.id-->
+<!--        LEFT JOIN reactionPoint R-->
+<!--        ON A.id = R.relId-->
+<!--        WHERE A.id = #{id}-->
+<!--        GROUP BY A.id-->
+<!--        ORDER BY A.id DESC;-->
+<!--    </select>-->
 
-    <select id="getArticles"
-            resultType="com.example.demo.vo.Article">
-        SELECT A.*, M.nickName AS extra_writer, B.code AS extra_boardCode,
-        IFNULL(SUM(R.point), 0) AS 'extra_sumReactionPoint',
-        IFNULL(SUM(IF(R.point &gt; 0, R.point, 0)), 0) AS 'extra_goodReactionPoint',
-        IFNULL(SUM(IF(R.point &lt; 0, R.point, 0)) * -1, 0) AS 'extra_badReactionPoint'
-        FROM article A
-        JOIN `member` M
-        ON A.memberId = M.id
-        JOIN board B
-        ON A.boardId = B.id
-        LEFT JOIN reactionPoint R
-        ON A.id = R.relId
-        <where>
-            <if test="boardId != 0 and boardId != null">
-                AND A.boardId = #{boardId}
-            </if>
-            <if test="searchItem == 1 and keyword != null">
-                AND A.title LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-            <if test="searchItem == 2 and keyword != null">
-                AND A.body LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-            <if test="searchItem == 3 and keyword != null">
-                AND M.nickName LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-        </where>
-        GROUP BY A.id
-        ORDER BY A.id DESC
-        LIMIT #{limitFrom}, #{itemsInAPage}
-    </select>
+<!--    <select id="getArticles"-->
+<!--            resultType="com.example.demo.vo.Article">-->
+<!--        SELECT A.*, M.nickName AS extra_writer,-->
+<!--        IFNULL(SUM(R.point), 0) AS 'extra_ReactionPoint'-->
+<!--        FROM article A-->
+<!--        JOIN `member` M-->
+<!--        ON A.memberId = M.id-->
+<!--        LEFT JOIN reactionPoint R-->
+<!--        ON A.id = R.relId-->
+<!--        <where>-->
+<!--            <if test="searchItem == 1 and keyword != null">-->
+<!--                AND A.title LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--            <if test="searchItem == 2 and keyword != null">-->
+<!--                AND A.body LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--            <if test="searchItem == 3 and keyword != null">-->
+<!--                AND M.nickName LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--        </where>-->
+<!--        GROUP BY A.id-->
+<!--        ORDER BY A.id DESC-->
+<!--        LIMIT #{limitFrom}, #{itemsInAPage}-->
+<!--    </select>-->
 
-    <select id="getArticlesCnt">
-        SELECT COUNT(*)
-        FROM article A
-        JOIN `member` M
-        ON A.memberId = M.id
-        <where>
-            <if test="boardId != 0 and boardId != null">
-                AND A.boardId = #{boardId}
-            </if>
-            <if test="searchItem == 1 and keyword != null">
-                AND A.title LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-            <if test="searchItem == 2 and keyword != null">
-                AND A.body LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-            <if test="searchItem == 3 and keyword != null">
-                AND M.nickName LIKE CONCAT('%', #{keyword}, '%')
-            </if>
-        </where>
-    </select>
+<!--    <select id="getArticlesCnt">-->
+<!--        SELECT COUNT(*)-->
+<!--        FROM article A-->
+<!--        JOIN `member` M-->
+<!--        ON A.memberId = M.id-->
+<!--        <where>-->
+<!--            <if test="searchItem == 1 and keyword != null">-->
+<!--                AND A.title LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--            <if test="searchItem == 2 and keyword != null">-->
+<!--                AND A.body LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--            <if test="searchItem == 3 and keyword != null">-->
+<!--                AND M.nickName LIKE CONCAT('%', #{keyword}, '%')-->
+<!--            </if>-->
+<!--        </where>-->
+<!--    </select>-->
 
-    <select id="getLastInsertId" parameterType="int">
-        SELECT LAST_INSERT_ID()
-    </select>
+<!--    <select id="getLastInsertId" parameterType="int">-->
+<!--        SELECT LAST_INSERT_ID()-->
+<!--    </select>-->
 
-    <select id="getArticleCnt" parameterType="int">
-        SELECT COUNT(*)
-        FROM article
-    </select>
+<!--    <select id="getArticleCnt" parameterType="int">-->
+<!--        SELECT COUNT(*)-->
+<!--        FROM article-->
+<!--    </select>-->
 
-    <update id="doIncHits" parameterType="int">
-        UPDATE article
-        SET hits = hits + 1
-        WHERE id = #{id}
-    </update>
+<!--    <update id="doIncHits" parameterType="int">-->
+<!--        UPDATE article-->
+<!--        SET hits = hits + 1-->
+<!--        WHERE id = #{id}-->
+<!--    </update>-->
 
-    <select id="getHits" parameterType="int">
-        SELECT hits
-        FROM article
-        WHERE id = #{id}
-    </select>
+<!--    <select id="getHits" parameterType="int">-->
+<!--        SELECT hits-->
+<!--        FROM article-->
+<!--        WHERE id = #{id}-->
+<!--    </select>-->
 
-    <select id="getLikes" parameterType="int">
-        SELECT COUNT(*)
-        FROM `like`
-        WHERE articleId = #{id}
-    </select>
+<!--    <select id="getLikes" parameterType="int">-->
+<!--        SELECT COUNT(*)-->
+<!--        FROM `like`-->
+<!--        WHERE articleId = #{id}-->
+<!--    </select>-->
 
-    <select id="isMyreaction" parameterType="int">
-        SELECT IFNULL((SELECT `point`
-                       FROM reactionPoint
-                       WHERE relTypeCode = 'article'
-                         AND relId =  #{articleId}
-                         AND memberId = #{loginedMemberId}), 0)
-    </select>
+<!--    <select id="isMyreaction" parameterType="int">-->
+<!--        SELECT IFNULL((SELECT `point`-->
+<!--                       FROM reactionPoint-->
+<!--                       WHERE relTypeCode = 'article'-->
+<!--                         AND relId =  #{articleId}-->
+<!--                         AND memberId = #{loginedMemberId}), 0)-->
+<!--    </select>-->
 
 </mapper>

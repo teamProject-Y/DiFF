@@ -13,11 +13,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class Article {
-    public Article(String title, String body, int memberId, int boardId) {
+    public Article(String title, String body, int memberId) {
         this.title = title;
         this.body = body;
         this.memberId = memberId;
-        this.boardId = boardId;
+        //this.boardId = boardId;
     }
 
     private int id;
@@ -26,15 +26,15 @@ public class Article {
     private String title;
     private String body;
     private int memberId;
-    private int boardId;
+    //private int boardId;
     private int hits;
 
     private String extra_writer;
     private String extra_boardCode;
 
-    private int extra_goodReactionPoint;
-    private int extra_badReactionPoint;
-    private int extra_sumReactionPoint;
+    private int extra_ReactionPoint;
+    //private int extra_badReactionPoint;
+    //private int extra_sumReactionPoint;
 
     private boolean userCanModify;
     private boolean userCanDelete;

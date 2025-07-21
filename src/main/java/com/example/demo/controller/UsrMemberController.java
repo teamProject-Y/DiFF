@@ -41,17 +41,16 @@ public class UsrMemberController {
     // 액션메서드
     @RequestMapping("/usr/member/doJoin")
     @ResponseBody
-    public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String cellPhone, String email) {
+    public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
 
         if(Ut.isEmpty(loginId)) return Ut.jsHistoryBack("F-1", "아이디를 쓰시오");
         if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호를 쓰시오");
         if(Ut.isEmpty(name)) return Ut.jsHistoryBack("F-3", "이름을 쓰시오");
         if(Ut.isEmpty(nickName)) return Ut.jsHistoryBack("F-4", "닉네임을 쓰시오");
-        if(Ut.isEmpty(cellPhone)) return Ut.jsHistoryBack("F-5", "전화번호 좀 쓰시오");
         if(Ut.isEmpty(email) || !email.contains("@")) return Ut.jsHistoryBack("F-6", "이메일 정확히 쓰시오");
         if(!loginPw.equals(checkLoginPw)) return Ut.jsHistoryBack("F-7", "비밀번호가 일치하지 않소");
 
-        long id = memberService.doJoin(loginId, loginPw, name, nickName, cellPhone, email);
+        long id = memberService.doJoin(loginId, loginPw, name, nickName, email);
 
         if(id == -1) return Ut.jsHistoryBack("F-8", Ut.f("%s는 이미 사용 중인 아이디입니다.", loginId));
         if(id == -2) return Ut.jsHistoryBack("F-9", Ut.f("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", loginId, email));
@@ -137,7 +136,7 @@ public class UsrMemberController {
     // 로그인 체크 -> 유무 체크 -> 권한 체크
     @RequestMapping("/usr/member/doModify")
     @ResponseBody
-    public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String cellPhone, String email) {
+    public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String email) {
 
         Rq rq = (Rq) req.getAttribute("rq");
         long loginedMemberId = rq.getLoginedMemberId();
@@ -147,10 +146,9 @@ public class UsrMemberController {
         if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호를 쓰시오");
         if(Ut.isEmpty(name)) return Ut.jsHistoryBack("F-3", "이름을 쓰시오");
         if(Ut.isEmpty(nickName)) return Ut.jsHistoryBack("F-4", "닉네임을 쓰시오");
-        if(Ut.isEmpty(cellPhone)) return Ut.jsHistoryBack("F-5", "전화번호 좀 쓰시오");
         if(Ut.isEmpty(email) || !email.contains("@")) return Ut.jsHistoryBack("F-6", "이메일 정확히 쓰시오");
 
-        int memberUpdate = memberService.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, cellPhone, email);
+        int memberUpdate = memberService.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, email);
 
         return Ut.jsReplace("S-1", Ut.f("%s 회원님 정보 수정 완료", nickName), "../member/myInfo");
     }

@@ -28,7 +28,7 @@ public class SonarService {
         zipFile.transferTo(tempZip);
         unzip(tempZip, targetDir);
 
-        String rootDir = targetDir.getAbsolutePath(); // ✅ 올바른 경로 설정
+        String rootDir = targetDir.getAbsolutePath(); // 올바른 경로 설정
 
         // 동적으로 소스 디렉토리 설정
         String sourcePath = "src/main/java";
@@ -36,7 +36,7 @@ public class SonarService {
             if (new File(rootDir, "src").exists()) {
                 sourcePath = "src";
             } else {
-                throw new RuntimeException("📛 소스 폴더를 찾을 수 없습니다.");
+                throw new RuntimeException("소스 폴더를 찾을 수 없습니다.");
             }
         }
         // sonar-project.properties 생성

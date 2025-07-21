@@ -13,7 +13,7 @@ import com.example.demo.vo.Member;
 public interface MemberRepository {
 
     //	@Insert("INSERT INTO `member` SET regDate = NOW(), loginId = #{loginId}, loginPw = #{loginPw}, `name` = #{name}")
-    public int doJoin(String loginId, String loginPw, String name, String nickName, String cellPhone, String email);
+    public int doJoin(String loginId, String loginPw, String name, String nickName, String email);
 
     //	@Select("SELECT * FROM `member` WHERE id = #{id}")
     public void doLogin(int id);
@@ -32,7 +32,7 @@ public interface MemberRepository {
     //  @Select("SELECT * FROM `member` WHERE loginId = #{loginId}")
     public Member getMemberByLoginId(String loginId);
 
-    public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String cellPhone, String email);
+    public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
 
     Member getByOauthId(String oauthId);
     void save(Member member);

@@ -77,7 +77,7 @@ public class Rq {
     }
 
     public void logout() {
-        session.invalidate(); // ✅ 전체 세션 무효화
+        session.invalidate(); // 전체 세션 무효화
         this.loginedMember = null;
         this.isLogined = false;
         this.loginedMemberId = 0;
@@ -113,6 +113,5 @@ public class Rq {
 
         return currentUri;
     }
-
 
 }

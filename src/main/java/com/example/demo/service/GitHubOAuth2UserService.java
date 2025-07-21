@@ -26,7 +26,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
     private MemberService memberService;
 
     @Autowired
-    private HttpSession session; // ✅ 세션 접근
+    private HttpSession session; // 세션 접근
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -39,11 +39,11 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
         // 회원 가입 or 조회
         memberService.processOAuthPostLogin(oauthId, username, email);
 
-        // ✅ DB에서 Member 객체 가져옴
+        // DB에서 Member 객체 가져옴
         Member member = memberService.getByOauthId(oauthId);
 
         if (member != null) {
-            session.setAttribute("loginedMemberId", member.getId()); // ✅ 로그인 세션 주입
+            session.setAttribute("loginedMemberId", member.getId()); // 로그인 세션 주입
         }
 
         return oauthUser;
@@ -51,7 +51,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
     // 📡 GitHub 사용자 이메일 추가 요청
     private String fetchPrimaryEmail(OAuth2UserRequest userRequest) {
-        System.out.println("🌐 fetchPrimaryEmail() 호출됨");
+        System.out.println("fetchPrimaryEmail() 호출됨");
 
         String accessToken = userRequest.getAccessToken().getTokenValue();
         String emailApiUrl = "https://api.github.com/user/emails";
@@ -69,27 +69,27 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
                 new ParameterizedTypeReference<>() {}
         );
 
-        System.out.println("📡 이메일 API 응답 상태: " + response.getStatusCode());
+        System.out.println("이메일 API 응답 상태: " + response.getStatusCode());
 
         if (response.getStatusCode() == HttpStatus.OK) {
             List<Map<String, Object>> emails = response.getBody();
-            System.out.println("📨 이메일 리스트: " + emails);
+            System.out.println("이메일 리스트: " + emails);
 
             for (Map<String, Object> emailEntry : emails) {
                 Boolean primary = (Boolean) emailEntry.get("primary");
                 Boolean verified = (Boolean) emailEntry.get("verified");
                 String email = (String) emailEntry.get("email");
 
-                System.out.println("🔹 email: " + email + ", primary: " + primary + ", verified: " + verified);
+                System.out.println("email: " + email + ", primary: " + primary + ", verified: " + verified);
 
                 if (Boolean.TRUE.equals(primary) && Boolean.TRUE.equals(verified)) {
-                    System.out.println("✅ primary & verified 이메일 선택됨: " + email);
+                    System.out.println("primary & verified 이메일 선택됨: " + email);
                     return email;
                 }
             }
         }
 
-        System.out.println("⚠️ 이메일을 가져오지 못했습니다.");
+        System.out.println("⚠이메일을 가져오지 못했습니다.");
         return null;
     }
 }

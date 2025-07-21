@@ -5,49 +5,49 @@
 
 <mapper namespace="com.example.demo.repository.ReactionRepository">
 
-    <select id="getUserReaction" parameterType="map">
-        SELECT IFNULL((SELECT `point`
-                       FROM reactionPoint
-                       WHERE relTypeCode = #{relTypeCode}
-                         AND relId = #{id}
-                         AND memberId = #{loginedMemberId}), 0)
-    </select>
+<!--    <select id="getUserReaction" parameterType="map">-->
+<!--        SELECT IFNULL((SELECT `point`-->
+<!--                       FROM reactionPoint-->
+<!--                       WHERE relTypeCode = #{relTypeCode}-->
+<!--                         AND relId = #{id}-->
+<!--                         AND memberId = #{loginedMemberId}), 0)-->
+<!--    </select>-->
 
-    <select id="getIsReactioned" parameterType="map">
-        SELECT COUNT(*)
-        FROM reactionPoint
-        WHERE relTypeCode = #{relTypeCode}
-          AND relId = #{id}
-          AND memberId = #{loginedMemberId}
-    </select>
+<!--    <select id="getIsReactioned" parameterType="map">-->
+<!--        SELECT COUNT(*)-->
+<!--        FROM reactionPoint-->
+<!--        WHERE relTypeCode = #{relTypeCode}-->
+<!--          AND relId = #{id}-->
+<!--          AND memberId = #{loginedMemberId}-->
+<!--    </select>-->
 
-    <insert id="doGoodReaction" parameterType="map">
-        INSERT INTO reactionPoint SET
-            regDate = NOW(),
-		updateDate = NOW(),
-		memberId = #{loginedMemberId},
-            relTypeCode = #{relTypeCode} ,
-            relId = #{id},
-            `point` = 1
-    </insert>
+<!--    <insert id="doGoodReaction" parameterType="map">-->
+<!--        INSERT INTO reactionPoint SET-->
+<!--            regDate = NOW(),-->
+<!--		updateDate = NOW(),-->
+<!--		memberId = #{loginedMemberId},-->
+<!--            relTypeCode = #{relTypeCode} ,-->
+<!--            relId = #{id},-->
+<!--            `point` = 1-->
+<!--    </insert>-->
 
-    <insert id="doBadReaction" parameterType="map">
-        INSERT INTO reactionPoint SET
-            regDate = NOW(),
-		updateDate = NOW(),
-		memberId = #{loginedMemberId},
-            relTypeCode = #{relTypeCode} ,
-            relId = #{id},
-            `point` = -1
-    </insert>
+<!--    <insert id="doBadReaction" parameterType="map">-->
+<!--        INSERT INTO reactionPoint SET-->
+<!--            regDate = NOW(),-->
+<!--		updateDate = NOW(),-->
+<!--		memberId = #{loginedMemberId},-->
+<!--            relTypeCode = #{relTypeCode} ,-->
+<!--            relId = #{id},-->
+<!--            `point` = -1-->
+<!--    </insert>-->
 
-    <update id="doChangeReaction" parameterType="map">
-        UPDATE reactionPoint SET
-                                 updateDate = NOW(),
-                                 `point` = #{point}
-        WHERE memberId =  #{loginedMemberId}
-          AND relId =  #{id}
-          AND relTypeCode= #{relTypeCode}
-    </update>
+<!--    <update id="doChangeReaction" parameterType="map">-->
+<!--        UPDATE reactionPoint SET-->
+<!--                                 updateDate = NOW(),-->
+<!--                                 `point` = #{point}-->
+<!--        WHERE memberId =  #{loginedMemberId}-->
+<!--          AND relId =  #{id}-->
+<!--          AND relTypeCode= #{relTypeCode}-->
+<!--    </update>-->
 
 </mapper>

@@ -32,7 +32,7 @@ public class Ut {
         if (msg == null) msg = "";
         if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
 
-        // ✅ 이미 /로 시작하면 추가 슬래시 붙이지 말기
+        // 이미 /로 시작하면 추가 슬래시 붙이지 말기
         if (!replaceUri.startsWith("/")) {
             replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
         }
@@ -55,14 +55,16 @@ public class Ut {
 
 
     public static String jsReplace(String replaceUri) {
+
         if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
-// ✅ 이미 /로 시작하면 추가 슬래시 붙이지 말기
+
+        // 이미 /로 시작하면 추가 슬래시 붙이지 말기
         if (!replaceUri.startsWith("/")) {
             replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
         }
         replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "").replaceAll("/{2,}", "/");
 
-        System.out.println("🔁 Redirecting to: " + replaceUri); // 로그 확인
+        System.out.println("Redirecting to: " + replaceUri); // 로그 확인
 
         return Ut.f("""
 		<script>
