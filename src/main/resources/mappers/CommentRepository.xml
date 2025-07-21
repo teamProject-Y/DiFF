@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.CommentRepository">
+
+    <!-- 	<select id="getComments" parameterType="int"> -->
+    <!-- 		SELECT C.*, M.nickName AS extra_memberNickName -->
+    <!-- 		FROM `comment` C -->
+    <!-- 		JOIN `member` M -->
+    <!-- 		ON C.memberId = M.id -->
+    <!-- 		WHERE relId = #{relId} -->
+    <!-- 		AND relTypeCode = 'article' -->
+    <!-- 	</select> -->
+
+    <select id="getComments" parameterType="int">
+        SELECT C.*, M.nickName AS extra_writer,
+               IFNULL(SUM(R.point), 0) AS 'extra_sumReactionPoint',
+                IFNULL(SUM(IF(R.point &gt; 0, R.point, 0)), 0) AS 'extra_goodReactionPoint',
+                IFNULL(SUM(IF(R.point &lt; 0, R.point, 0)) * -1, 0) AS 'extra_badReactionPoint'
+        FROM `comment` C
+                 JOIN `member` M
+                      ON C.memberId = M.id
+                 LEFT JOIN reactionPoint R
+                           ON C.id = R.relId
+        WHERE C.relId = #{relId}
+        GROUP BY C.id
+        ORDER BY C.id DESC;
+    </select>
+
+    <insert id="doCommentWrtie">
+        INSERT INTO `comment`
+        SET
+            regDate = NOW(),
+		updateDate = NOW(),
+		memberId = #{memberId},
+            relTypeCode = #{relTypeCode},
+            relId = #{relId},
+            `body` = #{body}
+    </insert>
+
+</mapper>
