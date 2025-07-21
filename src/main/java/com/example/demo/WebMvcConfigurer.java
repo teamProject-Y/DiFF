@@ -36,22 +36,22 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
 
         // 로그인 필요한 요청
         ir = registry.addInterceptor(needLoginInterceptor);
-        ir.addPathPatterns("/usr/article/write");
-        ir.addPathPatterns("/usr/article/doWrite");
-        ir.addPathPatterns("/usr/article/modify");
-        ir.addPathPatterns("/usr/article/doModify");
-        ir.addPathPatterns("/usr/article/doDelete");
-        ir.addPathPatterns("/usr/member/doLogout");
-        ir.addPathPatterns("/usr/reply/doWrite");
-        ir.addPathPatterns("/usr/reactionPoint/doGoodReaction");
-        ir.addPathPatterns("/usr/reactionPoint/doBadReaction");
+        ir.addPathPatterns("/DiFF/article/write");
+        ir.addPathPatterns("/DiFF/article/doWrite");
+        ir.addPathPatterns("/DiFF/article/modify");
+        ir.addPathPatterns("/DiFF/article/doModify");
+        ir.addPathPatterns("/DiFF/article/doDelete");
+        ir.addPathPatterns("/DiFF/member/doLogout");
+        ir.addPathPatterns("/DiFF/reply/doWrite");
+        ir.addPathPatterns("/DiFF/reactionPoint/doGoodReaction");
+        ir.addPathPatterns("/DiFF/reactionPoint/doBadReaction");
 
         // 로그인 상태에서는 접근 금지
         ir = registry.addInterceptor(needLogoutInterceptor);
-        ir.addPathPatterns("/usr/member/login");
-        ir.addPathPatterns("/usr/member/doLogin");
-        ir.addPathPatterns("/usr/member/join");
-        ir.addPathPatterns("/usr/member/doJoin");
+        ir.addPathPatterns("/DiFF/member/login");
+        ir.addPathPatterns("/DiFF/member/doLogin");
+        ir.addPathPatterns("/DiFF/member/join");
+        ir.addPathPatterns("/DiFF/member/doJoin");
     }
 
 

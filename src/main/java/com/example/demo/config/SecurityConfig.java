@@ -22,21 +22,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/usr/home/main",
+                                "/", "/DiFF/home/main",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/usr/member/login", "/usr/member/doLogin",
-                                "/usr/member/join", "/usr/member/doJoin",
-                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp","/upload","/api/**"
+                                "/DiFF/member/login", "/DiFF/member/doLogin",
+                                "/DiFF/member/join", "/DiFF/member/doJoin",
+                                "/oauth2/**", "/login/**","/upload","/api/**"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )
                 .formLogin(form -> form
-                        .loginPage("/usr/member/login")
-                        .loginProcessingUrl("/usr/member/doLogin")
+                        .loginPage("/DiFF/member/login")
+                        .loginProcessingUrl("/DiFF/member/doLogin")
                         .usernameParameter("loginId")
                         .passwordParameter("loginPw")
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/usr/member/login?error=true")
+                        .defaultSuccessUrl("http://localhost:3000/", true)
+                        .failureUrl("/DiFF/member/login?error=true")
                         .permitAll()
                 )
 
@@ -49,7 +49,7 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/usr/member/login")
+                        .logoutSuccessUrl("/DiFF/member/login")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
