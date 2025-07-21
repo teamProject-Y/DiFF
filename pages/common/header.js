@@ -43,12 +43,12 @@ export default function Header() {
 
                     {/* 로그인 훅 없이 고정 버튼 */}
                     <li className="hover:underline hover:text-neutral-400">
-                        <Link href="/member/login" className="block px-6">
+                        <Link href="/DiFF/member/login" className="block px-6">
                             LOGIN
                         </Link>
                     </li>
                     <li className="hover:underline hover:text-neutral-400">
-                        <Link href="/member/join" className="block px-6">
+                        <Link href="/DiFF/member/join" className="block px-6">
                             JOIN
                         </Link>
                     </li>

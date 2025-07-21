@@ -35,7 +35,7 @@
                 </ul>
             </li>
             <c:if test="${!rq.isLogined() }">
-                <li class="hover:underline hover:text-neutral-400"><a class="block px-6" href="../member/login">LOGIN</a></li>
+                <li class="hover:underline hover:text-neutral-400"><a class="block px-6" href="..usr/member/login">LOGIN</a></li>
                 <li class="hover:underline hover:text-neutral-400"><a class="block px-6" href="../member/join">JOIN</a></li>
             </c:if>
             <c:if test="${rq.isLogined() }">

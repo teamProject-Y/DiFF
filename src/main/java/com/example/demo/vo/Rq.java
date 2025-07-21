@@ -84,10 +84,8 @@ public class Rq {
         this.loginedMemberNickName = null;
     }
 
-
     public void login(Member member) {
         session.setAttribute("loginedMemberId", member.getId());
-
     }
 
     public void initBeforeActionInterceptor() {

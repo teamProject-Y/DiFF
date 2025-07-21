@@ -25,26 +25,47 @@ public class SonarQubeService {
 
     public String getAnalysisResult(String projectKey) throws InterruptedException {
         System.out.println("소나 토큰 : " + sonarToken);
-        String url = sonarHost + "/api/measures/component?component=" + projectKey
-                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage";
+
+        RestTemplate restTemplate = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(sonarToken, "");
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        RestTemplate restTemplate = new RestTemplate();
+        String statusUrl = sonarHost + "/api/ce/component?component=" + projectKey;
+        int maxRetries = 5;
+        int delayMillis = 2000;
 
-        int retryCount = 3;
-        int delay = 2000;    // 2초 대기
-
-        for (int i = 0; i < retryCount; i++) {
+        // 1. 분석이 끝날 때까지 기다리기
+        for (int i = 0; i < maxRetries; i++) {
             try {
-                ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+                ResponseEntity<String> response = restTemplate.exchange(statusUrl, HttpMethod.GET, entity, String.class);
+                String body = response.getBody();
+                if (body != null && body.contains("\"status\":\"SUCCESS\"")) {
+                    System.out.println("SonarQube 분석 완료 감지됨");
+                    break;
+                } else {
+                    System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
+                    Thread.sleep(delayMillis);
+                }
+            } catch (Exception e) {
+                System.out.println("상태 확인 실패: " + e.getMessage());
+                Thread.sleep(delayMillis);
+            }
+        }
+
+        // 2. 실제 측정 결과 가져오기
+        String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
+                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage";
+
+        for (int i = 0; i < 3; i++) {
+            try {
+                ResponseEntity<String> response = restTemplate.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
                 System.out.println("분석 결과 가져오기 성공");
                 return response.getBody();
             } catch (HttpClientErrorException.NotFound e) {
-                System.out.println("분석 대기 중... " + (i + 1) + "/" + retryCount);
-                Thread.sleep(delay);
+                System.out.println("분석 결과 대기 중... " + (i + 1) + "/3");
+                Thread.sleep(delayMillis);
             }
         }
 
@@ -101,12 +122,12 @@ public class SonarQubeService {
                 }
             }
 
-            Thread.sleep(3000); // 결과 수신 대기
+            Thread.sleep(3000);
 
             String resultJson = getAnalysisResult(projectKey);
             System.out.println("분석 결과: " + resultJson);
 
-            deleteProject(projectKey); // ✅ SonarQube 서버에서 삭제
+            deleteProject(projectKey);
             System.out.println("Sonar 프로젝트 삭제 완료: " + projectKey);
 
             return resultJson;
@@ -116,7 +137,7 @@ public class SonarQubeService {
             return "분석 실패: " + e.getMessage();
 
         } finally {
-            deleteDirectoryRecursively(projectDir); // ✅ 로컬 디렉토리 삭제
+            deleteDirectoryRecursively(projectDir);
             System.out.println("임시 디렉토리 삭제 완료: " + projectDir.getAbsolutePath());
         }
     }
@@ -161,8 +182,7 @@ public class SonarQubeService {
             writer.println("sonar.sources=" + sourcePath);
             writer.println("sonar.java.binaries=" + binaryPath);
             writer.println("sonar.java.source=17");
-            writer.println("sonar.login=" + sonarToken);  // 토큰 추가
-
+            writer.println("sonar.login=" + sonarToken);
         }
     }
 }

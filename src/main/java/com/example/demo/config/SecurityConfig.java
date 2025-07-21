@@ -41,11 +41,11 @@ public class SecurityConfig {
                 )
 
                 .oauth2Login(oauth -> oauth
-                        .loginPage("/usr/member/login")
+                        .loginPage("/DiFF/member/login")
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(gitHubOAuth2UserService)
                         )
-                        .defaultSuccessUrl("/usr/home/main", true)
+                        .defaultSuccessUrl("http://localhost:3000/DiFF/home/main", true)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")

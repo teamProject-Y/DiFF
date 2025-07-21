@@ -1,10 +1,11 @@
 package com.example.demo.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.MemberService;
 import com.example.demo.vo.Member;
@@ -13,10 +14,10 @@ import com.example.demo.vo.Rq;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
-import org.springframework.web.bind.annotation.RestController;
 import util.Ut;
 
 @RestController
+@RequestMapping("/usr/member")
 public class UsrMemberController {
 
     private final BeforeActionInterceptor beforeActionInterceptor;
@@ -27,19 +28,31 @@ public class UsrMemberController {
     @Autowired
     private MemberService memberService;
 
-    public UsrMemberController(HttpSession session, BeforeActionInterceptor beforeActionInterceptor) {
+    public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
-
     }
 
-    @RequestMapping("/usr/member/join")
-    public String join() {
-
-        return "usr/member/join";
-    }
+//    @PostMapping("/join")
+//    public ResponseEntity<ResultData> doJoin(@RequestBody Member dto) {
+//        if (Ut.isEmpty(dto.getLoginId()))
+//            return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 쓰시오"));
+//        // ... 기타 유효성 검사 ...
+//
+//        long newId = memberService.doJoin(
+//                dto.getLoginId(), dto.getLoginPw(),
+//                dto.getName(), dto.getNickName(),
+//                dto.getEmail()
+//        );
+//
+//        if (newId < 1)
+//            return ResponseEntity.badRequest().body(ResultData.from("F-8","이미 사용 중인 정보가 있습니다"));
+//
+//        Member m = memberService.getMemberById(newId);
+//        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
+//    }
 
     // 액션메서드
-    @RequestMapping("/usr/member/doJoin")
+    @RequestMapping("/doJoin")
     @ResponseBody
     public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
 
@@ -55,34 +68,39 @@ public class UsrMemberController {
         if(id == -1) return Ut.jsHistoryBack("F-8", Ut.f("%s는 이미 사용 중인 아이디입니다.", loginId));
         if(id == -2) return Ut.jsHistoryBack("F-9", Ut.f("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", loginId, email));
 
-        Member member = memberService.getMemberById(id);
-
-        return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하", nickName), "usr/home/main");
+        return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하합니다.", nickName), "/");
     }
 
-    @RequestMapping("/usr/member/login")
+    @RequestMapping("/login")
     public String login() {
+
         System.out.println("login 메서드 진입");
+
         return "usr/member/login";
     }
 
+
+
     @RequestMapping("/usr/member/doLogin")
     @ResponseBody
-    public String doLogin(HttpServletRequest req, String loginId, String loginPw) {
+    public String doLogin(@RequestBody Member member) {
 
-        Rq rq = (Rq) req.getAttribute("rq");
+        System.out.println("제발 여기로 와라");
 
-        if(Ut.isEmpty(loginId)) return Ut.jsHistoryBack("F-1", "아이디 입력해주세요");
-        if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호 입력햇주세요");
+        if (Ut.isEmpty(member.getLoginId()))
+            return Ut.jsHistoryBack("F-1","아이디를 입력해주세요");
+        if (Ut.isEmpty(member.getLoginPw()))
+            return Ut.jsHistoryBack("F-2","비밀번호를 입력해주세요");
 
-        Member member = memberService.getMemberByLoginId(loginId);
+        Member m = memberService.getMemberByLoginId(member.getLoginId());
+        if (m == null)
+            return Ut.jsHistoryBack("F-3","존재하지 않는 아이디");
+        if (!m.getLoginPw().equals(member.getLoginPw()))
+            return Ut.jsHistoryBack("F-A","비밀번호 불일치");
 
-        if(member == null) return Ut.jsHistoryBack("F-3", "존재하지 않는 아이디에요");
-        if(!member.getLoginPw().equals(loginPw)) return Ut.jsHistoryBack("F-A", "올바르지 않은 비밀번호에요");
+        rq.login(m);
 
-        rq.login(member);
-        System.out.println("🛫 로그인 후 이동할 URI: /usr/home/main");
-        return Ut.jsReplace("S-1", Ut.f("%s님 환영합니다", member.getNickName()), "usr/home/main");
+        return Ut.jsHistoryBack("S-1", m.getNickName()+"님 환영");
     }
 
     @RequestMapping("/usr/member/doLogout")

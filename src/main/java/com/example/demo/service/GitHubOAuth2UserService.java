@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.vo.Member;
 import com.example.demo.repository.MemberRepository;
+import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -25,8 +26,10 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
     @Autowired
     private MemberService memberService;
 
+//    @Autowired
+//    private HttpSession session; // 세션 접근
     @Autowired
-    private HttpSession session; // 세션 접근
+    private Rq rq;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -34,7 +37,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
         String oauthId = oauthUser.getName();
         String username = oauthUser.getAttribute("login");
-        String email = oauthUser.getAttribute("email");
+        String email = fetchPrimaryEmail(userRequest);
 
         // 회원 가입 or 조회
         memberService.processOAuthPostLogin(oauthId, username, email);
@@ -43,7 +46,8 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
         Member member = memberService.getByOauthId(oauthId);
 
         if (member != null) {
-            session.setAttribute("loginedMemberId", member.getId()); // 로그인 세션 주입
+            rq.login(member);
+            System.out.println("LOGINED USER: " + rq.getLoginedMemberId());
         }
 
         return oauthUser;
@@ -66,7 +70,8 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
                 emailApiUrl,
                 HttpMethod.GET,
                 entity,
-                new ParameterizedTypeReference<>() {}
+                new ParameterizedTypeReference<>() {
+                }
         );
 
         System.out.println("이메일 API 응답 상태: " + response.getStatusCode());
@@ -89,7 +94,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
             }
         }
 
-        System.out.println("⚠이메일을 가져오지 못했습니다.");
+        System.out.println("이메일을 가져오지 못했습니다.");
         return null;
     }
 }

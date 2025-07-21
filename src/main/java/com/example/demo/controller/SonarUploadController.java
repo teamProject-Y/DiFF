@@ -41,19 +41,19 @@ public class SonarUploadController {
             String commitId = UUID.randomUUID().toString();
             String projectKey = "temp_" + memberId + "_" + commitId;
 
-            System.out.println("👤 사용자 ID: " + memberId);
-            System.out.println("📂 생성된 Project Key: " + projectKey);
+            System.out.println("사용자 ID: " + memberId);
+            System.out.println("생성된 Project Key: " + projectKey);
 
             // 2. 압축 해제 및 sonar-project.properties 생성
             String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
-            System.out.println("📦 압축 해제 위치: " + extractedPath);
+            System.out.println("압축 해제 위치: " + extractedPath);
 
             // 3. 분석 실행
             sonarService.runSonarScanner(extractedPath);
 
             // 4. 결과 조회
             String result = sonarQubeService.getAnalysisResult(projectKey);
-            System.out.println("📊 분석 결과: " + result);
+            System.out.println("분석 결과: " + result);
 
             // 5. SonarQube 프로젝트 삭제
             grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
@@ -66,7 +66,7 @@ public class SonarUploadController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("❌ 분석 중 오류 발생: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
         }
 
     }
@@ -92,16 +92,16 @@ public class SonarUploadController {
 
             int responseCode = connection.getResponseCode();
             if (responseCode == 204) {
-                System.out.println("✅ 프로젝트 관리자 권한 부여 완료: " + projectKey);
+                System.out.println("프로젝트 관리자 권한 부여 완료: " + projectKey);
             } else {
                 BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
                 String response = in.lines().collect(Collectors.joining());
                 in.close();
-                System.out.println("❌ 권한 부여 실패: " + response);
+                System.out.println("권한 부여 실패: " + response);
             }
 
         } catch (IOException e) {
-            System.out.println("❌ 권한 부여 중 예외 발생: " + e.getMessage());
+            System.out.println("권한 부여 중 예외 발생: " + e.getMessage());
         }
     }
 

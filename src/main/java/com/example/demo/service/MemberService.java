@@ -63,7 +63,7 @@ public class MemberService {
             memberRepository.save(newMember);
             System.out.println("저장 완료");
         } else {
-            System.out.println("ℹ이미 존재하는 회원 - 저장 생략");
+            System.out.println("이미 존재하는 회원 -> 저장 생략");
         }
     }
 
