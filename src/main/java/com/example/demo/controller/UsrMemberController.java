@@ -53,6 +53,7 @@ public class UsrMemberController {
 //        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
 //    }
 
+    // 주석
     // 액션메서드
     @RequestMapping("/doJoin")
     @ResponseBody
