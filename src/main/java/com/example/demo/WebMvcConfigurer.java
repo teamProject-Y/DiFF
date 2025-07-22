@@ -24,6 +24,13 @@ public class WebMvcConfigurer implements org.springframework.web.servlet.config.
     NeedLogoutInterceptor needLogoutInterceptor;
 
     @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowCredentials(true);
+    }
+
+    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         InterceptorRegistration ir;
 

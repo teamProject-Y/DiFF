@@ -82,7 +82,7 @@ public class UsrMemberController {
 
 
 
-    @RequestMapping("/DiFF/member/doLogin")
+    @RequestMapping("/doLogin")
     @ResponseBody
     public String doLogin(@RequestBody Member member) {
 
