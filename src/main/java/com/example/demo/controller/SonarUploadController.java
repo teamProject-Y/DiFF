@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.service.SonarQubeService;
 import com.example.demo.service.SonarService;
 import com.example.demo.vo.Rq;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +21,6 @@ import java.util.stream.Collectors;
 
 @Controller
 public class SonarUploadController {
-
-    @Autowired
-    private SonarQubeService sonarQubeService;
 
     @Autowired
     private SonarService sonarService;
@@ -49,16 +45,16 @@ public class SonarUploadController {
             System.out.println("압축 해제 위치: " + extractedPath);
 
             // 3. 분석 실행
-            sonarService.runSonarScanner(extractedPath);
+            sonarService.runSonarScanner(extractedPath,projectKey);
 
             // 4. 결과 조회
-            String result = sonarQubeService.getAnalysisResult(projectKey);
+            String result = sonarService.getAnalysisResult(projectKey);
             System.out.println("분석 결과: " + result);
 
             // 5. SonarQube 프로젝트 삭제
             grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
             Thread.sleep(2000);
-            sonarQubeService.deleteProject(projectKey);
+            sonarService.deleteProject(projectKey);
             System.out.println("🧹 SonarQube 프로젝트 삭제 완료: " + projectKey);
 
 
