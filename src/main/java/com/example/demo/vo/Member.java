@@ -33,4 +33,6 @@ public class Member {
     private String email;
     private boolean delStatus;
     private LocalDateTime delDate;
+
+    private boolean verified;
 }
