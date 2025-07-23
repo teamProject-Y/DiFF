@@ -184,120 +184,60 @@ public class SonarService {
 
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
-        System.out.println(propertiesFile.getAbsolutePath() + " 소스 경로 감지 ");
-
-        String javaSourcePath = findJavaSourceFolder(projectDir);
-        String classPath = findClassFolder(projectDir);
-
-        // 여러 유효 폴더 모두 포함
-        List<String> sourcePaths = detectAllValidSourceFolders(projectDir)
-                .stream()
-                .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
-                .collect(Collectors.toList());
-
-        //  .js, .py 탐색용 - 루트 전체 기준
-        boolean containsJS = containsExtension(projectDir, ".js");
-        boolean containsPY = containsExtension(projectDir, ".py");
-
-        System.out.println("✅ [DEBUG] .java 포함 여부: " + (javaSourcePath != null));
-        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + (classPath != null));
-        System.out.println("✅ [DEBUG] .js 포함 여부: " + containsJS);
-        System.out.println("✅ [DEBUG] .py 포함 여부: " + containsPY);
+        System.out.println(propertiesFile.getAbsolutePath()+"소스 경로 감지 ");
+        // 자동으로 소스 경로 감지
+        String detectedSource = detectSourceFolder(projectDir);
 
         try (PrintWriter writer = new PrintWriter(propertiesFile)) {
             writer.println("sonar.projectKey=" + projectKey);
             writer.println("sonar.projectName=" + projectKey);
             writer.println("sonar.projectVersion=1.0");
+            writer.println("sonar.sources=" + detectedSource);
             writer.println("sonar.host.url=" + sonarHost);
 
-            //  1. 소스 경로
-            writer.println("sonar.sources=" + String.join(",", sourcePaths));
+            File sourceDir = new File(detectedSource);
 
-            //  2. Java 설정
-            if (javaSourcePath != null && classPath != null) {
-                String classPathRel = projectDir.toPath().relativize(Path.of(classPath)).toString();
-                writer.println("sonar.java.binaries=" + classPathRel);
+            if (containsExtension(sourceDir, ".java")) {
+                writer.println("sonar.java.binaries=" +
+                        (new File(projectDir, "target/classes").exists() ? "target/classes" : "build/classes/java/main"));
                 writer.println("sonar.java.source=17");
-            }
-
-            //  3. Python 설정 (자동 감지)
-            if (containsPY) {
+            } else if (containsExtension(sourceDir, ".py")) {
                 writer.println("sonar.language=py");
                 writer.println("sonar.python.version=3.10");
+            } else if (containsExtension(sourceDir, ".js")) {
+                writer.println("sonar.language=js");
             }
 
             writer.println("sonar.login=" + sonarToken);
         }
-
-        System.out.println("📂 최종 분석 대상 폴더들: " + sourcePaths);
     }
+    // 분석 대상 소스 경로 자동 탐색
+    private String detectSourceFolder(File baseDir) {
+        List<String> extensions = List.of(".js", ".py", ".java");
+        Queue<File> queue = new LinkedList<>();
+        queue.add(baseDir);
 
+        while (!queue.isEmpty()) {
+            File current = queue.poll();
+            File[] files = current.listFiles();
+            if (files == null) continue;
 
-    private String findClassFolder(File projectDir) {
-        File[] classDirs = {
-                new File(projectDir, "target/classes"),
-                new File(projectDir, "build/classes/java/main")
-        };
+            boolean hasSourceFile = Arrays.stream(files)
+                    .anyMatch(f -> extensions.stream().anyMatch(ext -> f.getName().endsWith(ext)));
 
-        for (File dir : classDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                return dir.getAbsolutePath();
+            if (hasSourceFile) {
+                return current.getAbsolutePath();
             }
+
+            // 하위 디렉터리 탐색
+            Arrays.stream(files)
+                    .filter(File::isDirectory)
+                    .forEach(queue::add);
         }
 
-        return null;
-    }
-    private String findJavaSourceFolder(File projectDir) {
-        return findDirectoryContainingExtension(projectDir, ".java");
-    }
-
-    private String findDirectoryContainingExtension(File dir, String extension) {
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-
-        boolean containsTargetFile = false;
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith(extension)) {
-                containsTargetFile = true;
-            }
-        }
-        if (containsTargetFile) {
-            return dir.getAbsolutePath();
-        }
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String found = findDirectoryContainingExtension(file, extension);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-
-        return null;
+        throw new RuntimeException("⚠️ 분석 가능한 소스 파일이 없습니다.");
     }
 
-    private List<String> detectAllValidSourceFolders(File baseDir) {
-        String[] candidates = {"src", "client", "app", "js", "python", "."};
-        List<String> validPaths = new ArrayList<>();
-
-        for (String name : candidates) {
-            File dir = new File(baseDir, name);
-            System.out.println("🕵️ 후보 탐색 중: " + dir.getAbsolutePath());
-            if (dir.exists() && dir.isDirectory()) {
-                System.out.println("✅ 후보 선택됨: " + dir.getAbsolutePath());
-                validPaths.add(dir.getAbsolutePath());
-            }
-        }
-
-        // 아무 폴더도 없으면 루트 fallback
-        if (validPaths.isEmpty()) {
-            System.out.println("⚠️ 후보 중 유효한 폴더 없음. 루트로 fallback");
-            validPaths.add(baseDir.getAbsolutePath());
-        }
-
-        return validPaths;
-    }
 
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;

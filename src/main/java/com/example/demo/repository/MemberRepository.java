@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 import com.example.demo.vo.Member;
 
-import java.util.Optional;
-
 @Mapper
 public interface MemberRepository {
 
@@ -36,13 +34,11 @@ public interface MemberRepository {
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
 
-    public Member getByOauthId(String oauthId);
+    Member getByOauthId(String oauthId);
+    void save(Member member);
 
-    public void save(Member member);
+    Member findByEmail(String email);
+    void saveMember(Member member);
 
-    public Member getMemberByEmail(String email);
-
-    public void saveMember(Member member);
-
-    public Member getById(Long memberId);
+    Member getById(Long memberId);
 }

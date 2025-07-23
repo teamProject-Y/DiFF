@@ -35,8 +35,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String oauthId = oauthUser.getName();
         String username = oauthUser.getAttribute("login");
-        //String email = fetchPrimaryEmail(userRequest); <- 이렇게 하면 구글이 깃허브 이메일을 받아서?? 터짐 근데 이게 필요함 (null로 안나오려면)
-        String email = oauthUser.getAttribute("email"); // 이렇게 하면 구글이 잘받아먹음 (대신 null이 뜸)
+        String email = fetchPrimaryEmail(userRequest);
 
         memberService.processOAuthLogin(provider, oauthId, email, username);
         Member member = memberService.getByProviderAndOauthId(oauthId,provider);
@@ -71,6 +70,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
                 }
             }
         }
+
         return null;
     }
 }
