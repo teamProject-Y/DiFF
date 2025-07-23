@@ -2,38 +2,42 @@ package com.example.demo.config;
 
 
 import com.example.demo.service.GitHubOAuth2UserService;
+import com.example.demo.service.GoogleOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.Collections;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Autowired
-    private GitHubOAuth2UserService gitHubOAuth2UserService;
+    private GitHubOAuth2UserService githubOAuth2UserService;
+
+    @Autowired
+    private GoogleOAuth2UserService googleOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/DiFF/home/main", "/DiFF/**",
+                                "/", "/usr/home/main", "/usr/member/verifyGitUser",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin",
-                                "/DiFF/member/join", "/DiFF/member/doJoin",
-                                "/oauth2/**", "/login/**","/upload","/api/**"
+                                "/usr/member/login", "/usr/member/doLogin",
+                                "/usr/member/join", "/usr/member/doJoin",
+                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
+                                "/upload", "/api/**"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )
@@ -46,36 +50,28 @@ public class SecurityConfig {
                         .failureUrl("/DiFF/member/login?error=true")
                         .permitAll()
                 )
-
                 .oauth2Login(oauth -> oauth
-                        .loginPage("/DiFF/member/login")
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(gitHubOAuth2UserService)
+                                .userService(this::selectOAuthService) // 서비스 선택 로직
                         )
-                        .defaultSuccessUrl("http://localhost:3000/DiFF/home/main", true)
+                        .defaultSuccessUrl("/main", true)
                 )
-                .logout(logout -> logout
+                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("http://localhost:3000/DiFF/member/login")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-                );
-
+        );
         return http.build();
     }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        // List.of 대신
-        config.setAllowedOrigins(Collections.singletonList("http://localhost:3000"));
-        config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
-        config.setAllowedHeaders(Collections.singletonList("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
+    private OAuth2User selectOAuthService(OAuth2UserRequest request) {
+        String registrationId = request.getClientRegistration().getRegistrationId();
+        if ("github".equals(registrationId)) {
+            return githubOAuth2UserService.loadUser(request);
+        } else if ("google".equals(registrationId)) {
+            return googleOAuth2UserService.loadUser(request);
+        }
+        throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
     }
 
 }

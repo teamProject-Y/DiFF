@@ -16,8 +16,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import util.Ut;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/DiFF/member")
+@RequestMapping("/usr/member")
 public class UsrMemberController {
 
     private final BeforeActionInterceptor beforeActionInterceptor;
@@ -51,7 +53,6 @@ public class UsrMemberController {
 //        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
 //    }
 
-    // 주석
     // 액션메서드
     @RequestMapping("/doJoin")
     @ResponseBody
@@ -77,12 +78,10 @@ public class UsrMemberController {
 
         System.out.println("login 메서드 진입");
 
-        return "DiFF/member/login";
+        return "usr/member/login";
     }
 
-
-
-    @RequestMapping("/doLogin")
+    @RequestMapping("/usr/member/doLogin")
     @ResponseBody
     public String doLogin(@RequestBody Member member) {
 
@@ -104,7 +103,7 @@ public class UsrMemberController {
         return Ut.jsHistoryBack("S-1", m.getNickName()+"님 환영");
     }
 
-    @RequestMapping("/DiFF/member/doLogout")
+    @RequestMapping("/usr/member/doLogout")
     @ResponseBody
     public String doLogout(HttpServletRequest req) {
 
@@ -112,11 +111,11 @@ public class UsrMemberController {
 
         rq.logout();
 
-        return Ut.jsReplace("S-1", "로그아웃 되었습니다", "DiFF/home/main");
+        return Ut.jsReplace("S-1", "로그아웃 되었습니다", "usr/home/main");
 
     }
 
-    @RequestMapping("/DiFF/member/myInfo")
+    @RequestMapping("/usr/member/myInfo")
     public String myInfo(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -124,10 +123,10 @@ public class UsrMemberController {
 
         model.addAttribute("member", member);
 
-        return "DiFF/member/myInfo";
+        return "usr/member/myInfo";
     }
 
-    @RequestMapping("/DiFF/member/modify")
+    @RequestMapping("/usr/member/modify")
     public String modify(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -135,10 +134,10 @@ public class UsrMemberController {
 
         model.addAttribute("member", member);
 
-        return "DiFF/member/modify";
+        return "usr/member/modify";
     }
 
-    @RequestMapping("/DiFF/member/checkPw")
+    @RequestMapping("/usr/member/checkPw")
     @ResponseBody
     public ResultData checkPw(HttpServletRequest req, String pw) {
 
@@ -153,7 +152,7 @@ public class UsrMemberController {
     }
 
     // 로그인 체크 -> 유무 체크 -> 권한 체크
-    @RequestMapping("/DiFF/member/doModify")
+    @RequestMapping("/usr/member/doModify")
     @ResponseBody
     public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String email) {
 
@@ -171,4 +170,30 @@ public class UsrMemberController {
 
         return Ut.jsReplace("S-1", Ut.f("%s 회원님 정보 수정 완료", nickName), "../member/myInfo");
     }
+
+    ////////// CLI
+    @PostMapping("/verifyGitUser")
+    @ResponseBody
+    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
+
+        System.err.println("git config user.name = " + requestMap.get("email"));
+        String email = requestMap.get("email");
+
+        Integer verifiedMemberId = memberService.isVerifiedUser(email);
+
+        if(verifiedMemberId != null) {
+            System.out.println("succes memberID: " + verifiedMemberId);
+            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
+        }else {
+            System.out.println("failed");
+            return ResultData.from("F-1", "사용자 인증 실패");
+        }
+    }
+
+    @PostMapping("/getdiFf")
+    public ResultData getDiFF(@RequestBody Map<String, String> requestMap) {
+
+        return null;
+    }
+
 }
