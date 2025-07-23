@@ -188,11 +188,20 @@ public class SonarService {
         // 자동으로 소스 경로 감지
         String detectedSource = detectSourceFolder(projectDir);
 
+        System.out.println("✅ [DEBUG] sonar.sources 경로: " + detectedSource);
+        System.out.println("✅ [DEBUG] .properties 위치: " + projectDir.getAbsolutePath());
+        System.out.println("✅ [DEBUG] .java 파일 포함 여부: " + containsExtension(new File(detectedSource), ".java"));
+        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + new File(projectDir, "target/classes").exists());
+        System.out.println("✅ [DEBUG] sonar.java.binaries 값: " +
+                (new File(projectDir, "target/classes").exists() ? "target/classes" : "build/classes/java/main"));
+
         try (PrintWriter writer = new PrintWriter(propertiesFile)) {
             writer.println("sonar.projectKey=" + projectKey);
             writer.println("sonar.projectName=" + projectKey);
             writer.println("sonar.projectVersion=1.0");
-            writer.println("sonar.sources=" + detectedSource);
+            Path relativePath = projectDir.toPath().relativize(Path.of(detectedSource));
+            writer.println("sonar.sources=" + relativePath.toString());
+
             writer.println("sonar.host.url=" + sonarHost);
 
             File sourceDir = new File(detectedSource);
@@ -219,6 +228,12 @@ public class SonarService {
 
         while (!queue.isEmpty()) {
             File current = queue.poll();
+
+            // 테스트 디렉토리 제외
+            if (current.getAbsolutePath().toLowerCase().contains("test")) {
+                continue;
+            }
+
             File[] files = current.listFiles();
             if (files == null) continue;
 
@@ -229,7 +244,6 @@ public class SonarService {
                 return current.getAbsolutePath();
             }
 
-            // 하위 디렉터리 탐색
             Arrays.stream(files)
                     .filter(File::isDirectory)
                     .forEach(queue::add);
@@ -237,6 +251,7 @@ public class SonarService {
 
         throw new RuntimeException("⚠️ 분석 가능한 소스 파일이 없습니다.");
     }
+
 
 
     private boolean containsExtension(File dir, String ext) {
