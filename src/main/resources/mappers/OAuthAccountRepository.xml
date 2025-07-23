@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.OAuthAccountRepository">
+
+    <!-- 특정 OAuth 계정 존재 여부 확인 -->
+    <select id="findByProviderAndOauthId" resultType="com.example.demo.vo.OAuthAccount">
+        SELECT * FROM oauthAccount
+        WHERE provider = #{provider} AND oauthId = #{oauthId}
+    </select>
+
+    <!-- OAuth 계정 추가 -->
+    <insert id="saveOAuthAccount" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO oauthAccount (memberId, provider, oauthId)
+        VALUES (#{memberId}, #{provider}, #{oauthId})
+    </insert>
+
+</mapper>
