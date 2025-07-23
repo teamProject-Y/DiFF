@@ -86,7 +86,7 @@ public class MemberService {
         }
 
         // 이메일로 기존 회원 확인
-        Member member = memberRepository.findByEmail(email);
+        Member member = memberRepository.getMemberByEmail(email);
         if (member == null) {
             // 없다면 새로 등록
             member = new Member();
@@ -117,6 +117,8 @@ public class MemberService {
     }
 
     public Integer isVerifiedUser(String email) {
-        return memberRepository.isVerifiedUser(email);
+        Member member = memberRepository.getMemberByEmail(email);
+        if(member == null) return null;
+        else return (int) member.getId();
     }
 }
