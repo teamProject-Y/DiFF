@@ -34,6 +34,9 @@ public interface MemberRepository {
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
 
-    Member getByOauthId(String oauthId);
-    void save(Member member);
+    public Member getByOauthId(String oauthId);
+
+    public void save(Member member);
+
+    public Integer isVerifiedUser(String email);
 }

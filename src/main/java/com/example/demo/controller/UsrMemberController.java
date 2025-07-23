@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import util.Ut;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/usr/member")
 public class UsrMemberController {
@@ -78,8 +80,6 @@ public class UsrMemberController {
 
         return "usr/member/login";
     }
-
-
 
     @RequestMapping("/usr/member/doLogin")
     @ResponseBody
@@ -170,4 +170,30 @@ public class UsrMemberController {
 
         return Ut.jsReplace("S-1", Ut.f("%s 회원님 정보 수정 완료", nickName), "../member/myInfo");
     }
+
+    ////////// CLI
+    @PostMapping("/verifyGitUser")
+    @ResponseBody
+    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
+
+        System.err.println("git config user.name = " + requestMap.get("email"));
+        String email = requestMap.get("email");
+
+        Integer verifiedMemberId = memberService.isVerifiedUser(email);
+
+        if(verifiedMemberId != null) {
+            System.out.println("succes memberID: " + verifiedMemberId);
+            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
+        }else {
+            System.out.println("failed");
+            return ResultData.from("F-1", "사용자 인증 실패");
+        }
+    }
+
+    @PostMapping("/getdiFf")
+    public ResultData getDiFF(@RequestBody Map<String, String> requestMap) {
+
+        return null;
+    }
+
 }

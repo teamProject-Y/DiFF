@@ -63,4 +63,11 @@
         </set>
         WHERE id = #{loginedMemberId}
     </update>
+
+    <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
+        SELECT id
+        FROM `member`
+        WHERE email = #{email} LIMIT 1
+    </select>
+
 </mapper>
