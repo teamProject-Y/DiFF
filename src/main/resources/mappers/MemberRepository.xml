@@ -20,11 +20,11 @@
 		loginId = #{loginId},
             loginPw = #{loginPw},
             `name` = #{name},
-            nickName = #{nickName},
+            nickName = #{nickName}
             email = #{email}
     </insert>
 
-    <select id="getLastInsertId" parameterType="long">
+    <select id="getLastInsertId" parameterType="int">
         SELECT LAST_INSERT_ID()
     </select>
 
@@ -65,7 +65,7 @@
     </update>
 
     <!-- 이메일로 회원 조회 -->
-    <select id="getMemberByEmail" resultType="com.example.demo.vo.Member">
+    <select id="findByEmail" resultType="com.example.demo.vo.Member">
         SELECT * FROM member WHERE email = #{email}
     </select>
 
@@ -77,13 +77,6 @@
 
     <select id="getById" resultType="com.example.demo.vo.Member">
         SELECT * FROM member WHERE id = #{id}
-    </select>
-
-
-    <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
-        SELECT id
-        FROM `member`
-        WHERE email = #{email} LIMIT 1
     </select>
 
 </mapper>
