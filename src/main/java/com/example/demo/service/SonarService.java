@@ -184,120 +184,59 @@ public class SonarService {
 
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
-        System.out.println(propertiesFile.getAbsolutePath() + " 소스 경로 감지 ");
-
-        String javaSourcePath = findJavaSourceFolder(projectDir);
-        String classPath = findClassFolder(projectDir);
-        String mainSourcePath = detectSourceFolder(projectDir);
-
-        System.out.println("✅ [DEBUG] .java 포함 여부: " + (javaSourcePath != null));
-        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + (classPath != null));
-        System.out.println("✅ [DEBUG] .js 포함 여부: " + containsExtension(new File(mainSourcePath), ".js"));
-        System.out.println("✅ [DEBUG] .py 포함 여부: " + containsExtension(new File(mainSourcePath), ".py"));
+        System.out.println(propertiesFile.getAbsolutePath()+"소스 경로 감지 ");
+        // 자동으로 소스 경로 감지
+        String detectedSource = detectSourceFolder(projectDir);
 
         try (PrintWriter writer = new PrintWriter(propertiesFile)) {
             writer.println("sonar.projectKey=" + projectKey);
             writer.println("sonar.projectName=" + projectKey);
             writer.println("sonar.projectVersion=1.0");
+            writer.println("sonar.sources=" + detectedSource);
             writer.println("sonar.host.url=" + sonarHost);
 
-            // ✅ 1. sources 경로 지정
-            List<String> sourcePaths = new ArrayList<>();
-            if (javaSourcePath != null) {
-                sourcePaths.add(projectDir.toPath().relativize(Path.of(javaSourcePath)).toString());
-            }
-            if (classPath != null && !sourcePaths.contains(projectDir.toPath().relativize(Path.of(classPath)).toString())) {
-                sourcePaths.add(projectDir.toPath().relativize(Path.of(classPath)).toString());
-            }
-            if (sourcePaths.isEmpty()) {
-                sourcePaths.add(projectDir.toPath().relativize(Path.of(mainSourcePath)).toString());
-            }
-            writer.println("sonar.sources=" + String.join(",", sourcePaths));
+            File sourceDir = new File(detectedSource);
 
-            // ✅ 2. Java 설정
-            if (javaSourcePath != null && classPath != null) {
-                String classPathRel = projectDir.toPath().relativize(Path.of(classPath)).toString();
-                writer.println("sonar.java.binaries=" + classPathRel);
+            if (containsExtension(sourceDir, ".java")) {
+                writer.println("sonar.java.binaries=" +
+                        (new File(projectDir, "target/classes").exists() ? "target/classes" : "build/classes/java/main"));
                 writer.println("sonar.java.source=17");
-            }
-
-            // ✅ 3. Python 설정 (자동 감지)
-            if (containsExtension(new File(mainSourcePath), ".py")) {
+            } else if (containsExtension(sourceDir, ".py")) {
                 writer.println("sonar.language=py");
                 writer.println("sonar.python.version=3.10");
+            } else if (containsExtension(sourceDir, ".js")) {
+                writer.println("sonar.language=js");
             }
-
-            // ✅ 4. JS 설정 (자동 감지) – 필요 없을 수도 있음 (JS 플러그인 자동 인식)
-            if (containsExtension(new File(mainSourcePath), ".js")) {
-                // JS는 보통 language를 안 넣어도 됨. 혹시 넣고 싶으면 아래 주석 해제
-                // writer.println("sonar.language=js");
-            }
-            System.out.println("📂 최종 분석 대상 폴더: " + mainSourcePath);
 
             writer.println("sonar.login=" + sonarToken);
         }
     }
-
-    private String findClassFolder(File projectDir) {
-        File[] classDirs = {
-                new File(projectDir, "target/classes"),
-                new File(projectDir, "build/classes/java/main")
-        };
-
-        for (File dir : classDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                return dir.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-
-    private String findJavaSourceFolder(File projectDir) {
-        return findDirectoryContainingExtension(projectDir, ".java");
-    }
-
-    private String findDirectoryContainingExtension(File dir, String extension) {
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-
-        boolean containsTargetFile = false;
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith(extension)) {
-                containsTargetFile = true;
-            }
-        }
-        if (containsTargetFile) {
-            return dir.getAbsolutePath();
-        }
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String found = findDirectoryContainingExtension(file, extension);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-
-        return null;
-    }
-
+    // 분석 대상 소스 경로 자동 탐색
     private String detectSourceFolder(File baseDir) {
-        String[] candidates = {"src", "client", "app", "js", "python", "."};
-        for (String name : candidates) {
-            File dir = new File(baseDir, name);
-            System.out.println("🕵️‍♂️ 후보 탐색 중: " + dir.getAbsolutePath());
-            if (dir.exists() && dir.isDirectory()) {
-                System.out.println("✅ 후보 선택됨: " + dir.getAbsolutePath());
-                return dir.getAbsolutePath();
-            }
-        }
-        System.out.println("⚠️ 후보 중 유효한 폴더 없음. 루트로 fallback");
-        return baseDir.getAbsolutePath(); // fallback: 루트 전체
-    }
+        List<String> extensions = List.of(".js", ".py", ".java");
+        Queue<File> queue = new LinkedList<>();
+        queue.add(baseDir);
 
+        while (!queue.isEmpty()) {
+            File current = queue.poll();
+            File[] files = current.listFiles();
+            if (files == null) continue;
+
+            boolean hasSourceFile = Arrays.stream(files)
+                    .anyMatch(f -> extensions.stream().anyMatch(ext -> f.getName().endsWith(ext)));
+
+            if (hasSourceFile) {
+                return current.getAbsolutePath();
+            }
+
+            // 하위 디렉터리 탐색
+            Arrays.stream(files)
+                    .filter(File::isDirectory)
+                    .forEach(queue::add);
+        }
+
+        throw new RuntimeException("⚠️ 분석 가능한 소스 파일이 없습니다.");
+    }
 
 
     private boolean containsExtension(File dir, String ext) {

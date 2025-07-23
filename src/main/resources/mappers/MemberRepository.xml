@@ -5,10 +5,6 @@
 
 <mapper namespace="com.example.demo.repository.MemberRepository">
 
-    <select id="getByOauthId" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE oauthId = #{oauthId}
-    </select>
-
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (oauthId, nickName, email)
         VALUES (#{oauthId}, #{nickName}, #{email})
@@ -20,11 +16,11 @@
 		loginId = #{loginId},
             loginPw = #{loginPw},
             `name` = #{name},
-            nickName = #{nickName}
+            nickName = #{nickName},
             email = #{email}
     </insert>
 
-    <select id="getLastInsertId" parameterType="int">
+    <select id="getLastInsertId" parameterType="long">
         SELECT LAST_INSERT_ID()
     </select>
 
