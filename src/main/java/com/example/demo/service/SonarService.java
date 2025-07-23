@@ -39,7 +39,7 @@ public class SonarService {
         zipFile.transferTo(tempZip);
         unzip(tempZip, targetDir);
 
-        // ✅ sonar-project.properties 자동 생성
+        // sonar-project.properties 자동 생성
         createSonarPropertiesFile(targetDir, projectKey);
 
         return targetDir.getAbsolutePath();
@@ -120,7 +120,7 @@ public class SonarService {
 
         // 2. 실제 측정 결과 가져오기
         String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
-                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage";
+                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity";
         System.out.println("measuresUrl : " + measuresUrl);
         for (int i = 0; i < 10; i++) {
             try {

@@ -51,7 +51,6 @@ public class SonarUploadController {
             String result = sonarService.getAnalysisResult(projectKey);
             System.out.println("분석 결과: " + result);
 
-            // 5. SonarQube 프로젝트 삭제
             grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
             Thread.sleep(2000);
             sonarService.deleteProject(projectKey);

@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Service("githubOAuth2UserService") // 식별자 부여
+@Service("githubOAuth2UserService")
 public class GitHubOAuth2UserService extends DefaultOAuth2UserService
         implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
@@ -32,14 +32,13 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oauthUser = super.loadUser(userRequest);
-
+        String provider = userRequest.getClientRegistration().getRegistrationId();
         String oauthId = oauthUser.getName();
         String username = oauthUser.getAttribute("login");
         String email = fetchPrimaryEmail(userRequest);
 
-        memberService.processOAuthPostLogin(oauthId, username, email);
-        Member member = memberService.getByOauthId(oauthId);
-
+        memberService.processOAuthLogin(provider, oauthId, email, username);
+        Member member = memberService.getByProviderAndOauthId(oauthId,provider);
         if (member != null) {
             rq.login(member);
         }

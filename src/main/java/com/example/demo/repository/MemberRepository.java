@@ -36,4 +36,9 @@ public interface MemberRepository {
 
     Member getByOauthId(String oauthId);
     void save(Member member);
+
+    Member findByEmail(String email);
+    void saveMember(Member member);
+
+    Member getById(Long memberId);
 }
