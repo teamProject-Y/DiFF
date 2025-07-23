@@ -232,6 +232,7 @@ public class SonarService {
                 // JS는 보통 language를 안 넣어도 됨. 혹시 넣고 싶으면 아래 주석 해제
                 // writer.println("sonar.language=js");
             }
+            System.out.println("📂 최종 분석 대상 폴더: " + mainSourcePath);
 
             writer.println("sonar.login=" + sonarToken);
         }
@@ -283,14 +284,22 @@ public class SonarService {
         return null;
     }
 
-    // 분석 대상 소스 경로 자동 탐색
     private String detectSourceFolder(File baseDir) {
-        File targetClasses = new File(baseDir, "target/classes");
-        if (targetClasses.exists() && targetClasses.isDirectory()) {
-            return targetClasses.getAbsolutePath();
+        String[] candidates = {"src", "client", "app", "js", "python", "."};
+        for (String name : candidates) {
+            File dir = new File(baseDir, name);
+            System.out.println("🕵️‍♂️ 후보 탐색 중: " + dir.getAbsolutePath());
+            if (dir.exists() && dir.isDirectory()) {
+                System.out.println("✅ 후보 선택됨: " + dir.getAbsolutePath());
+                return dir.getAbsolutePath();
+            }
         }
-        throw new RuntimeException("⚠️ target/classes 디렉터리가 없습니다.");
+        System.out.println("⚠️ 후보 중 유효한 폴더 없음. 루트로 fallback");
+        return baseDir.getAbsolutePath(); // fallback: 루트 전체
     }
+
+
+
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;
         for (File file : dir.listFiles()) {
