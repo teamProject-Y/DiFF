@@ -2,11 +2,15 @@ package com.example.demo.config;
 
 
 import com.example.demo.service.GitHubOAuth2UserService;
+import com.example.demo.service.GoogleOAuth2UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -14,7 +18,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Autowired
-    private GitHubOAuth2UserService gitHubOAuth2UserService;
+    private GitHubOAuth2UserService githubOAuth2UserService;
+
+    @Autowired
+    private GoogleOAuth2UserService googleOAuth2UserService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,22 +46,27 @@ public class SecurityConfig {
                         .failureUrl("/usr/member/login?error=true")
                         .permitAll()
                 )
-
                 .oauth2Login(oauth -> oauth
-                        .loginPage("/DiFF/member/login")
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(gitHubOAuth2UserService)
+                                .userService(this::selectOAuthService) // ✅ 서비스 선택 로직
                         )
-                        .defaultSuccessUrl("http://localhost:3000/DiFF/home/main", true)
+                        .defaultSuccessUrl("/main", true)
                 )
-                .logout(logout -> logout
+                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/usr/member/login")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-                );
-
+        );
         return http.build();
     }
-
+    private OAuth2User selectOAuthService(OAuth2UserRequest request) {
+        String registrationId = request.getClientRegistration().getRegistrationId();
+        if ("github".equals(registrationId)) {
+            return githubOAuth2UserService.loadUser(request);
+        } else if ("google".equals(registrationId)) {
+            return googleOAuth2UserService.loadUser(request);
+        }
+        throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+    }
 }
