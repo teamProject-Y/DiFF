@@ -184,76 +184,113 @@ public class SonarService {
 
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
-        System.out.println(propertiesFile.getAbsolutePath()+"소스 경로 감지 ");
-        // 자동으로 소스 경로 감지
-        String detectedSource = detectSourceFolder(projectDir);
+        System.out.println(propertiesFile.getAbsolutePath() + " 소스 경로 감지 ");
 
-        System.out.println("✅ [DEBUG] sonar.sources 경로: " + detectedSource);
-        System.out.println("✅ [DEBUG] .properties 위치: " + projectDir.getAbsolutePath());
-        System.out.println("✅ [DEBUG] .java 파일 포함 여부: " + containsExtension(new File(detectedSource), ".java"));
-        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + new File(projectDir, "target/classes").exists());
-        System.out.println("✅ [DEBUG] sonar.java.binaries 값: " +
-                (new File(projectDir, "target/classes").exists() ? "target/classes" : "build/classes/java/main"));
+        String javaSourcePath = findJavaSourceFolder(projectDir);
+        String classPath = findClassFolder(projectDir);
+        String mainSourcePath = detectSourceFolder(projectDir);
+
+        System.out.println("✅ [DEBUG] .java 포함 여부: " + (javaSourcePath != null));
+        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + (classPath != null));
+        System.out.println("✅ [DEBUG] .js 포함 여부: " + containsExtension(new File(mainSourcePath), ".js"));
+        System.out.println("✅ [DEBUG] .py 포함 여부: " + containsExtension(new File(mainSourcePath), ".py"));
 
         try (PrintWriter writer = new PrintWriter(propertiesFile)) {
             writer.println("sonar.projectKey=" + projectKey);
             writer.println("sonar.projectName=" + projectKey);
             writer.println("sonar.projectVersion=1.0");
-            Path relativePath = projectDir.toPath().relativize(Path.of(detectedSource));
-            writer.println("sonar.sources=" + relativePath.toString());
-
             writer.println("sonar.host.url=" + sonarHost);
 
-            File sourceDir = new File(detectedSource);
+            // ✅ 1. sources 경로 지정
+            List<String> sourcePaths = new ArrayList<>();
+            if (javaSourcePath != null) {
+                sourcePaths.add(projectDir.toPath().relativize(Path.of(javaSourcePath)).toString());
+            }
+            if (classPath != null && !sourcePaths.contains(projectDir.toPath().relativize(Path.of(classPath)).toString())) {
+                sourcePaths.add(projectDir.toPath().relativize(Path.of(classPath)).toString());
+            }
+            if (sourcePaths.isEmpty()) {
+                sourcePaths.add(projectDir.toPath().relativize(Path.of(mainSourcePath)).toString());
+            }
+            writer.println("sonar.sources=" + String.join(",", sourcePaths));
 
-            if (containsExtension(sourceDir, ".java")) {
-                writer.println("sonar.java.binaries=" +
-                        (new File(projectDir, "target/classes").exists() ? "target/classes" : "build/classes/java/main"));
+            // ✅ 2. Java 설정
+            if (javaSourcePath != null && classPath != null) {
+                String classPathRel = projectDir.toPath().relativize(Path.of(classPath)).toString();
+                writer.println("sonar.java.binaries=" + classPathRel);
                 writer.println("sonar.java.source=17");
-            } else if (containsExtension(sourceDir, ".py")) {
+            }
+
+            // ✅ 3. Python 설정 (자동 감지)
+            if (containsExtension(new File(mainSourcePath), ".py")) {
                 writer.println("sonar.language=py");
                 writer.println("sonar.python.version=3.10");
-            } else if (containsExtension(sourceDir, ".js")) {
-                writer.println("sonar.language=js");
+            }
+
+            // ✅ 4. JS 설정 (자동 감지) – 필요 없을 수도 있음 (JS 플러그인 자동 인식)
+            if (containsExtension(new File(mainSourcePath), ".js")) {
+                // JS는 보통 language를 안 넣어도 됨. 혹시 넣고 싶으면 아래 주석 해제
+                // writer.println("sonar.language=js");
             }
 
             writer.println("sonar.login=" + sonarToken);
         }
     }
-    // 분석 대상 소스 경로 자동 탐색
-    private String detectSourceFolder(File baseDir) {
-        List<String> extensions = List.of(".js", ".py", ".java");
-        Queue<File> queue = new LinkedList<>();
-        queue.add(baseDir);
 
-        while (!queue.isEmpty()) {
-            File current = queue.poll();
+    private String findClassFolder(File projectDir) {
+        File[] classDirs = {
+                new File(projectDir, "target/classes"),
+                new File(projectDir, "build/classes/java/main")
+        };
 
-            // 테스트 디렉토리 제외
-            if (current.getAbsolutePath().toLowerCase().contains("test")) {
-                continue;
+        for (File dir : classDirs) {
+            if (dir.exists() && dir.isDirectory()) {
+                return dir.getAbsolutePath();
             }
-
-            File[] files = current.listFiles();
-            if (files == null) continue;
-
-            boolean hasSourceFile = Arrays.stream(files)
-                    .anyMatch(f -> extensions.stream().anyMatch(ext -> f.getName().endsWith(ext)));
-
-            if (hasSourceFile) {
-                return current.getAbsolutePath();
-            }
-
-            Arrays.stream(files)
-                    .filter(File::isDirectory)
-                    .forEach(queue::add);
         }
 
-        throw new RuntimeException("⚠️ 분석 가능한 소스 파일이 없습니다.");
+        return null;
     }
 
 
+    private String findJavaSourceFolder(File projectDir) {
+        return findDirectoryContainingExtension(projectDir, ".java");
+    }
 
+    private String findDirectoryContainingExtension(File dir, String extension) {
+        File[] files = dir.listFiles();
+        if (files == null) return null;
+
+        boolean containsTargetFile = false;
+        for (File file : files) {
+            if (file.isFile() && file.getName().endsWith(extension)) {
+                containsTargetFile = true;
+            }
+        }
+        if (containsTargetFile) {
+            return dir.getAbsolutePath();
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                String found = findDirectoryContainingExtension(file, extension);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // 분석 대상 소스 경로 자동 탐색
+    private String detectSourceFolder(File baseDir) {
+        File targetClasses = new File(baseDir, "target/classes");
+        if (targetClasses.exists() && targetClasses.isDirectory()) {
+            return targetClasses.getAbsolutePath();
+        }
+        throw new RuntimeException("⚠️ target/classes 디렉터리가 없습니다.");
+    }
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;
         for (File file : dir.listFiles()) {
