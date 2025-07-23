@@ -86,7 +86,7 @@ public class MemberService {
         }
 
         // 이메일로 기존 회원 확인
-        Member member = memberRepository.findByEmail(email);
+        Member member = memberRepository.getMemberByEmail(email);
         if (member == null) {
             // 없다면 새로 등록
             member = new Member();
@@ -114,5 +114,11 @@ public class MemberService {
         OAuthAccount acc = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (acc == null) return null;
         return memberRepository.getById(acc.getMemberId());
+    }
+
+    public Integer isVerifiedUser(String email) {
+        Member member = memberRepository.getMemberByEmail(email);
+        if(member == null) return null;
+        else return (int) member.getId();
     }
 }
