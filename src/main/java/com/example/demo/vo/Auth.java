@@ -15,8 +15,8 @@ public class Auth {
 
     // 클라이언트측에서 서버측으로 API 요청을 보낼 때 사용됨
     // 로그인 요청 시 사용
-    private String userId;
-    private String userPw;
+    private String loginId;
+    private String loginPw;
 
     // 토큰 정보
     private String tokenType;      // Bearer 등
@@ -33,10 +33,10 @@ public class Auth {
     /**
      * 로그인 요청 정보로부터 Auth VO 생성
      */
-    public static Auth fromLoginRequest(String userId, String userPw) {
+    public static Auth fromLoginRequest(String loginId, String loginPw) {
         return Auth.builder()
-                .userId(userId)
-                .userPw(userPw)
+                .loginId(loginId)
+                .loginPw(loginPw)
                 .build();
     }
 

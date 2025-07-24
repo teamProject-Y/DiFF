@@ -3,7 +3,6 @@ package com.example.demo.service;
 import com.example.demo.repository.OAuthAccountRepository;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class MemberService {
 
 

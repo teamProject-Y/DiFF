@@ -24,6 +24,7 @@ public class CustomMemberDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // ROLE_USER, ROLE_ADMIN 같은 enum.name() 을 권한으로 사용
         return Collections.singleton(new SimpleGrantedAuthority(member.getRole().name()));
     }
 
@@ -38,7 +39,7 @@ public class CustomMemberDetails implements UserDetails {
     }
     
     public String getContact() {
-        return member.getContect();
+        return member.getContact();
     }
     
     @Override

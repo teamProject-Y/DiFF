@@ -6,8 +6,6 @@ import com.example.demo.domain.Role;
 import lombok.*;
 
 @Data
-@Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,7 +30,7 @@ public class Member {
     private boolean verified;
 
     private Role role;
-    private String contect;
+    private String contact;
 
     // OAuth 로그인 정보로부터 새 Member vo 생성 ? (기본 ROLE_USER 설정)
     public static Member fromOAuthLogin(String oauthId, String email, String nickName) {

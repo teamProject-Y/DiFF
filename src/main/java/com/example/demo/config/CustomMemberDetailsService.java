@@ -15,23 +15,28 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomMemberDetailsService implements UserDetailsService {
 
-    private Rq rq;
-
-    private final MemberRepository memberRepository;
     private final MemberService memberService;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member member = memberRepository.findByUsername(username).orElseThrow(
-                () -> new UsernameNotFoundException("해당 유저 존재안함. 유저 이름 : " + username));
-        return new CustomMemberDetails(member); // 위에서 생성한 CustomerUserDetails Class
+    public UserDetails loadUserByUsername(String loginId) throws UsernameNotFoundException {
+        // MyBatis 방식: 조회 결과가 null일 수 있음
+        Member member = memberService.getMemberByLoginId(loginId);
+        if (member == null) {
+            throw new UsernameNotFoundException("해당 유저가 없습니다. username=" + loginId);
+        }
+        return new CustomMemberDetails(member);
     }
 
+    // 필요하다면 ID 조회 버전도
     public UserDetails loadUserByUserId(Long userId) throws UsernameNotFoundException {
-        Member member = memberService.getMemberById(rq.getLoginedMemberId())
-                .orElseThrow(() -> new UsernameNotFoundException("해당 유저 존재안함. 유저 아이디 : " + userId));
-        return new CustomMemberDetails(member); // 위에서 생성한 CustomerUserDetails Class
+        Member member = memberService.getMemberById(userId);
+        if (member == null) {
+            throw new IllegalArgumentException("해당 유저가 없습니다. userId=" + userId);
+        }
+        return new CustomMemberDetails(member);
     }
+
+
 }
 
 // UserDetailsService를 User 기반으로 implements

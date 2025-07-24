@@ -39,4 +39,7 @@ public interface MemberRepository {
     public void saveMember(Member member);
 
     public Member getById(Long memberId);
+
+
+    Member findByUsername(String username);
 }
