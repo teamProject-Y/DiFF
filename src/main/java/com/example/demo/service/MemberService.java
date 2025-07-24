@@ -1,76 +1,62 @@
 package com.example.demo.service;
 
-import java.util.List;
-
 import com.example.demo.repository.OAuthAccountRepository;
+import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.MemberRepository;
-import com.example.demo.vo.Member;
+
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class MemberService {
 
-    @Autowired
-    private MemberRepository memberRepository;
 
-    @Autowired
-    private OAuthAccountRepository oAuthAccountRepository;
+    private final MemberRepository memberRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final OAuthAccountRepository oAuthAccountRepository;
 
-    public MemberService(MemberRepository memberRepository) {
-        this.memberRepository = memberRepository;
-    }
-
+    // 회원 조회
     public Member getMemberById(Long id) {
-
         return memberRepository.getMemberById(id);
     }
+    
+    
+    // 회원 가입
+    public Long doJoin(String loginId, String loginPw, String name, String nickName, String email) {
 
-    public int doJoin(String loginId, String loginPw, String name, String nickName, String email) {
+        if(memberRepository.isJoinableLogInId(loginId) == 1) return -1L; // 중복 아이디
+        if(memberRepository.isExistsNameNEmail(name, email) == 1) return -2L; // 중복 이름, 이메일
 
-        if(memberRepository.isJoinableLogInId(loginId) == 1) return -1; // 중복 아이디
-        if(memberRepository.isExistsNameNEmail(name, email) == 1) return -2; // 중복 이름, 이메일
+        // 비밀번호 암호화 후 저장
+        String encPw = passwordEncoder.encode(loginPw);
+        memberRepository.doJoin(loginId, encPw, name, nickName, email);
 
-        memberRepository.doJoin(loginId, loginPw, name, nickName, email);
-        return memberRepository.getLastInsertId(); // 방금 가입된 멤버의 id 반환
+        return (long) memberRepository.getLastInsertId(); // 방금 가입된 멤버의 id 반환
     }
 
     public Member getMemberByLoginId(String loginId) {
-
         return memberRepository.getMemberByLoginId(loginId);
     }
 
+    // 회원 정보 수정
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {
-        return memberRepository.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, email);
+        String encPw = passwordEncoder.encode(loginPw);
+        return memberRepository.modifyMember(loginedMemberId, loginId, encPw, name, nickName, email);
     }
 
-    //    public boolean isUsableLoginId(String loginId) {
-//        return memberRepository.isJoinableLogInId(loginId) != 1;
+//    // 회원 삭제
+//    public void deleteMember(long loginId) {
+//        Member member =
 //    }
-//
-//    public void processOAuthPostLogin(String oauthId, String username, String email) {
-//        System.out.println("processOAuthPostLogin() 진입");
-//        System.out.println("oauthId: " + oauthId + ", username: " + username + ", email: " + email);
-//
-//        Member existing = memberRepository.getByOauthId(oauthId);
-//        System.out.println("기존 회원 조회 결과: " + existing);
-//
-//        if (existing == null) {
-//            Member newMember = Member.builder()
-//                    .oauthId(oauthId)
-//                    .nickName(username)
-//                    .email(email)
-//                    .build();
-//
-//            System.out.println("신규 회원 저장 시도: " + newMember);
-//            memberRepository.save(newMember);
-//            System.out.println("저장 완료");
-//        } else {
-//            System.out.println("이미 존재하는 회원 -> 저장 생략");
-//        }
-//    }
+
+    // OAuth 로그인/연동 처리
     public Member processOAuthLogin(String provider, String oauthId, String email, String nickName) {
         System.out.println("procOAuthlogin 진입");
         if (email == null || email.isBlank()) {
@@ -89,7 +75,7 @@ public class MemberService {
         Member member = memberRepository.getMemberByEmail(email);
         if (member == null) {
             // 없다면 새로 등록
-            member = new Member();
+            member = new com.example.demo.vo.Member();
             member.setEmail(email);
             member.setNickName(nickName);
             memberRepository.saveMember(member);
@@ -119,6 +105,6 @@ public class MemberService {
     public Integer isVerifiedUser(String email) {
         Member member = memberRepository.getMemberByEmail(email);
         if(member == null) return null;
-        else return (int) member.getId();
+        else return Math.toIntExact(member.getId());
     }
 }
