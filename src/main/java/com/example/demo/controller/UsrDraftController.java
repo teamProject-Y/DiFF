@@ -43,7 +43,11 @@ public class UsrDraftController {
         String repoName = (String) param.get("repoName");
 
         boolean isUsableRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
-        return ResultData.from("S-1", "리포지토리 이름 중복 여부", "가능", true);
+        if(isUsableRepoName){
+            return ResultData.from("S-1", "리포지토리 이름 중복 여부", "가능", isUsableRepoName);
+        }else {
+            return ResultData.from("F-1", "리포지토리 이름 중복 여부", "불가능", isUsableRepoName);
+        }
     }
 
 }
