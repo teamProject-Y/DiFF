@@ -35,6 +35,19 @@ public class SecurityConfig {
     private GoogleOAuth2UserService googleOAuth2UserService;
 
     @Bean
+    public HttpFirewall allowSemicolonFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowSemicolon(true); // 세미콜론 허용
+        return firewall;
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
+        return (web) -> web.httpFirewall(firewall);
+    }
+
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -69,11 +82,16 @@ public class SecurityConfig {
                         // 기존에 있던 것들
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser",
+                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
                                 "/DiFF/member/login", "/DiFF/member/doLogin",
                                 "/DiFF/member/join", "/DiFF/member/doJoin",
                                 "/oauth2/**", "/login/**",
-                                "/upload", "/api/**", "/error/**"
+                                "/upload", "/api/**", "/error/**",
+                                "/usr/member/login", "/usr/member/doLogin",
+                                "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
+                                "/oauth2/**", "/login/**",
+                                "/upload"
                         ).permitAll()
                         .anyRequest().authenticated() // 그 외는 무조건 인증
                 )
@@ -120,5 +138,4 @@ public class SecurityConfig {
         }
         throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
     }
-
 }
