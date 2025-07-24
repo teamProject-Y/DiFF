@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 
 import com.example.demo.vo.Member;
 
-import java.util.Optional;
-
 @Mapper
 public interface MemberRepository {
 

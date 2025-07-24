@@ -19,7 +19,7 @@ import util.Ut;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/DiFF/member")
+@RequestMapping("/usr/member")
 public class UsrMemberController {
 
     private final BeforeActionInterceptor beforeActionInterceptor;
@@ -78,10 +78,10 @@ public class UsrMemberController {
 
         System.out.println("login 메서드 진입");
 
-        return "/login";
+        return "usr/member/login";
     }
 
-    @RequestMapping("/doLogin")
+    @RequestMapping("/usr/member/doLogin")
     @ResponseBody
     public String doLogin(@RequestBody Member member) {
 
@@ -103,7 +103,7 @@ public class UsrMemberController {
         return Ut.jsHistoryBack("S-1", m.getNickName()+"님 환영");
     }
 
-    @RequestMapping("/doLogout")
+    @RequestMapping("/usr/member/doLogout")
     @ResponseBody
     public String doLogout(HttpServletRequest req) {
 
@@ -111,11 +111,11 @@ public class UsrMemberController {
 
         rq.logout();
 
-        return Ut.jsReplace("S-1", "로그아웃 되었습니다", "/DiFF/home/main");
+        return Ut.jsReplace("S-1", "로그아웃 되었습니다", "usr/home/main");
 
     }
 
-    @RequestMapping("/myInfo")
+    @RequestMapping("/usr/member/myInfo")
     public String myInfo(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -123,10 +123,10 @@ public class UsrMemberController {
 
         model.addAttribute("member", member);
 
-        return "/myInfo";
+        return "usr/member/myInfo";
     }
 
-    @RequestMapping("/modify")
+    @RequestMapping("/usr/member/modify")
     public String modify(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -134,10 +134,10 @@ public class UsrMemberController {
 
         model.addAttribute("member", member);
 
-        return "/modify";
+        return "usr/member/modify";
     }
 
-    @RequestMapping("/checkPw")
+    @RequestMapping("/usr/member/checkPw")
     @ResponseBody
     public ResultData checkPw(HttpServletRequest req, String pw) {
 
@@ -152,7 +152,7 @@ public class UsrMemberController {
     }
 
     // 로그인 체크 -> 유무 체크 -> 권한 체크
-    @RequestMapping("/doModify")
+    @RequestMapping("/usr/member/doModify")
     @ResponseBody
     public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String email) {
 
