@@ -247,8 +247,6 @@ public class SonarService {
 
         return null;
     }
-
-
     private String findJavaSourceFolder(File projectDir) {
         return findDirectoryContainingExtension(projectDir, ".java");
     }

@@ -17,7 +17,7 @@ module.exports = {
             },
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:8080/usr/:path*',
+                destination: 'http://localhost:8080/DiFF/:path*',
                 permanent: false
             }
         ]
