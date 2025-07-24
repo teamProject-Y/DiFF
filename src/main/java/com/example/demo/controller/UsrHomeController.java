@@ -8,14 +8,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class UsrHomeController {
 
-    @RequestMapping("/DiFF/home/main")
+    @RequestMapping("/usr/home/main")
     public String showMain() {
-        return "DiFF/home/main";
+        return "usr/home/main";
     }
 
     @RequestMapping("/")
     public String connectMain() {
-        return "redirect:/DiFF/home/main";
+        return "redirect:/usr/home/main";
     }
 
 }
