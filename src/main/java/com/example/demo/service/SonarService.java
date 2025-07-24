@@ -189,13 +189,13 @@ public class SonarService {
         String javaSourcePath = findJavaSourceFolder(projectDir);
         String classPath = findClassFolder(projectDir);
 
-        // ✅ 여러 유효 폴더 모두 포함
+        // 여러 유효 폴더 모두 포함
         List<String> sourcePaths = detectAllValidSourceFolders(projectDir)
                 .stream()
                 .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
                 .collect(Collectors.toList());
 
-        // ✅ .js, .py 탐색용 - 루트 전체 기준
+        //  .js, .py 탐색용 - 루트 전체 기준
         boolean containsJS = containsExtension(projectDir, ".js");
         boolean containsPY = containsExtension(projectDir, ".py");
 
