@@ -27,17 +27,30 @@ public class SecurityConfig {
     private GoogleOAuth2UserService googleOAuth2UserService;
 
     @Bean
+    public HttpFirewall allowSemicolonFirewall() {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        firewall.setAllowSemicolon(true); // 세미콜론 허용
+        return firewall;
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
+        return (web) -> web.httpFirewall(firewall);
+    }
+
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/usr/home/main", "/usr/member/verifyGitUser",
+                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
                                 "/usr/member/login", "/usr/member/doLogin",
-                                "/usr/member/join", "/usr/member/doJoin",
+                                "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
                                 "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
-                                "/upload", "/api/**"
+                                "/upload"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )

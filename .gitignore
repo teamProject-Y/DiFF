@@ -21,7 +21,7 @@ target/
 *.iws
 *.iml
 *.ipr
-
+difftest.zip
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
