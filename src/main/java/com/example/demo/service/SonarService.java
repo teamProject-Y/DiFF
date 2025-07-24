@@ -210,25 +210,20 @@ public class SonarService {
             writer.println("sonar.projectVersion=1.0");
             writer.println("sonar.host.url=" + sonarHost);
 
-            // ✅ 1. 소스 경로
+            //  1. 소스 경로
             writer.println("sonar.sources=" + String.join(",", sourcePaths));
 
-            // ✅ 2. Java 설정
+            //  2. Java 설정
             if (javaSourcePath != null && classPath != null) {
                 String classPathRel = projectDir.toPath().relativize(Path.of(classPath)).toString();
                 writer.println("sonar.java.binaries=" + classPathRel);
                 writer.println("sonar.java.source=17");
             }
 
-            // ✅ 3. Python 설정 (자동 감지)
+            //  3. Python 설정 (자동 감지)
             if (containsPY) {
                 writer.println("sonar.language=py");
                 writer.println("sonar.python.version=3.10");
-            }
-
-            // ✅ 4. JS 설정 (자동 감지)
-            if (containsJS) {
-                // JS는 보통 language 명시 안 해도 됨.
             }
 
             writer.println("sonar.login=" + sonarToken);
