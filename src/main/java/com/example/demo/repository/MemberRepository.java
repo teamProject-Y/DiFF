@@ -34,11 +34,13 @@ public interface MemberRepository {
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
 
-    Member getByOauthId(String oauthId);
-    void save(Member member);
+    public Member getByOauthId(String oauthId);
 
-    Member findByEmail(String email);
-    void saveMember(Member member);
+    public void save(Member member);
 
-    Member getById(Long memberId);
+    public Member getMemberByEmail(String email);
+
+    public void saveMember(Member member);
+
+    public Member getById(Long memberId);
 }
