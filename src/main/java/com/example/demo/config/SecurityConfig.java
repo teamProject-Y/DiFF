@@ -89,11 +89,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated() //
                 )
                 .formLogin(form -> form
-                        .loginPage("/usr/member/login")
-                        .loginProcessingUrl("/usr/member/doLogin")
+                        .loginPage("/DiFF/member/login")
+                        .loginProcessingUrl("/DiFF/member/doLogin")
                         .usernameParameter("loginId")
                         .passwordParameter("loginPw")
-                        .defaultSuccessUrl("/", true)
+                        .defaultSuccessUrl("http://localhost:3000/", true)
                         .failureUrl("/usr/member/login?error=true")
                         .permitAll()
                 )
