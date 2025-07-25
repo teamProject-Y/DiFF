@@ -88,9 +88,6 @@ public class Rq {
         session.setAttribute("loginedMemberId", member.getId());
     }
 
-    public void initBeforeActionInterceptor() {
-        System.err.println("initBeforeActionInterceptor 실행됨");
-    }
 
     public String historyBackOnView(String msg) {
         req.setAttribute("msg", msg);

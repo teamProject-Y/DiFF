@@ -66,4 +66,4 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+  token: sqa_5e5e40852a186649465510fda31bbb575bcec55e

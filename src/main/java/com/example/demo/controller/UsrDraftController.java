@@ -25,9 +25,12 @@ public class UsrDraftController {
         int memberId = (Integer) param.get("memberId");
         String repoName = (String) param.get("repoName");
         String firstCommit = (String) param.get("firstCommit");
+        System.out.println(memberId);
+        System.out.println(repoName);
+        System.out.println(firstCommit);
 
         boolean existsRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
-        if(existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
+        if(!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
 
         draftService.makeRepository(memberId, repoName, firstCommit);
         int repoId = draftService.getLastInsertId();

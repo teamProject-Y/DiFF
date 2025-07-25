@@ -22,10 +22,6 @@ public class BeforeActionInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest req, HttpServletResponse resp, Object handler) throws Exception {
 
-        // 로그 남기기
-        rq.initBeforeActionInterceptor();
-
-        // 로그인 상태면, 매 요청마다 Member 객체를 세팅
         if (rq.isLogined()) {
             Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
             rq.setLoginedMember(member);
