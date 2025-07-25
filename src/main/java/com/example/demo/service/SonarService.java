@@ -88,7 +88,7 @@ public class SonarService {
     }
 
     public String getAnalysisResult(String projectKey) throws InterruptedException {
-        System.out.println("getAnalysisResult : 소나 토큰 : " + sonarToken);
+        System.out.println("getAnalysisResult sonar token : " + sonarToken);
 
         RestTemplate restTemplate = new RestTemplate();
 
@@ -112,6 +112,10 @@ public class SonarService {
                     System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
                     Thread.sleep(delayMillis);
                 }
+            } catch (HttpClientErrorException.Forbidden e) {
+                // 403인 경우 무시
+                // System.out.println("⚠️상태 확인 실패 (권한 부족 - 무시하고 계속 진행): " + e.getMessage());
+                break;
             } catch (Exception e) {
                 System.out.println("상태 확인 실패: " + e.getMessage());
                 Thread.sleep(delayMillis);
