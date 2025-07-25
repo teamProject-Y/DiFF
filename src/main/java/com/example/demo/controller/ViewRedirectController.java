@@ -17,6 +17,4 @@ public class ViewRedirectController {
 //    public String showJoin() {
 //        return "redirect:http://localhost:3000/usr/member/join";
 //    }
-
-
 }

@@ -49,7 +49,7 @@ public class Rq {
 
         this.loginedMember = member;
         System.out.println("rq");
-        this.loginedMemberId = (int) member.getId();
+        this.loginedMemberId = member.getId();
         this.loginedMemberNickName= member.getNickName();
         System.out.println("Nickname = " + loginedMember.getNickName());
         System.out.println("Nickname = " + loginedMemberNickName);
@@ -88,9 +88,6 @@ public class Rq {
         session.setAttribute("loginedMemberId", member.getId());
     }
 
-    public void initBeforeActionInterceptor() {
-        System.err.println("initBeforeActionInterceptor 실행됨");
-    }
 
     public String historyBackOnView(String msg) {
         req.setAttribute("msg", msg);

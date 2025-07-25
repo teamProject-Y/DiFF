@@ -54,7 +54,7 @@ public class SonarUploadController {
             grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
             Thread.sleep(2000);
             sonarService.deleteProject(projectKey);
-            System.out.println("🧹 SonarQube 프로젝트 삭제 완료: " + projectKey);
+            System.out.println("SonarQube 프로젝트 삭제 완료: " + projectKey);
 
 
             return ResponseEntity.ok(result);

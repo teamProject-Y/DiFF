@@ -22,6 +22,7 @@ target/
 *.iml
 *.ipr
 difftest.zip
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -38,3 +39,4 @@ build/
 ### Dependencies ###
 node_modules/
 .next/
+application.yml
