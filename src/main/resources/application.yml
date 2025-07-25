@@ -2,19 +2,18 @@ server:
   address: 0.0.0.0
   port: 8080
 
-# JWT, 1HOUR=3600000 / 24HOUR=86400000
-jwt:
-  secret: your-secret-key
-  access-token-expiration-time: 3600000 # 액세스 토큰이 발급된 후, 1시간 동안 유호
-  refresh-token-expiration-time: 86400000 # 리프레시 토큰이 발급된 후, 24시간 동안 유호
-
-
 spring:
+  mvc:
+    view:
+      prefix: /WEB-INF/jsp/
+      suffix: .jsp
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://diff.c78k86o8iw7w.ap-northeast-2.rds.amazonaws.com:3306/project_Y?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
     username: admin
     password: teamprojecty
+
 
   servlet:
     multipart:
@@ -35,7 +34,7 @@ spring:
 
           google:
             client-id:
-            client-secret: 
+            client-secret:
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - profile

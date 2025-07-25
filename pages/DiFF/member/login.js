@@ -27,7 +27,7 @@ export default function MemberLogin() {
 
                 <form
                     name="login"
-                    action="DiFF/member/doLogin"
+                    action="usr/member/doLogin"
                     method="POST"
                     className="flex flex-col items-center"
                 >
@@ -53,7 +53,7 @@ export default function MemberLogin() {
                 </form>
 
                 <div className="sub-menu text-center my-4 flex justify-center gap-4">
-                    <a href="/DiFF/member/join" className="hover:underline">
+                    <a href="/usr/member/join" className="hover:underline">
                         Join
                     </a>
                 </div>
