@@ -32,6 +32,7 @@ public class UsrMemberController {
 
     @Autowired
     private MemberService memberService;
+
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
@@ -58,7 +59,6 @@ public class UsrMemberController {
 //        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
 //    }
 
-    // 액션메서드
     @RequestMapping("/doJoin")
     @ResponseBody
     public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {

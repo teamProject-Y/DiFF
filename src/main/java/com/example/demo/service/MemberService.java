@@ -1,15 +1,16 @@
 package com.example.demo.service;
 
+import java.util.List;
+
 import com.example.demo.repository.OAuthAccountRepository;
-import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.MemberRepository;
-
-import java.util.Optional;
+import com.example.demo.vo.Member;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +23,11 @@ public class MemberService {
 
     // 회원 조회
     public Member getMemberById(Long id) {
+
         return memberRepository.getMemberById(id);
     }
-    
-    
+
+
     // 회원 가입
     public Long doJoin(String loginId, String loginPw, String name, String nickName, String email) {
 
@@ -40,19 +42,14 @@ public class MemberService {
     }
 
     public Member getMemberByLoginId(String loginId) {
+
         return memberRepository.getMemberByLoginId(loginId);
     }
 
-    // 회원 정보 수정
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {
         String encPw = passwordEncoder.encode(loginPw);
         return memberRepository.modifyMember(loginedMemberId, loginId, encPw, name, nickName, email);
     }
-
-//    // 회원 삭제
-//    public void deleteMember(long loginId) {
-//        Member member =
-//    }
 
     // OAuth 로그인/연동 처리
     public Member processOAuthLogin(String provider, String oauthId, String email, String nickName) {
@@ -73,7 +70,7 @@ public class MemberService {
         Member member = memberRepository.getMemberByEmail(email);
         if (member == null) {
             // 없다면 새로 등록
-            member = new com.example.demo.vo.Member();
+            member = new Member();
             member.setEmail(email);
             member.setNickName(nickName);
             memberRepository.saveMember(member);
@@ -92,7 +89,6 @@ public class MemberService {
 
         return member;
     }
-
 
     public Member getByProviderAndOauthId(String provider, String oauthId) {
         OAuthAccount acc = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);

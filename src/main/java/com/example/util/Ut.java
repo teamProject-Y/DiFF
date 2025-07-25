@@ -22,8 +22,7 @@ public class Ut {
         return false;
     }
 
-    public static String f(String str, Object...args){ // 가변인자 활용
-
+    public static String f(String str, Object...args){
         return String.format(str, args);
     }
 
@@ -32,7 +31,6 @@ public class Ut {
         if (msg == null) msg = "";
         if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
 
-        // 이미 /로 시작하면 추가 슬래시 붙이지 말기
         if (!replaceUri.startsWith("/")) {
             replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
         }
@@ -58,7 +56,6 @@ public class Ut {
 
         if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
 
-        // 이미 /로 시작하면 추가 슬래시 붙이지 말기
         if (!replaceUri.startsWith("/")) {
             replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
         }
