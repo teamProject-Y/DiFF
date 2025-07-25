@@ -25,9 +25,12 @@ public class UsrDraftController {
         int memberId = (Integer) param.get("memberId");
         String repoName = (String) param.get("repoName");
         String firstCommit = (String) param.get("firstCommit");
+        System.out.println(memberId);
+        System.out.println(repoName);
+        System.out.println(firstCommit);
 
         boolean existsRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
-        if(existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
+        if(!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
 
         draftService.makeRepository(memberId, repoName, firstCommit);
         int repoId = draftService.getLastInsertId();
@@ -43,7 +46,11 @@ public class UsrDraftController {
         String repoName = (String) param.get("repoName");
 
         boolean isUsableRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
-        return ResultData.from("S-1", "리포지토리 이름 중복 여부", "가능", true);
+        if(isUsableRepoName){
+            return ResultData.from("S-1", "리포지토리 이름 중복 여부", "가능", isUsableRepoName);
+        }else {
+            return ResultData.from("F-1", "리포지토리 이름 중복 여부", "불가능", isUsableRepoName);
+        }
     }
 
 }

@@ -229,7 +229,7 @@ public class SonarService {
             writer.println("sonar.login=" + sonarToken);
         }
 
-        System.out.println("📂 최종 분석 대상 폴더들: " + sourcePaths);
+        System.out.println(" 최종 분석 대상 폴더들: " + sourcePaths);
     }
 
 
@@ -247,8 +247,6 @@ public class SonarService {
 
         return null;
     }
-
-
     private String findJavaSourceFolder(File projectDir) {
         return findDirectoryContainingExtension(projectDir, ".java");
     }
@@ -285,16 +283,16 @@ public class SonarService {
 
         for (String name : candidates) {
             File dir = new File(baseDir, name);
-            System.out.println("🕵️ 후보 탐색 중: " + dir.getAbsolutePath());
+            System.out.println(" 후보 탐색 중: " + dir.getAbsolutePath());
             if (dir.exists() && dir.isDirectory()) {
-                System.out.println("✅ 후보 선택됨: " + dir.getAbsolutePath());
+                System.out.println(" 후보 선택됨: " + dir.getAbsolutePath());
                 validPaths.add(dir.getAbsolutePath());
             }
         }
 
         // 아무 폴더도 없으면 루트 fallback
         if (validPaths.isEmpty()) {
-            System.out.println("⚠️ 후보 중 유효한 폴더 없음. 루트로 fallback");
+            System.err.println("후보 중 유효한 폴더 없음. 루트로 fallback");
             validPaths.add(baseDir.getAbsolutePath());
         }
 

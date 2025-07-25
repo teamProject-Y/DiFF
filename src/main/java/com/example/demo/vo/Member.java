@@ -18,7 +18,6 @@ public class Member {
         this.loginPw = loginPw;
         this.name = name;
         this.nickName = nickName;
-        //this.cellPhone = cellPhone;
         this.email = email;
     }
 
@@ -29,7 +28,6 @@ public class Member {
     private String loginPw;
     private String name;
     private String nickName;
-    //private String cellPhone;
     private String email;
     private boolean delStatus;
     private LocalDateTime delDate;

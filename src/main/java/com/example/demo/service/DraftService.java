@@ -25,6 +25,6 @@ public class DraftService {
     }
 
     public boolean existsByMemberIdAndRepoName(int memberId, String repoName) {
-        return draftRepository.existsByMemberIdAndRepoName(memberId, repoName) != 0;
+        return draftRepository.existsByMemberIdAndRepoName(memberId, repoName) == 0;
     }
 }

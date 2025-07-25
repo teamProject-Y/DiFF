@@ -53,8 +53,6 @@ public class UsrMemberController {
 //        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
 //    }
 
-    // 주석
-    // 액션메서드
     @RequestMapping("/doJoin")
     @ResponseBody
     public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
@@ -113,7 +111,6 @@ public class UsrMemberController {
         rq.logout();
 
         return Ut.jsReplace("S-1", "로그아웃 되었습니다", "usr/home/main");
-
     }
 
     @RequestMapping("/usr/member/myInfo")
@@ -152,7 +149,6 @@ public class UsrMemberController {
         return ResultData.from("S-1", "비밀번호 일치 성공");
     }
 
-    // 로그인 체크 -> 유무 체크 -> 권한 체크
     @RequestMapping("/usr/member/doModify")
     @ResponseBody
     public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String email) {
@@ -160,8 +156,6 @@ public class UsrMemberController {
         Rq rq = (Rq) req.getAttribute("rq");
         long loginedMemberId = rq.getLoginedMemberId();
 
-//		if(Ut.isEmpty(loginId)) return Ut.jsHistoryBack("F-1", "아이디를 쓰시오");
-//		if(memberService.isUsableLoginId(loginId)) return Ut.jsHistoryBack("F-7", "사용 중인 아이디입니다.");
         if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호를 쓰시오");
         if(Ut.isEmpty(name)) return Ut.jsHistoryBack("F-3", "이름을 쓰시오");
         if(Ut.isEmpty(nickName)) return Ut.jsHistoryBack("F-4", "닉네임을 쓰시오");
