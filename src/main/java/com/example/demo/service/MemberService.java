@@ -109,7 +109,6 @@ public class MemberService {
         return member;
     }
 
-
     public Member getByProviderAndOauthId(String provider, String oauthId) {
         OAuthAccount acc = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (acc == null) return null;

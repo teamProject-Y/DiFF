@@ -5,6 +5,8 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface OAuthAccountRepository {
-    OAuthAccount findByProviderAndOauthId(String provider,String oauthId);
-    void saveOAuthAccount(OAuthAccount account);
+
+    public OAuthAccount findByProviderAndOauthId(String provider,String oauthId);
+
+    public void saveOAuthAccount(OAuthAccount account);
 }
