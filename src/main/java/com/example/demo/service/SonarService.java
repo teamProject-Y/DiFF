@@ -120,7 +120,7 @@ public class SonarService {
 
         // 2. 실제 측정 결과 가져오기
         String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
-                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity";
+                + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity,ncloc_language_distribution";
         System.out.println("measuresUrl : " + measuresUrl);
         for (int i = 0; i < 10; i++) {
             try {
