@@ -20,7 +20,6 @@ spring:
       enabled: true
       max-file-size: 500MB
       max-request-size: 500MB
-
   security:
     oauth2:
       client:
@@ -63,7 +62,12 @@ logging:
     org.springframework.security.web: DEBUG
     org.springframework.security.oauth2.client: DEBUG
     org.springframework.security.oauth2.core.endpoint: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
 
 sonarqube:
   host: http://localhost:9000
   token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+
+openai:
+  api:
+    key:

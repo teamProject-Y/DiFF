@@ -53,4 +53,21 @@ public class UsrDraftController {
         }
     }
 
+    @PostMapping("/receiveDiff")
+    @ResponseBody
+    public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
+        int memberId = (Integer) param.get("memberId");
+        String commitHash = (String) param.get("commitHash");
+        String diff = (String) param.get("diff");
+
+        System.out.println("👤 memberId: " + memberId);
+        System.out.println("🔨 commitHash: " + commitHash);
+        System.out.println("📦 diff:\n" + diff);
+
+        // 👉 여기서 GPT 요청 또는 DB 저장 처리 로직을 이어서 넣을 수 있음
+        // 예: gptService.summarizeDiff(diff), draftService.saveDiff(...)
+
+        return ResultData.from("S-1", "커밋 diff 수신 완료", "diff", diff);
+    }
+
 }
