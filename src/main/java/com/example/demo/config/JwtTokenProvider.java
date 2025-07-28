@@ -52,7 +52,7 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .get("MemberId", Long.class);
+                .get("memberId", Long.class);
     }
 
     public String getMembernameFromToken(String token) {
@@ -68,7 +68,7 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .get("user-email", String.class);
+                .get("memberEmail", String.class);
     }
 
     public Date getExpirationFromToken(String token) {

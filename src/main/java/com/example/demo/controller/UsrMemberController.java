@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.service.AuthService;
+import com.example.demo.vo.Auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,7 @@ import util.Ut;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/DiFF/member")
+@RequestMapping("/api/v1/DiFF/member")
 @RequiredArgsConstructor
 public class UsrMemberController {
 
@@ -35,6 +37,8 @@ public class UsrMemberController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private AuthService authService;
 
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
@@ -75,6 +79,20 @@ public class UsrMemberController {
         if(id == -1) return Ut.jsHistoryBack("F-8", Ut.f("%s는 이미 사용 중인 아이디입니다.", loginId));
         if(id == -2) return Ut.jsHistoryBack("F-9", Ut.f("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", loginId, email));
 
+        Auth auth = null;
+        try {
+            Auth authRq = new Auth();
+            authRq.setLoginId(loginId);
+            authRq.setLoginPw(loginPw);
+
+            auth = authService.login(authRq);
+
+            rq.setAccessToken(auth.getAccessToken());
+            rq.setLoginedMember(memberService.getMemberByLoginId(loginId));
+        } catch (Exception e) {
+            return Ut.jsReplace("F-10", "자동 로그인에 실패했습니다. 로그인 페이지로 이동합니다.", "/member/login");
+        }
+
         return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하합니다.", nickName), "/");
     }
 
@@ -96,16 +114,17 @@ public class UsrMemberController {
         if (Ut.isEmpty(member.getLoginPw()))
             return ResponseEntity.badRequest().body(ResultData.from("F-2","비밀번호를 입력해주세요"));
 
-        Member m = memberService.getMemberByLoginId(member.getLoginId());
-        if (m == null)
-            return ResponseEntity.status(404).body(ResultData.from("F-3","존재하지 않는 아이디"));
-        if (!m.getLoginPw().equals(member.getLoginPw()))
-            return ResponseEntity.status(401).body(ResultData.from("F-A","비밀번호 불일치"));
+        Auth authRq = new Auth();
+        authRq.setLoginId(member.getLoginId());
+        authRq.setLoginPw(member.getLoginPw());
+        Auth auth = authService.login(authRq);
+        if (auth == null)
+            return ResponseEntity.status(401).body(ResultData.from("F-3","로그인 실패"));
 
-        rq.login(m);
-        rq.setLoginedMember(m);
+        rq.setAccessToken(auth.getAccessToken());
+        rq.setLoginedMember(memberService.getMemberByLoginId(member.getLoginId()));
 
-        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 환영"));
+        return ResponseEntity.ok(ResultData.from("S-1", member.getNickName()+"님 환영", "accessToken", auth.getAccessToken()));
     }
 
     @PostMapping("/doLogout")
@@ -123,7 +142,7 @@ public class UsrMemberController {
     public String myInfo(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
         model.addAttribute("member", member);
 

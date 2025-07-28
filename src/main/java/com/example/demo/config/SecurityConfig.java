@@ -28,6 +28,7 @@ import org.springframework.security.web.firewall.StrictHttpFirewall;
 public class SecurityConfig {
 
     private final JwtTokenFilter jwtTokenFilter;
+    private final OAuth2SuccessHandler successHandler;
 
 //    @Autowired
 //    private GitHubOAuth2UserService githubOAuth2UserService;
@@ -61,16 +62,16 @@ public class SecurityConfig {
                 // jwt
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/admin/**", "/api/v2/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/auth/**",  "/api/v2/auth/**").permitAll()
-                        .requestMatchers("/api/v1/user/check/**", "/api/v2/user/check/**").permitAll()
+                        .requestMatchers("/api/v1/diff/admin/**", "/api/v2/diff/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/diff/auth/**",  "/api/v2/diff/auth/**").permitAll()
+                        .requestMatchers("/api/v1/diff/member/check/**", "/api/v2/diff/member/check/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
-                                "/api/v1/attachment/**", "/api/v2/attachment/**",
-                                "/api/v1/comment/**",    "/api/v2/comment/**",
-                                "/api/v1/post/**",       "/api/v2/post/**")
+                                "/api/v1/diff/attachment/**", "/api/v2/diff/attachment/**",
+                                "/api/v1/diff/comment/**",    "/api/v2/diff/comment/**",
+                                "/api/v1/diff/post/**",       "/api/v2/diff/post/**")
                         .permitAll()
-                        .requestMatchers("/api/v1/user/**", "/api/v2/user/**").authenticated()
-                        .requestMatchers("/api/v1/**",      "/api/v2/**").authenticated()
+                        .requestMatchers("/api/v1/diff/member/**", "/api/v2/diff/member/**").authenticated()
+                        .requestMatchers("/api/v1/diff/**",      "/api/v2/diff/**").authenticated()
                 )
                 .sessionManagement(sm -> sm
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -79,12 +80,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/usr/draft/**",
+                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/DiFF/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
                                 "/usr/member/login", "/usr/member/doLogin",
                                 "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
-                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
-                                "/upload"
+                                "/oauth2/**", "/login/**", "/upload"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )
@@ -109,6 +109,7 @@ public class SecurityConfig {
                                     throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
                                 })
                         )
+                        .successHandler(successHandler)
                         .defaultSuccessUrl("http://localhost:3000/DiFF/home/main", true))
                 .logout(logout -> logout
                         .logoutUrl("/logout")

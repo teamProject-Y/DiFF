@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.util.List;
 
+import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.repository.OAuthAccountRepository;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;

@@ -16,7 +16,7 @@ public interface MemberRepository {
 
     public void doLogin(int id);
 
-    public int getLastInsertId();
+    public Long getLastInsertId();
 
     public Member getMemberById(Long id);
 

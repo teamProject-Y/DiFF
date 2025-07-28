@@ -3,6 +3,7 @@ package com.example.demo.vo;
 import java.io.IOException;
 import java.security.Principal;
 
+import com.example.demo.config.JwtTokenProvider;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
@@ -29,15 +30,34 @@ public class Rq {
     private long loginedMemberId = 0;
     private String loginedMemberNickName;
 
+    private String accessToken;
+    private JwtTokenProvider jwtTokenProvider;
 
-    public Rq(HttpServletRequest req, HttpServletResponse resp) {
+
+    public Rq(HttpServletRequest req, HttpServletResponse resp, JwtTokenProvider jwtTokenProvider) {
         this.req = req;
         this.resp = resp;
         this.session = req.getSession();
+        this.jwtTokenProvider = jwtTokenProvider;
 
+        // 세션 기반 로그인 체크
         if (session.getAttribute("loginedMemberId") != null) {
             isLogined = true;
             loginedMemberId = (long) session.getAttribute("loginedMemberId");
+        }
+        
+        // JWT 토큰 기반 로그인 체크
+        String bearerToken = req.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            accessToken = bearerToken.substring(7);
+            try {
+                if (jwtTokenProvider.validateToken(accessToken)) {
+                    loginedMemberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
+                    isLogined = true;
+                }
+            } catch (Exception e) {
+                // 토큰 오류 무시
+            }
         }
 
         this.req.setAttribute("rq", this);
