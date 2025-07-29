@@ -112,10 +112,6 @@ public class SonarService {
                     System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
                     Thread.sleep(delayMillis);
                 }
-            } catch (HttpClientErrorException.Forbidden e) {
-                // 403인 경우 무시
-                // System.out.println("⚠️상태 확인 실패 (권한 부족 - 무시하고 계속 진행): " + e.getMessage());
-                break;
             } catch (Exception e) {
                 System.out.println("상태 확인 실패: " + e.getMessage());
                 Thread.sleep(delayMillis);
@@ -284,7 +280,7 @@ public class SonarService {
     }
 
     private List<String> detectAllValidSourceFolders(File baseDir) {
-        String[] candidates = {"src", "client", "app", "js", "python", "."};
+        String[] candidates = {"src", "client", "apps", "js", "python", "."};
         List<String> validPaths = new ArrayList<>();
 
         for (String name : candidates) {
