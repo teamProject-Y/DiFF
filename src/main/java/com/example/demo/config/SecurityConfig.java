@@ -79,12 +79,13 @@ public class SecurityConfig {
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/DiFF/draft/**",
+                        .requestMatchers(
+                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
                                 "/usr/member/login", "/usr/member/doLogin",
                                 "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
-                                "/oauth2/**", "/login/**", "/upload"
+                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
+                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )

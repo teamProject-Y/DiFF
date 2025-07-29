@@ -25,7 +25,6 @@ spring:
       enabled: true
       max-file-size: 500MB
       max-request-size: 500MB
-
   security:
     oauth2:
       client:
@@ -39,7 +38,7 @@ spring:
 
           google:
             client-id:
-            client-secret: 
+            client-secret:
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - profile
@@ -71,4 +70,8 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_aed8979967f48da92b732aeaa6d65718130c8a9e
+  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+
+openai:
+  api:
+    key:
