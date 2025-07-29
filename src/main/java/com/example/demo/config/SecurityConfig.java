@@ -50,7 +50,7 @@ public class SecurityConfig {
                                 "/usr/member/login", "/usr/member/doLogin",
                                 "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
                                 "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
-                                "/upload","/gpt/test"
+                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )

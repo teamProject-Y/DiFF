@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.DraftService;
+import com.example.demo.service.GptService;
 import com.example.demo.vo.ResultData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,9 @@ public class UsrDraftController {
 
     @Autowired
     private DraftService draftService;
+
+    @Autowired
+    private GptService gptService;
 
     @PostMapping("/mkRepo")
     @ResponseBody
@@ -56,18 +60,30 @@ public class UsrDraftController {
     @PostMapping("/receiveDiff")
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
+        System.out.println("receiveDiff 메서드 진입" );
         int memberId = (Integer) param.get("memberId");
         String commitHash = (String) param.get("commitHash");
         String diff = (String) param.get("diff");
 
-        System.out.println("👤 memberId: " + memberId);
-        System.out.println("🔨 commitHash: " + commitHash);
-        System.out.println("📦 diff:\n" + diff);
+        System.out.println("memberId: " + memberId);
+        System.out.println("commitHash: " + commitHash);
+        System.out.println("diff:\n" + diff);
 
-        // 👉 여기서 GPT 요청 또는 DB 저장 처리 로직을 이어서 넣을 수 있음
-        // 예: gptService.summarizeDiff(diff), draftService.saveDiff(...)
+        if (diff == null || diff.trim().isEmpty()) {
+            return ResultData.from("F-1", "diff 내용이 비어있습니다.");
+        }
 
-        return ResultData.from("S-1", "커밋 diff 수신 완료", "diff", diff);
+        String summary;
+        try {
+            summary = gptService.summarizeDiff(diff);
+        } catch (Exception e) {
+            return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
+        }
+
+        //draftService.saveDiff(memberId, commitHash, diff, summary);
+
+        return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장 완료", "summary", summary);
     }
+
 
 }

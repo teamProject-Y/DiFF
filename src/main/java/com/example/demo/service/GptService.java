@@ -20,7 +20,30 @@ public class GptService {
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4o",
                 "messages", List.of(
-                        Map.of("role", "system", "content", "너는 소스 코드 변경을 분석해서 요약해주는 AI야."),
+                        Map.of("role", "system", "content",
+                                "너는 내가 블로그 작성을 편하게 하기 위해, 코드 변경 사항을 분석하고 간결하게 요약해주는 도우미야.\n" +
+                                        "\n" +
+                                        "너는 지금부터 내가 보내는 diff를 계속 기억해야 해. 각 요청은 이전 요청과 연결된 연속적인 변경사항일 수 있어.\n" +
+                                        "\n" +
+                                        "요약은 다음 형식을 따른다:\n" +
+                                        "\n" +
+                                        "1. **변경 요약**은 구조보다는 \"무엇이 달라졌는지\"에 초점을 맞춰, **명사형 문장**으로 정리하고, 각 항목은 **번호를 매긴다**.\n" +
+                                        "2. **변경된 메서드/함수/클래스 단위로 묶어서** 설명한다. 이전에 같은 메서드가 등장했다면 그 메서드 블럭 마지막에 **덧붙여서 통합 정리**한다.\n" +
+                                        "3. 각 변경사항마다 **수정 후 핵심 코드 블럭**을 함께 출력하되, 너무 짧게 생략하지 말고 **변화를 유추할 수 있을 만큼 구체적으로** 보여준다.\n" +
+                                        "4. **확인용 로그, 주석 제거, import 순서 변경 등 사소한 변화는 생략한다.**\n" +
+                                        "\n" +
+                                        "출력 양식은 다음과 같다:\n" +
+                                        "\n" +
+                                        "[제목: 파일명-메서드명]\n" +
+                                        "\n" +
+                                        "- 요약 항목 1\n" +
+                                        "\n" +
+                                        "```bash\n" +
+                                        "```변경 후 코드```\n" +
+                                        "```\n" +
+                                        "\n" +
+                                        "- 요약 항목 2"+
+                                        "```변경 후 코드```\n" ),
                         Map.of("role", "user", "content", prompt)
                 ),
                 "temperature", 0.2
@@ -31,28 +54,19 @@ public class GptService {
                     .uri("/chat/completions")
                     .bodyValue(requestBody)
                     .retrieve()
-                    .onStatus(status -> status.isError(), clientResponse -> {
-                        // 👉 응답 상태와 본문 출력
-                        return clientResponse.bodyToMono(String.class)
-                                .doOnNext(errorBody -> System.out.println("❌ GPT 에러 응답 본문:\n" + errorBody))
-                                .flatMap(errorBody -> {
-                                    System.out.println("❌ 상태 코드: " + clientResponse.statusCode());
-                                    return clientResponse.createException();
-                                });
-                    })
                     .bodyToMono(Map.class)
-                    .doOnNext(body -> System.out.println("✅ GPT 응답 전체:\n" + body))
                     .block();
 
             List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
             Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
 
+            System.out.println("GPT 응답: " + message.get("content"));
             return (String) message.get("content");
 
+        } catch (WebClientResponseException e) {
+            return "[GPT 응답 오류]: " + e.getResponseBodyAsString();
         } catch (Exception e) {
-            System.out.println("❗ 예외 발생: " + e.getMessage());
-            return "[GPT 요약 실패]: " + e.getMessage();
+            return "[GPT 예외 발생]: " + e.getMessage();
         }
     }
-
 }
