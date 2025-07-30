@@ -9,4 +9,6 @@ public interface OAuthAccountRepository {
     public OAuthAccount findByProviderAndOauthId(String provider,String oauthId);
 
     public void saveOAuthAccount(OAuthAccount account);
+
+    OAuthAccount findByOauthId(String oauthId);
 }
