@@ -3,7 +3,6 @@ package com.example.demo.config;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -19,26 +18,26 @@ public class JwtTokenProvider {
     @Value("${jwt.refresh-token-expiration-time}")
     private Long jwtRefreshTokenExpirationTime;
 
-    public String generateAccessToken(Authentication authentication) {
-        CustomMemberDetails customMemberDetails = (CustomMemberDetails) authentication.getPrincipal();
+    public String generateAccessToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtAccessTokenExpirationTime);
         return Jwts.builder()
-                .setSubject(customMemberDetails.getUsername())
-                .claim("memberId", customMemberDetails.getId())
-                .claim("memberEmail", customMemberDetails.getEmail())
+                .setSubject(nickName)
+                .claim("memberId", memberId)
+                .claim("memberEmail", email)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecretKey)
                 .compact();
     }
 
-    public String generateRefreshToken(Authentication authentication) {
-        CustomMemberDetails customMemberDetails = (CustomMemberDetails) authentication.getPrincipal();
+
+
+    public String generateRefreshToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtRefreshTokenExpirationTime);
         return Jwts.builder()
-                .setSubject(customMemberDetails.getUsername())
-                .claim("memberId", customMemberDetails.getId())
-                .claim("memberEmail", customMemberDetails.getEmail())
+                .setSubject(nickName)
+                .claim("memberId", memberId)
+                .claim("memberEmail", email)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecretKey)

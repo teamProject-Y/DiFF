@@ -1,9 +1,7 @@
-package util;
+package com.example.util;
 
 import java.lang.reflect.Array;
 import java.util.Map;
-
-import com.example.demo.vo.Member;
 
 public class Ut {
 

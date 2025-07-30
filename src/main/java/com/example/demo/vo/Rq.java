@@ -1,9 +1,10 @@
 package com.example.demo.vo;
 
 import java.io.IOException;
-import java.security.Principal;
 
 import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.service.MemberService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
@@ -13,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
 import lombok.Setter;
-import util.Ut;
+import com.example.util.Ut;
 
 @Component
 @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
@@ -25,27 +26,29 @@ public class Rq {
     private final HttpServletResponse resp;
     private final HttpSession session;
 
+    private final JwtTokenProvider jwtTokenProvider;
+    private final MemberService memberService;
+
     private Member loginedMember;
     private boolean isLogined = false;
     private long loginedMemberId = 0;
     private String loginedMemberNickName;
-
     private String accessToken;
-    private JwtTokenProvider jwtTokenProvider;
 
-
-    public Rq(HttpServletRequest req, HttpServletResponse resp, JwtTokenProvider jwtTokenProvider) {
+    public Rq(HttpServletRequest req, HttpServletResponse resp, JwtTokenProvider jwtTokenProvider, @Lazy MemberService memberService) {
         this.req = req;
         this.resp = resp;
         this.session = req.getSession();
         this.jwtTokenProvider = jwtTokenProvider;
+        this.memberService = memberService;
 
-        // 세션 기반 로그인 체크
         if (session.getAttribute("loginedMemberId") != null) {
             isLogined = true;
             loginedMemberId = (long) session.getAttribute("loginedMemberId");
+            Member member = memberService.getMemberById(loginedMemberId);
+            setLoginedMember(member);
         }
-        
+
         // JWT 토큰 기반 로그인 체크
         String bearerToken = req.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
@@ -53,10 +56,14 @@ public class Rq {
             try {
                 if (jwtTokenProvider.validateToken(accessToken)) {
                     loginedMemberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
-                    isLogined = true;
+                    Member member = memberService.getMemberById(loginedMemberId);
+                    if (member != null) {
+                        setLoginedMember(member);
+                        isLogined = true;
+                    }
                 }
             } catch (Exception e) {
-                // 토큰 오류 무시
+                System.out.println("JWT 토큰 검증 실패: " + e.getMessage());
             }
         }
 

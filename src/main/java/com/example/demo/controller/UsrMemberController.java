@@ -6,7 +6,7 @@ import com.example.demo.vo.Auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
@@ -16,13 +16,13 @@ import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import util.Ut;
+import com.example.util.Ut;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/DiFF/member")
+@RequestMapping("/api/DiFF/member")
+@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor
 public class UsrMemberController {
 
@@ -43,25 +43,6 @@ public class UsrMemberController {
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
-
-//    @PostMapping("/join")
-//    public ResponseEntity<ResultData> doJoin(@RequestBody Member dto) {
-//        if (Ut.isEmpty(dto.getLoginId()))
-//            return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 쓰시오"));
-//        // ... 기타 유효성 검사 ...
-//
-//        long newId = memberService.doJoin(
-//                dto.getLoginId(), dto.getLoginPw(),
-//                dto.getName(), dto.getNickName(),
-//                dto.getEmail()
-//        );
-//
-//        if (newId < 1)
-//            return ResponseEntity.badRequest().body(ResultData.from("F-8","이미 사용 중인 정보가 있습니다"));
-//
-//        Member m = memberService.getMemberById(newId);
-//        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
-//    }
 
     @RequestMapping("/doJoin")
     @ResponseBody
@@ -96,18 +77,19 @@ public class UsrMemberController {
         return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하합니다.", nickName), "/");
     }
 
-    @RequestMapping("/login")
-    public String login() {
+//    @RequestMapping("/login")
+//    public String login() {
+//
+//        System.out.println("login 메서드 진입");
+//
+//        return "/login";
+//    }
 
-        System.out.println("login 메서드 진입");
-
-        return "/login";
-    }
-
-    @PostMapping("/doLogin")
+    @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
-        System.out.println("제발 여기로 와라");
+        System.out.println("doLogin 진입"+"제발 여기로 와라");
+
 
         if (Ut.isEmpty(member.getLoginId()))
             return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 입력해주세요"));
@@ -118,7 +100,9 @@ public class UsrMemberController {
         authRq.setLoginId(member.getLoginId());
         authRq.setLoginPw(member.getLoginPw());
         Auth auth = authService.login(authRq);
+        System.out.println(new BCryptPasswordEncoder().encode("diff"));
         if (auth == null)
+
             return ResponseEntity.status(401).body(ResultData.from("F-3","로그인 실패"));
 
         rq.setAccessToken(auth.getAccessToken());

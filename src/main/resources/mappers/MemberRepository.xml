@@ -5,6 +5,14 @@
 
 <mapper namespace="com.example.demo.repository.MemberRepository">
 
+    <select id="getByOauthIdAndProvider" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM oauthAccount oa
+                 JOIN member m ON oa.memberId = m.id
+        WHERE oa.oauthId = #{oauthId}
+          AND oa.provider = #{provider}
+    </select>
+
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (oauthId, nickName, email)
         VALUES (#{oauthId}, #{nickName}, #{email})

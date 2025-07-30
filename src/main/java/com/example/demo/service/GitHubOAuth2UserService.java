@@ -1,9 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.vo.Member;
-import com.example.demo.repository.MemberRepository;
 import com.example.demo.vo.Rq;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -31,6 +29,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        System.out.println("GitHub 로그인 진입 \uD83C\uDF37\uD83C\uDF37");
         OAuth2User oauthUser = super.loadUser(userRequest);
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String oauthId = oauthUser.getName();

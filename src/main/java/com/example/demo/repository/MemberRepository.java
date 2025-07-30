@@ -1,11 +1,6 @@
 package com.example.demo.repository;
 
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
-import org.springframework.stereotype.Component;
 
 import com.example.demo.vo.Member;
 
@@ -38,6 +33,5 @@ public interface MemberRepository {
 
     public Member getById(Long memberId);
 
-
-    Member findByUsername(String username);
+    Member getByOauthIdAndProvider(String oauthId, String provider);
 }

@@ -1,13 +1,9 @@
 package com.example.demo.service;
 
-import java.util.List;
-
-import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.repository.OAuthAccountRepository;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.MemberRepository;
@@ -16,7 +12,6 @@ import com.example.demo.vo.Member;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
@@ -27,7 +22,6 @@ public class MemberService {
 
         return memberRepository.getMemberById(id);
     }
-
 
     // 회원 가입
     public Long doJoin(String loginId, String loginPw, String name, String nickName, String email) {
@@ -60,7 +54,7 @@ public class MemberService {
         }
 
         email = email.trim();
-
+        System.out.println("1. processOAuthLogin email: " + email + ", nickName: " + nickName);
         // 이미 연결된 계정인지 확인
         OAuthAccount account = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (account != null) {
@@ -86,7 +80,7 @@ public class MemberService {
                 .build();
         oAuthAccountRepository.saveOAuthAccount(newAccount);
 
-        System.out.println("processOAuthLogin email: " + email + ", nickName: " + nickName);
+        System.out.println("2. processOAuthLogin email: " + email + ", nickName: " + nickName);
 
         return member;
     }
@@ -101,5 +95,13 @@ public class MemberService {
         Member member = memberRepository.getMemberByEmail(email);
         if(member == null) return null;
         else return Math.toIntExact(member.getId());
+    }
+
+    public Member getByOauthIdAndProvider(String oauthId, String provider) {
+        return memberRepository.getByOauthIdAndProvider(oauthId, provider);
+    }
+
+    public Member getByOauthId(String oauthId) {
+        return memberRepository.getByOauthId(oauthId);
     }
 }

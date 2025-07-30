@@ -14,4 +14,8 @@ public interface AuthRepository {
     public Auth findByRefreshToken(String refreshToken);
 
     public void updateAccessToken(Long id, String newAccessToken);
+
+    void saveAuth(Auth auth);
+
+    void updateAuthByMemberId(Auth auth);
 }

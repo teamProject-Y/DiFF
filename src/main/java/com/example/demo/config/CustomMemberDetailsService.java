@@ -2,8 +2,6 @@ package com.example.demo.config;
 
 import com.example.demo.service.MemberService;
 import com.example.demo.vo.Member;
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.vo.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
