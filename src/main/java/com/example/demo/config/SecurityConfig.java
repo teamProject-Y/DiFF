@@ -82,10 +82,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser", "/DiFF/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin",
-                                "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/oauth2/**", "/login/**",
-                                "/upload","/gpt/test,","/DiFF/draft/receiveDiff"
+                                "/usr/member/login", "/usr/member/doLogin",
+                                "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
+                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
+                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
+
                         ).permitAll()
                         .anyRequest().authenticated() //
                 )

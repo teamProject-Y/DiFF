@@ -68,6 +68,7 @@ logging:
     org.springframework.security.web: DEBUG
     org.springframework.security.oauth2.client: DEBUG
     org.springframework.security.oauth2.core.endpoint: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
 
 sonarqube:
   host: http://localhost:9000
