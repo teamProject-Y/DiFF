@@ -37,4 +37,6 @@ public interface MemberRepository {
     public void saveMember(Member member);
 
     public Member getById(Long memberId);
+
+    Member getByOauthIdAndProvider(String oauthId, String provider);
 }

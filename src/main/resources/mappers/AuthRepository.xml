@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.AuthRepository">
+
+    <insert id="saveAuth" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO auth (memberId, accessToken, refreshToken, tokenType, regDate, updateDate)
+        VALUES (#{memberId}, #{accessToken}, #{refreshToken}, #{tokenType}, NOW(), NOW())
+    </insert>
+
+</mapper>
