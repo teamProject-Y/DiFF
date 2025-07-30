@@ -282,7 +282,7 @@ public class SonarService {
     }
 
     private List<String> detectAllValidSourceFolders(File baseDir) {
-        String[] candidates = {"src", "client", "app", "js", "python", "."};
+        String[] candidates = {"src", "client", "apps", "js", "python", "."};
         List<String> validPaths = new ArrayList<>();
 
         for (String name : candidates) {
