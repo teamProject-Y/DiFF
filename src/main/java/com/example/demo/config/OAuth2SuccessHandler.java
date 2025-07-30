@@ -2,7 +2,7 @@ package com.example.demo.config;
 
 import com.example.demo.service.AuthService;
 import com.example.demo.service.MemberService;
-import com.example.demo.service.OAuthAccountService;
+import com.example.demo.service.OAuthAccountsService;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
 import com.example.demo.vo.Rq;
@@ -11,11 +11,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -29,14 +27,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private @Lazy MemberService memberService;
 
     @Autowired
-    private OAuthAccountService oAuthAccountService;
+    private OAuthAccountsService oAuthAccountsService;
 
     @Autowired
     private AuthService authService;
 
     private final JwtTokenProvider jwtTokenProvider;
+
     @Autowired
     private Rq rq;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         System.out.println("==== [OAuth2SuccessHandler] 소셜 로그인 성공! ====");
@@ -60,7 +60,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         System.out.println("🌐 oauthId: " + oauthId);
 
         // ✅ provider 포함된 OAuthAccount 조회
-        OAuthAccount oAuthAccount = oAuthAccountService.findByOauthId(oauthId);
+        OAuthAccount oAuthAccount = oAuthAccountsService.findByOauthId(oauthId);
         if (oAuthAccount == null) {
             throw new RuntimeException("❌ 해당 OAuth 계정을 찾을 수 없습니다.");
         }
@@ -83,6 +83,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         request.getSession().setAttribute("loginedMember", member);
         request.getSession().setAttribute("loginedMemberNickName", member.getNickName());
 
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
 
         rq.login(member);
         rq.setLoginedMember(member);
@@ -104,5 +105,3 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.sendRedirect(redirectUrl);
     }
 }
-
-

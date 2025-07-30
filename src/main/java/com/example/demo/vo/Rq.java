@@ -1,7 +1,6 @@
 package com.example.demo.vo;
 
 import java.io.IOException;
-import java.security.Principal;
 
 import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.service.MemberService;
@@ -15,7 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
 import lombok.Setter;
-import util.Ut;
+import com.example.util.Ut;
 
 @Component
 @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
