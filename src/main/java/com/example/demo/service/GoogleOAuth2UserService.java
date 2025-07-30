@@ -22,6 +22,7 @@ public class GoogleOAuth2UserService extends DefaultOAuth2UserService
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        System.out.println("구글 로그인 진입 \uD83C\uDF37\uD83C\uDF37");
         OAuth2User oauthUser = super.loadUser(userRequest);
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String oauthId = oauthUser.getAttribute("sub");
