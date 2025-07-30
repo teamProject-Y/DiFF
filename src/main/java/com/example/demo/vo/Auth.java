@@ -1,6 +1,5 @@
 package com.example.demo.vo;
 
-
 import lombok.*;
 
 import java.time.LocalDateTime;
