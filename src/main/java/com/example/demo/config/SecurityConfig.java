@@ -87,7 +87,7 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser", "/DiFF/draft/**",
+                                "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
                                 "/DiFF/member/login", "/DiFF/member/doLogin",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
