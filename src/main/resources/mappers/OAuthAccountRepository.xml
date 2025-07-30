@@ -17,4 +17,9 @@
         VALUES (#{memberId}, #{provider}, #{oauthId})
     </insert>
 
+    <select id="findByOauthId" resultType="com.example.demo.vo.OAuthAccount">
+        SELECT *
+        FROM oauthAccount
+        WHERE oauthId = #{oauthId}
+    </select>
 </mapper>
