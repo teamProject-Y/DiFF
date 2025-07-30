@@ -1,13 +1,9 @@
 package com.example.demo.service;
 
-import java.util.List;
-
-import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.repository.OAuthAccountRepository;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.MemberRepository;
@@ -16,7 +12,6 @@ import com.example.demo.vo.Member;
 @Service
 @RequiredArgsConstructor
 public class MemberService {
-
 
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
@@ -27,7 +22,6 @@ public class MemberService {
 
         return memberRepository.getMemberById(id);
     }
-
 
     // 회원 가입
     public Long doJoin(String loginId, String loginPw, String name, String nickName, String email) {

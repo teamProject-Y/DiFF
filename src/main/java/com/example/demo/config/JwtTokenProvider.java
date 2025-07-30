@@ -3,7 +3,6 @@ package com.example.demo.config;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -31,7 +30,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
+  
     public String generateRefreshToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtRefreshTokenExpirationTime);
         return Jwts.builder()

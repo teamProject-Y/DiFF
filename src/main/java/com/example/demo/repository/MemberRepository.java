@@ -1,11 +1,6 @@
 package com.example.demo.repository;
 
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
-import org.springframework.stereotype.Component;
 
 import com.example.demo.vo.Member;
 
@@ -16,7 +11,7 @@ public interface MemberRepository {
 
     public void doLogin(int id);
 
-    public int getLastInsertId();
+    public Long getLastInsertId();
 
     public Member getMemberById(Long id);
 

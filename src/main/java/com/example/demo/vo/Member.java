@@ -1,16 +1,16 @@
 package com.example.demo.vo;
 
 import java.time.LocalDateTime;
-
+import com.example.demo.domain.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Member {
 
     public Member(String loginId, String loginPw, String name, String nickName, String email) {
@@ -20,10 +20,10 @@ public class Member {
         this.nickName = nickName;
         this.email = email;
     }
-
-    private long id;
+    private Long id;
     private String oauthId;
     private LocalDateTime regDate;
+    private LocalDateTime updateDate;
     private String loginId;
     private String loginPw;
     private String name;
@@ -33,4 +33,7 @@ public class Member {
     private LocalDateTime delDate;
 
     private boolean verified;
+    private Role role;
+    private String contact;
+
 }

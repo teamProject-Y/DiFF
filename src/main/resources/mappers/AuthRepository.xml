@@ -9,4 +9,36 @@
         VALUES (#{memberId}, #{accessToken}, #{refreshToken}, #{tokenType}, NOW(), NOW())
     </insert>
 
+    <select id="getLastInsertId" parameterType="long">
+        SELECT LAST_INSERT_ID()
+    </select>
+
+    <select id="findByMemberId" parameterType="java.lang.Long"
+            resultType="com.example.demo.vo.Auth">
+        SELECT * FROM `auth`
+        WHERE memberId = #{id}
+    </select>
+
+    <update id="updateTokens" parameterType="com.example.demo.vo.Auth">
+        UPDATE auth
+        SET accessToken = #{accessToken},
+            refreshToken = #{refreshToken},
+            updateDate = NOW()
+        WHERE memberId = #{memberId}
+    </update>
+
+    <select id="findByRefreshToken" parameterType="string" resultType="com.example.demo.vo.Auth">
+        SELECT *
+        FROM auth
+        WHERE refreshToken = #{refreshToken}
+    </select>
+
+    <update id="updateAccessToken">
+        UPDATE auth
+        SET accessToken = #{newAccessToken},
+            updateDate = NOW()
+        WHERE memberId = #{id}
+    </update>
+
 </mapper>
+
