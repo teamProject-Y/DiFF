@@ -66,8 +66,9 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_24b14d7249b10d3364ae8b30a029c8da1ed9896d
+  token: sqa_ec1e62fbf7d348a0e395e347bb75f0ba16444d61
 
 openai:
   api:
     key:
+
