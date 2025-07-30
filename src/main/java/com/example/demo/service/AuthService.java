@@ -43,6 +43,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
 
+
         // 4. 기존 Auth 존재 여부 확인
         Auth auths = authRepository.findByMemberId(member.getId());
 

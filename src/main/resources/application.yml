@@ -7,7 +7,6 @@ jwt:
   access-token-expiration-time: 3600000
   refresh-token-expiration-time: 86400000
 
-
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -67,7 +66,7 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+  token:
 
 openai:
   api:

@@ -42,6 +42,7 @@ public class Rq {
         this.jwtTokenProvider = jwtTokenProvider;
         this.memberService = memberService;
 
+        // 세션 기반 로그인 체크
         if (session.getAttribute("loginedMemberId") != null) {
             isLogined = true;
             loginedMemberId = (long) session.getAttribute("loginedMemberId");

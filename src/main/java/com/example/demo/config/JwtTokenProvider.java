@@ -31,7 +31,6 @@ public class JwtTokenProvider {
     }
 
 
-
     public String generateRefreshToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtRefreshTokenExpirationTime);
         return Jwts.builder()
@@ -43,6 +42,7 @@ public class JwtTokenProvider {
                 .signWith(SignatureAlgorithm.HS512, jwtSecretKey)
                 .compact();
     }
+
 
     /// ////////////////////////////////////////////////
 
