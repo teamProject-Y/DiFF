@@ -105,4 +105,3 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.sendRedirect(redirectUrl);
     }
 }
-

@@ -30,7 +30,6 @@ public class SecurityConfig {
     private final JwtTokenFilter jwtTokenFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-
     @Bean
     public HttpFirewall allowSemicolonFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
@@ -47,7 +46,6 @@ public class SecurityConfig {
 //   public PasswordEncoder passwordEncoder() {
 //       return new BCryptPasswordEncoder();
 //   }
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -70,6 +68,23 @@ public class SecurityConfig {
                         .requestMatchers("/api/DiFF/member/**").authenticated()
                         .requestMatchers("/api/DiFF/**").authenticated()
                 )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/DiFF/admin/**", "/api/v2/diff/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/DiFF/auth/**",  "/api/v2/diff/auth/**").permitAll()
+                        .requestMatchers("/api/v1/DiFF/member/check/**", "/api/v2/diff/member/check/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/diff/attachment/**", "/api/v2/diff/attachment/**",
+                                "/api/v1/diff/comment/**",    "/api/v2/diff/comment/**",
+                                "/api/v1/diff/post/**",       "/api/v2/diff/post/**")
+                        .permitAll()
+                        .requestMatchers("/api/v1/diff/member/**", "/api/v2/diff/member/**").authenticated()
+                        .requestMatchers("/api/v1/diff/**",      "/api/v2/diff/**").authenticated()
+                )
+                .sessionManagement(sm -> sm
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser", "/DiFF/draft/**",
@@ -120,6 +135,7 @@ public class SecurityConfig {
                 );
         return http.build();
     }
+
     // 401 처리 핸들러 (익명)
     @Bean
     public AuthenticationEntryPoint restAuthenticationEntryPoint() {
@@ -139,4 +155,5 @@ public class SecurityConfig {
             response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"권한 없음\"}");
         };
     }
+
 }

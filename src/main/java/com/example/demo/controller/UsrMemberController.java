@@ -77,6 +77,7 @@ public class UsrMemberController {
         return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하합니다.", nickName), "/");
     }
 
+
 //    @RequestMapping("/login")
 //    public String login() {
 //
@@ -90,7 +91,6 @@ public class UsrMemberController {
 
         System.out.println("doLogin 진입"+"제발 여기로 와라");
 
-
         if (Ut.isEmpty(member.getLoginId()))
             return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 입력해주세요"));
         if (Ut.isEmpty(member.getLoginPw()))
@@ -100,6 +100,7 @@ public class UsrMemberController {
         authRq.setLoginId(member.getLoginId());
         authRq.setLoginPw(member.getLoginPw());
         Auth auth = authService.login(authRq);
+
         System.out.println(new BCryptPasswordEncoder().encode("diff"));
         if (auth == null)
 
