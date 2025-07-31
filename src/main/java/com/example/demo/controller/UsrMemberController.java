@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
+import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.service.AuthService;
+import com.example.demo.vo.Auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
@@ -13,16 +16,18 @@ import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import util.Ut;
+import com.example.util.Ut;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/usr/member")
+@RequestMapping("/api/DiFF/member")
+@CrossOrigin(origins = "http://localhost:3000")
+@RequiredArgsConstructor
 public class UsrMemberController {
 
-    private final BeforeActionInterceptor beforeActionInterceptor;
+    @Autowired
+    private BeforeActionInterceptor beforeActionInterceptor;
 
     @Autowired
     private Rq rq;
@@ -30,101 +35,134 @@ public class UsrMemberController {
     @Autowired
     private MemberService memberService;
 
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private AuthService authService;
+
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
 
-//    @PostMapping("/join")
-//    public ResponseEntity<ResultData> doJoin(@RequestBody Member dto) {
-//        if (Ut.isEmpty(dto.getLoginId()))
-//            return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 쓰시오"));
-//        // ... 기타 유효성 검사 ...
+    @PostMapping("/doJoin")
+    @ResponseBody
+    public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
+        System.out.println("✅ doJoin 진입");
+        System.out.println("입력 받은 아이디: " + member.getLoginId());
+        System.out.println("입력 받은 비밀번호: " + member.getLoginPw());
+        System.out.println("입력 받은 비밀번호 확인: " + member.getCheckLoginPw());
+        System.out.println("입력 받은 이름: " + member.getName());
+        System.out.println("입력 받은 닉네임: " + member.getNickName());
+        System.out.println("입력 받은 이메일: " + member.getEmail());
+
+        try {
+            // 1. 유효성 검사
+            if (Ut.isEmpty(member.getLoginId()))
+                return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 쓰시오"));
+            if (Ut.isEmpty(member.getLoginPw()))
+                return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 쓰시오"));
+            if (Ut.isEmpty(member.getName()))
+                return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 쓰시오"));
+            if (Ut.isEmpty(member.getNickName()))
+                return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 쓰시오"));
+            if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@"))
+                return ResponseEntity.badRequest().body(ResultData.from("F-6", "이메일 정확히 쓰시오"));
+
+            // 2. 회원가입 처리
+            long id = memberService.doJoin(
+                    member.getLoginId(),
+                    member.getLoginPw(),
+                    member.getCheckLoginPw(),
+                    member.getName(),
+                    member.getNickName(),
+                    member.getEmail()
+            );
+
+            if (id == -1)
+                return ResponseEntity.badRequest().body(ResultData.from("F-8", String.format("%s는 이미 사용 중인 아이디입니다.", member.getLoginId())));
+            if (id == -2)
+                return ResponseEntity.badRequest().body(ResultData.from("F-9", String.format("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", member.getName(), member.getEmail())));
+
+            // 3. 자동 로그인 처리
+            Auth authRq = new Auth();
+            authRq.setLoginId(member.getLoginId());
+            authRq.setLoginPw(member.getLoginPw());
+
+            Auth auth = authService.login(authRq);
+
+            if (auth == null) {
+                return ResponseEntity.status(401).body(ResultData.from("F-10", "자동 로그인에 실패했습니다. 로그인 페이지로 이동합니다."));
+            }
+
+            rq.setAccessToken(auth.getAccessToken());
+            rq.setLoginedMember(memberService.getMemberByLoginId(member.getLoginId()));
+
+            return ResponseEntity.ok(ResultData.from("S-1", member.getNickName() + " 님 회원가입을 축하합니다."));
+        } catch (Exception e) {
+            e.printStackTrace(); // 로그로 서버에서 어디서 죽었는지 추적
+            return ResponseEntity.status(500).body(ResultData.from("F-ERR", "서버 오류: " + e.getMessage()));
+        }
+    }
+
+
+
+//    @RequestMapping("/login")
+//    public String login() {
 //
-//        long newId = memberService.doJoin(
-//                dto.getLoginId(), dto.getLoginPw(),
-//                dto.getName(), dto.getNickName(),
-//                dto.getEmail()
-//        );
+//        System.out.println("login 메서드 진입");
 //
-//        if (newId < 1)
-//            return ResponseEntity.badRequest().body(ResultData.from("F-8","이미 사용 중인 정보가 있습니다"));
-//
-//        Member m = memberService.getMemberById(newId);
-//        return ResponseEntity.ok(ResultData.from("S-1", m.getNickName()+"님 가입 성공"));
+//        return "/login";
 //    }
 
-    @RequestMapping("/doJoin")
-    @ResponseBody
-    public String doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
+    @PostMapping("/login")
+    public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
-        if(Ut.isEmpty(loginId)) return Ut.jsHistoryBack("F-1", "아이디를 쓰시오");
-        if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호를 쓰시오");
-        if(Ut.isEmpty(name)) return Ut.jsHistoryBack("F-3", "이름을 쓰시오");
-        if(Ut.isEmpty(nickName)) return Ut.jsHistoryBack("F-4", "닉네임을 쓰시오");
-        if(Ut.isEmpty(email) || !email.contains("@")) return Ut.jsHistoryBack("F-6", "이메일 정확히 쓰시오");
-        if(!loginPw.equals(checkLoginPw)) return Ut.jsHistoryBack("F-7", "비밀번호가 일치하지 않소");
-
-        long id = memberService.doJoin(loginId, loginPw, name, nickName, email);
-
-        if(id == -1) return Ut.jsHistoryBack("F-8", Ut.f("%s는 이미 사용 중인 아이디입니다.", loginId));
-        if(id == -2) return Ut.jsHistoryBack("F-9", Ut.f("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", loginId, email));
-
-        return Ut.jsReplace("S-1", Ut.f("%s 님 회원가입을 축하합니다.", nickName), "/");
-    }
-
-    @RequestMapping("/login")
-    public String login() {
-
-        System.out.println("login 메서드 진입");
-
-        return "usr/member/login";
-    }
-
-    @RequestMapping("/usr/member/doLogin")
-    @ResponseBody
-    public String doLogin(@RequestBody Member member) {
-
-        System.out.println("제발 여기로 와라");
+        System.out.println("doLogin 진입"+"제발 여기로 와라");
 
         if (Ut.isEmpty(member.getLoginId()))
-            return Ut.jsHistoryBack("F-1","아이디를 입력해주세요");
+            return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 입력해주세요"));
         if (Ut.isEmpty(member.getLoginPw()))
-            return Ut.jsHistoryBack("F-2","비밀번호를 입력해주세요");
+            return ResponseEntity.badRequest().body(ResultData.from("F-2","비밀번호를 입력해주세요"));
 
-        Member m = memberService.getMemberByLoginId(member.getLoginId());
-        if (m == null)
-            return Ut.jsHistoryBack("F-3","존재하지 않는 아이디");
-        if (!m.getLoginPw().equals(member.getLoginPw()))
-            return Ut.jsHistoryBack("F-A","비밀번호 불일치");
+        Auth authRq = new Auth();
+        authRq.setLoginId(member.getLoginId());
+        authRq.setLoginPw(member.getLoginPw());
+        Auth auth = authService.login(authRq);
 
-        rq.login(m);
+        System.out.println(new BCryptPasswordEncoder().encode("diff"));
+        if (auth == null)
 
-        return Ut.jsHistoryBack("S-1", m.getNickName()+"님 환영");
+            return ResponseEntity.status(401).body(ResultData.from("F-3","로그인 실패"));
+
+        rq.setAccessToken(auth.getAccessToken());
+        rq.setLoginedMember(memberService.getMemberByLoginId(member.getLoginId()));
+
+        return ResponseEntity.ok(ResultData.from("S-1", member.getNickName()+"님 환영", "accessToken", auth.getAccessToken()));
     }
 
-    @RequestMapping("/usr/member/doLogout")
-    @ResponseBody
-    public String doLogout(HttpServletRequest req) {
+    @PostMapping("/doLogout")
+    public ResponseEntity<ResultData> doLogout(HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
 
         rq.logout();
 
-        return Ut.jsReplace("S-1", "로그아웃 되었습니다", "usr/home/main");
+        return ResponseEntity.ok(ResultData.from("S-1", "로그아웃 되었습니다"));
+
     }
 
-    @RequestMapping("/usr/member/myInfo")
+    @RequestMapping("/myInfo")
     public String myInfo(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
         model.addAttribute("member", member);
 
-        return "usr/member/myInfo";
+        return "/myInfo";
     }
 
-    @RequestMapping("/usr/member/modify")
+    @RequestMapping("/modify")
     public String modify(Model model, HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -132,10 +170,10 @@ public class UsrMemberController {
 
         model.addAttribute("member", member);
 
-        return "usr/member/modify";
+        return "/modify";
     }
 
-    @RequestMapping("/usr/member/checkPw")
+    @RequestMapping("/checkPw")
     @ResponseBody
     public ResultData checkPw(HttpServletRequest req, String pw) {
 
@@ -149,22 +187,45 @@ public class UsrMemberController {
         return ResultData.from("S-1", "비밀번호 일치 성공");
     }
 
-    @RequestMapping("/usr/member/doModify")
-    @ResponseBody
-    public String doModify(HttpServletRequest req, String loginId, String loginPw, String name, String nickName, String email) {
+    // 로그인 체크 -> 유무 체크 -> 권한 체크
+    @PutMapping("/doModify")
+    public ResponseEntity<ResultData> doModify(@RequestHeader("Authorization") String authorization, @RequestBody Member member) {
 
-        Rq rq = (Rq) req.getAttribute("rq");
-        long loginedMemberId = rq.getLoginedMemberId();
+        // 토큰에서 memberId 추출
+        String token = authorization.substring(7);
+        Long memberId = jwtTokenProvider.getMemberIdFromToken(token);
 
-        if(Ut.isEmpty(loginPw)) return Ut.jsHistoryBack("F-2", "비밀번호를 쓰시오");
-        if(Ut.isEmpty(name)) return Ut.jsHistoryBack("F-3", "이름을 쓰시오");
-        if(Ut.isEmpty(nickName)) return Ut.jsHistoryBack("F-4", "닉네임을 쓰시오");
-        if(Ut.isEmpty(email) || !email.contains("@")) return Ut.jsHistoryBack("F-6", "이메일 정확히 쓰시오");
+        // 입력 검증
+        if (Ut.isEmpty(member.getLoginId())) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 입력해주세요"));
+        }
+        if (Ut.isEmpty(member.getLoginPw())) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
+        }
+        if (Ut.isEmpty(member.getName())) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 입력해주세요"));
+        }
+        if (Ut.isEmpty(member.getNickName())) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 입력해주세요"));
+        }
+        if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-6", "유효한 이메일을 입력해주세요"));
+        }
 
-        int memberUpdate = memberService.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, email);
+        // 서비스에 수정 요청
+        int updated = memberService.modifyMember(memberId, member.getLoginId(), member.getLoginPw(), member.getName(), member.getNickName(), member.getEmail()
+        );
 
-        return Ut.jsReplace("S-1", Ut.f("%s 회원님 정보 수정 완료", nickName), "../member/myInfo");
+        //  결과 검사
+        if (updated == 0) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-7", "회원정보 수정에 실패했습니다"));
+        }
+
+        // 성공 응답
+        return ResponseEntity.ok(ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
+        );
     }
+
 
     ////////////////////////////////////////////// CLI ///////////////////////////////////////////////////
     @PostMapping("/verifyGitUser")

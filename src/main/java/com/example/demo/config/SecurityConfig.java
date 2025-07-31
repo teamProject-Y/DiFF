@@ -1,89 +1,124 @@
 package com.example.demo.config;
 
-
 import com.example.demo.service.GitHubOAuth2UserService;
 import com.example.demo.service.GoogleOAuth2UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.firewall.StrictHttpFirewall;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private GitHubOAuth2UserService githubOAuth2UserService;
-
-    @Autowired
-    private GoogleOAuth2UserService googleOAuth2UserService;
+    private final JwtTokenFilter jwtTokenFilter;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public HttpFirewall allowSemicolonFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowSemicolon(true); // 세미콜론 허용
+        firewall.setAllowSemicolon(true);
         return firewall;
     }
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
-        return (web) -> web.httpFirewall(firewall);
+        return web -> web.httpFirewall(firewall);
     }
 
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           GitHubOAuth2UserService githubOAuth2UserService,
+                                           GoogleOAuth2UserService googleOAuth2UserService) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .httpBasic(hb -> hb.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/usr/home/main", "/usr/member/verifyGitUser", "/usr/draft/**",
-                                "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/usr/member/login", "/usr/member/doLogin",
-                                "/usr/member/join", "/usr/member/doJoin", "/usr/member/login?error=true",
-                                "/oauth2/**", "/login/**","/WEB-INF/jsp/usr/member/login.jsp",
-                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
+                                "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser", "/DiFF/draft/**",
+                                "/resource/**", "/css/**", "/js/**", "/images/**",
+                                "/oauth2/**", "/login/**",
+                                "/upload", "/gpt/test", "/usr/draft/receiveDiff",
+
+                                // 회원 관련
+                                "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
+                                "/api/DiFF/member/check/**",
+                                "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
+                                "api/DiFF/member/login", "api/DiFF/member/doLogin"
                         ).permitAll()
-                        .anyRequest().authenticated() //
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**",
+                                "/api/v1/diff/attachment/**", "/api/v2/diff/attachment/**",
+                                "/api/v1/diff/comment/**", "/api/v2/diff/comment/**",
+                                "/api/v1/diff/post/**", "/api/v2/diff/post/**"
+                        ).permitAll()
+
+                        .requestMatchers("/api/DiFF/admin/**", "/api/v1/DiFF/admin/**", "/api/v2/diff/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/DiFF/member/**", "/api/v1/diff/member/**", "/api/v2/diff/member/**").authenticated()
+                        .requestMatchers("/api/DiFF/**", "/api/v1/diff/**", "/api/v2/diff/**").authenticated()
+                        .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                        .loginPage("/usr/member/login")
-                        .loginProcessingUrl("/usr/member/doLogin")
-                        .usernameParameter("loginId")
-                        .passwordParameter("loginPw")
-                        .defaultSuccessUrl("/", true)
-                        .failureUrl("/usr/member/login?error=true")
-                        .permitAll()
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(eh -> eh
+                        .authenticationEntryPoint(restAuthenticationEntryPoint())
+                        .accessDeniedHandler(restAccessDeniedHandler())
                 )
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
-                                .userService(this::selectOAuthService) // 서비스 선택 로직
+                                .userService(request -> {
+                                    String registrationId = request.getClientRegistration().getRegistrationId();
+                                    if ("github".equals(registrationId)) {
+                                        return githubOAuth2UserService.loadUser(request);
+                                    } else if ("google".equals(registrationId)) {
+                                        return googleOAuth2UserService.loadUser(request);
+                                    }
+                                    throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+                                })
                         )
-                        .defaultSuccessUrl("/main", true)
+                        .successHandler(oAuth2SuccessHandler)
                 )
-                 .logout(logout -> logout
+                .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/usr/member/login")
+                        .logoutSuccessUrl("http://localhost:3000/DiFF/home/main")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-        );
+                );
+
         return http.build();
     }
-    private OAuth2User selectOAuthService(OAuth2UserRequest request) {
-        String registrationId = request.getClientRegistration().getRegistrationId();
-        if ("github".equals(registrationId)) {
-            return githubOAuth2UserService.loadUser(request);
-        } else if ("google".equals(registrationId)) {
-            return googleOAuth2UserService.loadUser(request);
-        }
-        throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+
+    @Bean
+    public AuthenticationEntryPoint restAuthenticationEntryPoint() {
+        return (request, response, authException) -> {
+            response.setContentType("application/json");
+            response.setStatus(401);
+            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"로그인 필요\"}");
+        };
+    }
+
+    @Bean
+    public AccessDeniedHandler restAccessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setContentType("application/json");
+            response.setStatus(403);
+            response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"권한 없음\"}");
+        };
     }
 }
