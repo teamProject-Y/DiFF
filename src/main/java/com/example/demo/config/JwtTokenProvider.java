@@ -43,7 +43,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-
     /// ////////////////////////////////////////////////
 
     public Long getMemberIdFromToken(String token) {
