@@ -63,7 +63,6 @@
             <if test="name != null and name != ''">`name` = #{name},</if>
             <if test="nickName != null and nickName != ''">nickName = #{nickName},</if>
             <if test="email != null and email != ''">email = #{email},</if>
-            updateDate = NOW()
         </set>
         WHERE id = #{loginedMemberId}
     </update>

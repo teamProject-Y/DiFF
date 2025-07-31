@@ -42,8 +42,17 @@ public class MemberService {
     }
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {
-        String encPw = passwordEncoder.encode(loginPw);
-        return memberRepository.modifyMember(loginedMemberId, loginId, encPw, name, nickName, email);
+        Member member = memberRepository.getMemberById(loginedMemberId);
+
+        if (loginPw != null && !loginPw.trim().isEmpty()) {
+            member.setLoginPw(passwordEncoder.encode(loginPw));
+        }
+        if (loginId != null) member.setLoginId(loginId);
+        if (name != null) member.setName(name);
+        if (nickName != null) member.setNickName(nickName);
+        if (email != null) member.setEmail(email);
+
+        return memberRepository.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, email);
     }
 
     // OAuth 로그인/연동 처리
