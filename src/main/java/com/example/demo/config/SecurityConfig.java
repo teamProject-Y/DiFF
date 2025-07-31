@@ -92,7 +92,7 @@ public class SecurityConfig {
                                 "/DiFF/member/login", "/DiFF/member/doLogin",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
-                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
+                                "/upload","/gpt/test,","/usr/draft/mkDraft"
 
                         ).permitAll()
                         .anyRequest().authenticated() //
