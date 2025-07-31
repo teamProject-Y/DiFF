@@ -57,9 +57,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(hb -> hb.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api//DiFF/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/DiFF/auth/**", "/api/DiFF/member/login").permitAll()
-                        .requestMatchers("/api//DiFF/member/check/**").permitAll()
+                        .requestMatchers("/api/DiFF/member/check/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**",
                                 "/api/DiFF/comment/**",
@@ -68,28 +68,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/DiFF/member/**").authenticated()
                         .requestMatchers("/api/DiFF/**").authenticated()
                 )
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/DiFF/admin/**", "/api/v2/diff/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/DiFF/auth/**",  "/api/v2/diff/auth/**").permitAll()
-                        .requestMatchers("/api/v1/DiFF/member/check/**", "/api/v2/diff/member/check/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/v1/diff/attachment/**", "/api/v2/diff/attachment/**",
-                                "/api/v1/diff/comment/**",    "/api/v2/diff/comment/**",
-                                "/api/v1/diff/post/**",       "/api/v2/diff/post/**")
-                        .permitAll()
-                        .requestMatchers("/api/v1/diff/member/**", "/api/v2/diff/member/**").authenticated()
-                        .requestMatchers("/api/v1/diff/**",      "/api/v2/diff/**").authenticated()
-                )
                 .sessionManagement(sm -> sm
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin",
+                                "/DiFF/member/login", "/DiFF/member/doLogin", "/DiFF/member/myPage",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
                                 "/upload","/gpt/test,","/usr/draft/receiveDiff"
