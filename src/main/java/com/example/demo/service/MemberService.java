@@ -24,11 +24,11 @@ public class MemberService {
     }
 
     // 회원 가입
-    public Long doJoin(String loginId, String loginPw, String name, String nickName, String email) {
+    public Long doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
 
         if(memberRepository.isJoinableLogInId(loginId) == 1) return -1L; // 중복 아이디
         if(memberRepository.isExistsNameNEmail(name, email) == 1) return -2L; // 중복 이름, 이메일
-
+        if(!loginPw.equals(checkLoginPw)) return -3L; // 비밀번호
         // 비밀번호 암호화 후 저장
         String encPw = passwordEncoder.encode(loginPw);
         memberRepository.doJoin(loginId, encPw, name, nickName, email);
