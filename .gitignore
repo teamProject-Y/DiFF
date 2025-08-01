@@ -39,4 +39,6 @@ build/
 ### Dependencies ###
 node_modules/
 .next/
-application.yml
+
+# application.yml 제외
+src/main/resources/application.yml

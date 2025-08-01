@@ -123,15 +123,13 @@ public class UsrMemberController {
 
     }
 
-    @RequestMapping("/myInfo")
-    public String myInfo(Model model, HttpServletRequest req) {
+    @GetMapping("/myInfo")
+    public Member myInfo(HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
         Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
-        model.addAttribute("member", member);
-
-        return "/myInfo";
+        return member;
     }
 
     @RequestMapping("/modify")
@@ -196,24 +194,6 @@ public class UsrMemberController {
         // 성공 응답
         return ResponseEntity.ok(ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
         );
-    }
-
-
-    ////////////////////////////////////////////// CLI ///////////////////////////////////////////////////
-    @PostMapping("/verifyGitUser")
-    @ResponseBody
-    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
-
-        String email = requestMap.get("email");
-        Integer verifiedMemberId = memberService.isVerifiedUser(email);
-
-        if(verifiedMemberId != null) {
-            System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
-            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
-        }else {
-            System.err.println("git email로 찾은 member 없음");
-            return ResultData.from("F-1", "사용자 인증 실패");
-        }
     }
 
 }
