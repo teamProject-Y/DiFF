@@ -69,6 +69,7 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
                 }
             }
         }
+
         return null;
     }
 }

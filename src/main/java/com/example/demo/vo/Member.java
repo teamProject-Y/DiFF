@@ -26,6 +26,7 @@ public class Member {
     private LocalDateTime updateDate;
     private String loginId;
     private String loginPw;
+    private String checkLoginPw;
     private String name;
     private String nickName;
     private String email;

@@ -17,10 +17,10 @@
         INSERT INTO member (oauthId, nickName, email)
         VALUES (#{oauthId}, #{nickName}, #{email})
     </insert>
+
     <insert id="doJoin" parameterType="map">
         INSERT INTO `member`
         SET regDate = NOW(),
-		updateDate = NOW(),
 		loginId = #{loginId},
             loginPw = #{loginPw},
             `name` = #{name},
