@@ -2,12 +2,14 @@ package com.example.demo.service;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.repository.AuthRepository;
 import com.example.demo.repository.MemberRepository;
 import com.example.demo.vo.Auth;
 import com.example.demo.vo.Member;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,10 +39,12 @@ public class AuthService {
         System.out.println("AuthService DB에 저장된 해시: " + member.getLoginPw());
         System.out.println("AuthService 비교 결과: " + passwordEncoder.matches(loginPw, member.getLoginPw()));
         if (!passwordEncoder.matches(loginPw, member.getLoginPw())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. username = " + loginId);
         }
         // 3. 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
+
 
 
         // 4. 기존 Auth 존재 여부 확인

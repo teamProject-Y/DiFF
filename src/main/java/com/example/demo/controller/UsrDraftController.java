@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.service.DraftService;
 import com.example.demo.service.GptService;
+import com.example.demo.service.MemberService;
 import com.example.demo.vo.ResultData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,26 @@ public class UsrDraftController {
 
     @Autowired
     private GptService gptService;
+
+    @Autowired
+    private MemberService memberService;
+
+
+    @PostMapping("/verifyGitUser")
+    @ResponseBody
+    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
+
+        String email = requestMap.get("email");
+        Integer verifiedMemberId = memberService.isVerifiedUser(email);
+
+        if(verifiedMemberId != null) {
+            System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
+            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
+        }else {
+            System.err.println("git email로 찾은 member 없음");
+            return ResultData.from("F-1", "사용자 인증 실패");
+        }
+    }
 
     @PostMapping("/mkRepo")
     @ResponseBody
@@ -62,11 +83,11 @@ public class UsrDraftController {
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
         System.out.println("receiveDiff 메서드 진입" );
         int memberId = (Integer) param.get("memberId");
-        String commitHash = (String) param.get("commitHash");
+        String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
 
         System.out.println("memberId: " + memberId);
-        System.out.println("commitHash: " + commitHash);
+        System.out.println("lastChecksum: " + lastChecksum);
         System.out.println("diff:\n" + diff);
 
         if (diff == null || diff.trim().isEmpty()) {
@@ -80,7 +101,7 @@ public class UsrDraftController {
             return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
         }
 
-        //draftService.saveDiff(memberId, commitHash, diff, summary);
+        //draftService.saveDiff(memberId, lastChecksum, diff, summary);
 
         return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장 완료", "summary", summary);
     }

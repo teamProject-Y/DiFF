@@ -151,15 +151,13 @@ public class UsrMemberController {
 
     }
 
-    @RequestMapping("/myInfo")
-    public String myInfo(Model model, HttpServletRequest req) {
+    @GetMapping("/myInfo")
+    public Member myInfo(HttpServletRequest req) {
 
         Rq rq = (Rq) req.getAttribute("rq");
         Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
-        model.addAttribute("member", member);
-
-        return "/myInfo";
+        return member;
     }
 
     @RequestMapping("/modify")
