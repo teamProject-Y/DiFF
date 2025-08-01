@@ -66,7 +66,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**",
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**"
                         ).permitAll()
 
                         .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
