@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AnalyzeLanguage {
+public class AnalysisLanguage {
     private Long id;
     private Long analyzeId;
     private String language;
