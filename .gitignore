@@ -41,3 +41,4 @@ node_modules/
 .next/
 **/application.yml
 src/main/resources/application.yml
+**/application.yml
