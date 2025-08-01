@@ -33,72 +33,52 @@ public class SecurityConfig {
     @Bean
     public HttpFirewall allowSemicolonFirewall() {
         StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowSemicolon(true); // 세미콜론 허용
+        firewall.setAllowSemicolon(true);
         return firewall;
     }
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
-        return (web) -> web.httpFirewall(firewall);
+        return web -> web.httpFirewall(firewall);
     }
-
-//    @Bean
-//   public PasswordEncoder passwordEncoder() {
-//       return new BCryptPasswordEncoder();
-//   }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
                                            GitHubOAuth2UserService githubOAuth2UserService,
-                                           GoogleOAuth2UserService googleOAuth2UserService, JwtTokenProvider jwtTokenProvider) throws Exception {
+                                           GoogleOAuth2UserService googleOAuth2UserService) throws Exception {
         http
-                // jwt
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(hb -> hb.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/DiFF/auth/**", "/api/DiFF/member/login").permitAll()
-                        .requestMatchers("/api/DiFF/member/check/**").permitAll()
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**",
-                                "/api/DiFF/comment/**",
-                                "/api/DiFF/post/**")
-                        .permitAll()
-                        .requestMatchers("/api/DiFF/member/**").authenticated()
-                        .requestMatchers("/api/DiFF/**").authenticated()
-                )
-                .sessionManagement(sm -> sm
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
-                                "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin", "/DiFF/member/myPage",
-                                "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
+                                "/", "/DiFF/home/main", "/DiFF/member/verifyGitUser", "/DiFF/draft/**",
+                                "/resource/**", "/css/**", "/js/**", "/images/**",
                                 "/oauth2/**", "/login/**",
-                                "/upload","/gpt/test,","/usr/draft/receiveDiff"
+                                "/upload", "/gpt/test", "/usr/draft/receiveDiff",
 
+                                // 회원 관련
+                                "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
+                                "/api/DiFF/member/check/**",
+                                "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
+                                "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
-                        .anyRequest().authenticated() //
+
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**",
+                        ).permitAll()
+
+                        .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/DiFF/member/**").authenticated()
+                        .requestMatchers("/api/DiFF/**").authenticated()
+                        .anyRequest().authenticated()
                 )
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint(restAuthenticationEntryPoint())
                         .accessDeniedHandler(restAccessDeniedHandler())
                 )
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
-//                .formLogin(form -> form
-//                        .loginPage("/DiFF/member/login")
-//                        .loginProcessingUrl("/DiFF/member/login")
-//                        .usernameParameter("loginId")
-//                        .passwordParameter("loginPw")
-//                        .defaultSuccessUrl("http://localhost:3000/", true)
-//                        .failureUrl("/DiFF/member/login?error=true")
-//                        .permitAll()
-//                )
-
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(request -> {
@@ -111,18 +91,18 @@ public class SecurityConfig {
                                     throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
                                 })
                         )
-                        .successHandler(oAuth2SuccessHandler))
-                // .defaultSuccessUrl("http://localhost:3000/DiFF/home/main", true))
+                        .successHandler(oAuth2SuccessHandler)
+                )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("http://localhost:3000/DiFF/home/main")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
+
         return http.build();
     }
 
-    // 401 처리 핸들러 (익명)
     @Bean
     public AuthenticationEntryPoint restAuthenticationEntryPoint() {
         return (request, response, authException) -> {
@@ -132,7 +112,6 @@ public class SecurityConfig {
         };
     }
 
-    // 403 처리 핸들러 (권한 없음)
     @Bean
     public AccessDeniedHandler restAccessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -141,5 +120,4 @@ public class SecurityConfig {
             response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"권한 없음\"}");
         };
     }
-
 }
