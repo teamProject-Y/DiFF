@@ -5,7 +5,7 @@ server:
     max-swallow-size: 500MB
 
 jwt:
-  secret:
+  secret: 
   access-token-expiration-time: 3600000
   refresh-token-expiration-time: 86400000
 

@@ -98,12 +98,12 @@ public class UsrDraftController {
         try {
             summary = gptService.summarizeDiff(diff);
         } catch (Exception e) {
-            return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
+            return ResultData.from("F-2", "GPT 요약에 실패했습니다.", "error", e.getMessage());
         }
 
         //draftService.saveDiff(memberId, lastChecksum, diff, summary);
 
-        return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장 완료", "summary", summary);
+        return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장에 성공했습니다.", "summary", summary);
     }
 
 
