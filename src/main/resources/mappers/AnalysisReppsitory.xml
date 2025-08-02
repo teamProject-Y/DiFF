@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.repository.AnalysisReppsitory">
+
+    <insert id="insert" parameterType="com.example.demo.vo.Analysis" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO analysis (
+            memberId, projectKey, projectName, coverage,
+            bugs, complexity, codeSmells, duplicatedLinesDensity,
+            vulnerabilities, analyzeDate
+        )
+        VALUES (
+                   #{memberId}, #{projectKey}, #{projectName}, #{coverage},
+                   #{bugs}, #{complexity}, #{codeSmells}, #{duplicatedLinesDensity},
+                   #{vulnerabilities}, NOW()
+               )
+    </insert>
+
+    <insert id="insertLanguage" parameterType="com.example.demo.vo.AnalysisLanguage">
+        INSERT INTO analysisLanguage (
+            analyzeId, language, `lines`
+        ) VALUES (
+                     #{analyzeId}, #{language}, #{lines}
+                 );
+    </insert>
+
+</mapper>
