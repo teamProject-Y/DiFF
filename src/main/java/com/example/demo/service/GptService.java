@@ -15,7 +15,7 @@ public class GptService {
     private final WebClient openAiWebClient;
 
     public String summarizeDiff(String diff) {
-        System.out.println("summarizeDiff ㅈㅣㄴ입");
+        System.out.println("🍔🍔2summarizeDiff ㅈㅣㄴ입");
         String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
 
         Map<String, Object> requestBody = Map.of(
