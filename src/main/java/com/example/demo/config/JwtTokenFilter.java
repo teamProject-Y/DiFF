@@ -33,7 +33,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
+        System.out.println("진격의 거인에서 아르민이 자신의 정체성을 찾는 것처럼, " +" JwtTokenFilter에서 토큰을 찾는 중...");
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             Long userId = jwtTokenProvider.getMemberIdFromToken(accessToken);
 

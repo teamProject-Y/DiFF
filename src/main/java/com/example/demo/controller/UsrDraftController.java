@@ -82,10 +82,15 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
         System.out.println("receiveDiff 메서드 진입" );
-        int memberId = (Integer) param.get("memberId");
+        System.out.println("🍔param: " + param);
+
+        Number memberIdNum = (Number) param.get("memberId");
+//        Number repositoryIdNum = (Number) param.get("repositoryId");
+
+        Long memberId = memberIdNum.longValue();
+//        Long repositoryId = repositoryIdNum.longValue();
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
-
         System.out.println("memberId: " + memberId);
         System.out.println("lastChecksum: " + lastChecksum);
         System.out.println("diff:\n" + diff);
@@ -96,7 +101,7 @@ public class UsrDraftController {
 
         String summary;
         try {
-            summary = gptService.summarizeDiff(diff);
+            summary = gptService.summarizeDiff(diff, memberId, lastChecksum);
         } catch (Exception e) {
             return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
         }
