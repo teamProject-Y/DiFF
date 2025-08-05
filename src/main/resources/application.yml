@@ -5,7 +5,7 @@ server:
     max-swallow-size: 500MB
 
 jwt:
-  secret:
+  secret: 7a36d8d1c41b9e4d8f4260fa38fca973b33c14f2cfd7f1a9d3c848057c12a1e8b2dca3120f2ed014f9a4568ce841fb15b23051cd1e8763b64a0f12c29b2d9d0a
   access-token-expiration-time: 3600000
   refresh-token-expiration-time: 86400000
 
@@ -74,7 +74,7 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token:
+  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
 
 openai:
   api:

@@ -1,10 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.repository.DraftRepository;
+import com.example.demo.vo.Draft;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +16,7 @@ import java.util.Map;
 public class GptService {
 
     private final WebClient openAiWebClient;
+    private final DraftRepository draftRepository;
 
     public String makeDraft(String diff) {
         System.out.println("🍔🍔2summarizeDiff 진입");
@@ -55,8 +59,22 @@ public class GptService {
             List<Map<String, Object>> choices = (List<Map<String, Object>>) response.get("choices");
             Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
 
-            System.out.println("GPT 응답: " + message.get("content"));
-            return (String) message.get("content");
+            String content = (String) message.get("content");
+
+            // ✅ DB 저장
+            Draft draft = Draft.builder()
+                    .memberId(memberId)
+//                    .repositoryId(repositoryId)
+                    .checksum(checksum)
+                    .title(null) // 필요 시 추출 또는 별도 입력
+                    .body(content)
+                    .regDate(LocalDateTime.now())
+                    .build();
+
+            draftRepository.insertDraft(draft);
+            System.out.println("✅ 초안 저장 완료 - ID: " + draft.getId());
+
+            return content;
 
         } catch (WebClientResponseException e) {
             return "[GPT 응답 오류]: " + e.getResponseBodyAsString();
