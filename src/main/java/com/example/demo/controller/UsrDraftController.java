@@ -106,8 +106,6 @@ public class UsrDraftController {
             return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
         }
 
-        //draftService.saveDiff(memberId, lastChecksum, diff, summary);
-
         return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장 완료", "summary", summary);
     }
 
