@@ -78,7 +78,7 @@ public class UsrDraftController {
         }
     }
 
-    @PostMapping("/receiveDiff")
+    @PostMapping("/mkDraft")
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
         System.out.println("receiveDiff 메서드 진입" );
