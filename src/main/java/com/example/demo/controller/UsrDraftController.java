@@ -82,11 +82,15 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
         System.out.println("receiveDiff 메서드 진입" );
-        int memberId = (Integer) param.get("memberId");
-        int repositoryId = (Integer) param.get("repositoryId");
+        System.out.println("🍔param: " + param);
+
+        Number memberIdNum = (Number) param.get("memberId");
+//        Number repositoryIdNum = (Number) param.get("repositoryId");
+
+        Long memberId = memberIdNum.longValue();
+//        Long repositoryId = repositoryIdNum.longValue();
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
-
         System.out.println("memberId: " + memberId);
         System.out.println("repositoryId: " + repositoryId);
         System.out.println("lastChecksum: " + lastChecksum);
