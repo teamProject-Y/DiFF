@@ -29,7 +29,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = getTokenFromRequest(request);
         String path = request.getRequestURI();
         System.out.println("🔍 JwtTokenFilter - 요청 경로: " + path);
-        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/doLogin")) {
+
+        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/doLogin")
+        || path.equals("/upload")) {
             filterChain.doFilter(request, response);
             return;
         }
