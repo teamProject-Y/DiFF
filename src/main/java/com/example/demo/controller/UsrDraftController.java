@@ -85,10 +85,10 @@ public class UsrDraftController {
         System.out.println("🍔param: " + param);
 
         Number memberIdNum = (Number) param.get("memberId");
-//        Number repositoryIdNum = (Number) param.get("repositoryId");
+        Number repositoryIdNum = (Number) param.get("repositoryId");
 
         Long memberId = memberIdNum.longValue();
-//        Long repositoryId = repositoryIdNum.longValue();
+        Long repositoryId = repositoryIdNum.longValue();
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
         System.out.println("memberId: " + memberId);
@@ -101,7 +101,7 @@ public class UsrDraftController {
 
         String summary;
         try {
-            summary = gptService.summarizeDiff(diff, memberId, lastChecksum);
+            summary = gptService.summarizeDiff(diff, memberId, repositoryId, lastChecksum);
         } catch (Exception e) {
             return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
         }

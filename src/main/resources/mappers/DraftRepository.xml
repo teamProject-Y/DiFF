@@ -32,6 +32,7 @@
         INSERT INTO draft
         SET
             memberId = #{memberId},
+            repositoryId = #{repositoryId},
             checksum = #{checksum},
             title = #{title},
             body = #{body},
