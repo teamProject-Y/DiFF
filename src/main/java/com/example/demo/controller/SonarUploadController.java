@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.service.SonarService;
 import com.example.demo.vo.Rq;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -26,19 +29,67 @@ public class SonarUploadController {
     private SonarService sonarService;
 
     @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
     private Rq rq;
 
+//    @PostMapping("/upload")
+//    @ResponseBody
+//    public ResponseEntity<String> uploadSource(@RequestParam("file") MultipartFile zipFile) {
+//        try {
+//            // 1. 사용자 및 커밋 기반 projectKey 생성
+//            Long memberId = rq.getLoginedMemberId();
+//            String commitId = UUID.randomUUID().toString();
+//            String projectKey = "temp_" + memberId + "_" + commitId;
+//
+//            System.out.println("사용자 ID: " + memberId);
+//            System.out.println("생성된 Project Key: " + projectKey);
+//
+//            // 2. 압축 해제 및 sonar-project.properties 생성
+//            String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
+//            System.out.println("압축 해제 위치: " + extractedPath);
+//
+//            // 3. 분석 실행
+//            sonarService.runSonarScanner(extractedPath,projectKey);
+//            sonarService.analysisInsertDB(memberId, projectKey);
+//            // 4. 결과 조회
+//            String result = sonarService.getAnalysisResult(projectKey);
+//            System.out.println("분석 결과: " + result);
+//
+//            grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
+//            Thread.sleep(2000);
+//            sonarService.deleteProject(projectKey);
+//            System.out.println("SonarQube 프로젝트 삭제 완료: " + projectKey);
+//
+//
+//            return ResponseEntity.ok(result);
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
+//        }
+//
+//    }
+
     @PostMapping("/upload")
-    @ResponseBody
-    public ResponseEntity<String> uploadSource(@RequestParam("file") MultipartFile zipFile) {
+    public ResponseEntity<String> uploadSource(
+            @RequestParam("file") MultipartFile zipFile,
+            @RequestParam("meta") String metaJson) {
         try {
             // 1. 사용자 및 커밋 기반 projectKey 생성
-            Long memberId = rq.getLoginedMemberId();
-            String commitId = UUID.randomUUID().toString();
-            String projectKey = "temp_" + memberId + "_" + commitId;
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> param = mapper.readValue(metaJson, Map.class);
 
-            System.out.println("사용자 ID: " + memberId);
-            System.out.println("생성된 Project Key: " + projectKey);
+            Long memberId = ((Number) param.get("memberId")).longValue();
+            Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+            String lastChecksum = (String) param.get("lastChecksum");
+            String projectKey = "M-" + memberId + "_" + "R-" + repositoryId + "_" + "C-" + lastChecksum;
+
+            System.err.println("memberId:  " + memberId);
+            System.err.println("repositoryId:  " + repositoryId);
+            System.err.println("lastChecksum:  " + lastChecksum);
+            System.err.println("projectKey:  " + projectKey);
 
             // 2. 압축 해제 및 sonar-project.properties 생성
             String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
@@ -63,8 +114,8 @@ public class SonarUploadController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
         }
-
     }
+
 
     private void grantProjectAdminPermission(String projectKey) {
         String sonarBaseUrl = "http://localhost:9000";
