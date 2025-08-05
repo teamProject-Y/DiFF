@@ -83,10 +83,12 @@ public class UsrDraftController {
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
         System.out.println("receiveDiff 메서드 진입" );
         int memberId = (Integer) param.get("memberId");
+        int repositoryId = (Integer) param.get("repositoryId");
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
 
         System.out.println("memberId: " + memberId);
+        System.out.println("repositoryId: " + repositoryId);
         System.out.println("lastChecksum: " + lastChecksum);
         System.out.println("diff:\n" + diff);
 
@@ -94,16 +96,14 @@ public class UsrDraftController {
             return ResultData.from("F-1", "diff 내용이 비어있습니다.");
         }
 
-        String summary;
+        String draft;
         try {
-            summary = gptService.summarizeDiff(diff);
+            draft = gptService.makeDraft(diff);
         } catch (Exception e) {
-            return ResultData.from("F-2", "GPT 요약 실패", "error", e.getMessage());
+            return ResultData.from("F-2", "초안 생성에 실패했습니다.", "error", e.getMessage());
         }
 
-        //draftService.saveDiff(memberId, lastChecksum, diff, summary);
-
-        return ResultData.from("S-1", "커밋 diff 수신 및 요약/저장 완료", "summary", summary);
+        return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
 
 
