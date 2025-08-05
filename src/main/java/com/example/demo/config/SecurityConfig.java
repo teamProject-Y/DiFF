@@ -62,7 +62,7 @@ public class SecurityConfig {
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
                                 "/api/DiFF/member/check/**",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "api/DiFF/member/login", "api/DiFF/member/doLogin"
+                                "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
