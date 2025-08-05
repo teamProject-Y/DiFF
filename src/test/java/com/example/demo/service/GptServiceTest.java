@@ -123,7 +123,7 @@ public class GptServiceTest {
 +				<h2 class="text-2xl mb-6 font-bold">[${rq.loginedMember.nickName}] 님 환영합니다!</h2>
         """;
 
-        String summary = gptService.summarizeDiff(dummyDiff);
-        System.out.println("✅✅✅✅✅✅GPT 요약 결과: " + summary);
+        String draft = gptService.makeDraft(dummyDiff);
+        System.out.println("GPT 요약 결과 (test): " + draft);
     }
 }
