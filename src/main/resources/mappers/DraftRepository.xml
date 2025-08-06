@@ -25,4 +25,17 @@
         WHERE memberId = #{memberId} AND `name` = #{repoName}
     </select>
 
+    <insert id="insertDraft" parameterType="com.example.demo.vo.Draft"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO draft
+        SET
+            memberId = #{memberId},
+            checksum = #{checksum},
+            title = #{title},
+            body = #{body},
+            regDate = #{regDate}
+    </insert>
+
 </mapper>

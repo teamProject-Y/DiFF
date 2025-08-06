@@ -1,6 +1,5 @@
 package com.example.demo.config;
 
-
 import com.example.demo.service.GitHubOAuth2UserService;
 import com.example.demo.service.GoogleOAuth2UserService;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +54,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin",
+                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/list",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
                                 "/upload","/gpt/test,","/usr/draft/mkDraft",
@@ -68,7 +67,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**"
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**", "/api/DiFF/article/list"
                         ).permitAll()
 
                         .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
