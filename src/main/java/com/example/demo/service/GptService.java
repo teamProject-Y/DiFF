@@ -18,7 +18,7 @@ public class GptService {
     private final WebClient openAiWebClient;
     private final DraftRepository draftRepository;
 
-    public String makeDraft(String diff) {
+    public String makeDraft(String diff, Long repositoryId, Long memberId, String checksum) {
         System.out.println("🍔🍔2summarizeDiff 진입");
         String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
 
@@ -64,7 +64,7 @@ public class GptService {
             // ✅ DB 저장
             Draft draft = Draft.builder()
                     .memberId(memberId)
-//                    .repositoryId(repositoryId)
+                    .repositoryId(repositoryId)
                     .checksum(checksum)
                     .title(null) // 필요 시 추출 또는 별도 입력
                     .body(content)

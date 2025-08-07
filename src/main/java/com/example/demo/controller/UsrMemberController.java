@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.Auth;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.apache.bcel.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,6 +21,8 @@ import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.util.Ut;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,7 +44,8 @@ public class UsrMemberController {
     private JwtTokenProvider jwtTokenProvider;
     @Autowired
     private AuthService authService;
-
+    @Autowired
+    private RepositoryService repositoryService;
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -128,7 +134,6 @@ public class UsrMemberController {
         authRq.setLoginId(member.getLoginId());
         authRq.setLoginPw(member.getLoginPw());
         Auth auth = authService.login(authRq);
-
         System.out.println(new BCryptPasswordEncoder().encode("diff"));
         if (auth == null)
 
@@ -150,15 +155,24 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "로그아웃 되었습니다"));
 
     }
-
-    @GetMapping("/myInfo")
-    public Member myInfo(HttpServletRequest req) {
-
+    @GetMapping("/myPage")
+    public ResponseEntity<Map<String, Object>> myPage(HttpServletRequest req) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
-        return member;
+        Number memberIdNum = (Number) rq.getLoginedMemberId();
+        Long memberId = memberIdNum.longValue();
+
+        Member member = memberService.getMemberById(memberId);
+        List<Repository> repositories = repositoryService.getRepositoriesByMemberId(memberId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("member", member);
+        result.put("repositories", repositories);
+
+        return ResponseEntity.ok(result);
     }
+
+
 
     @RequestMapping("/modify")
     public String modify(Model model, HttpServletRequest req) {

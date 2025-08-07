@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class Draft {
     private Long id;
     private Long memberId;
-//    private Long repositoryId;
+    private Long repositoryId;
     private String checksum;
     private String title;
     private String body;

@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RequiredArgsConstructor
 @RestController
 public class UsrAuthController {
@@ -24,6 +26,6 @@ public class UsrAuthController {
     @GetMapping("/api/DiFF/auth/refresh")
     public ResponseEntity<?> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
         String newAccessToken = this.authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(newAccessToken);
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 }
