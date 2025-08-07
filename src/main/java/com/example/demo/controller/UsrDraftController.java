@@ -85,14 +85,14 @@ public class UsrDraftController {
         System.out.println("🍔param: " + param);
 
         Number memberIdNum = (Number) param.get("memberId");
-//        Number repositoryIdNum = (Number) param.get("repositoryId");
+        Number repositoryIdNum = (Number) param.get("repositoryId");
 
         Long memberId = memberIdNum.longValue();
-//        Long repositoryId = repositoryIdNum.longValue();
+        Long repositoryId = repositoryIdNum.longValue();
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
         System.out.println("memberId: " + memberId);
-        System.out.println("repositoryId: " + repositoryId);
+        // System.out.println("repositoryId: " + repositoryId);
         System.out.println("lastChecksum: " + lastChecksum);
         System.out.println("diff:\n" + diff);
 
@@ -102,7 +102,7 @@ public class UsrDraftController {
 
         String draft;
         try {
-            draft = gptService.makeDraft(diff);
+            draft = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
         } catch (Exception e) {
             return ResultData.from("F-2", "초안 생성에 실패했습니다.", "error", e.getMessage());
         }

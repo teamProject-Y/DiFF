@@ -158,6 +158,15 @@ public class UsrMemberController {
         return member;
     }
 
+    @GetMapping("/myPage")
+    public Member myPage(HttpServletRequest req) {
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Member member = memberService.getMemberById(rq.getLoginedMemberId());
+
+        return member;
+    }
+
     @RequestMapping("/modify")
     public String modify(Model model, HttpServletRequest req) {
 

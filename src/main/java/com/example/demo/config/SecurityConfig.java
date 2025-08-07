@@ -60,9 +60,9 @@ public class SecurityConfig {
 
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
-                                "/api/DiFF/member/check/**",
+                                "/api/DiFF/member/check/**", "/api/DiFF/member/myPage",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
+                                "api/DiFF/member/login", "api/DiFF/member/doLogin"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
