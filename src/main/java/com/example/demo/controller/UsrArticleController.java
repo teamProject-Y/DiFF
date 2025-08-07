@@ -53,8 +53,7 @@ public class UsrArticleController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
-        System.out.println("📥 /api/DiFF/article/list 요청 도착"+repositoryId);
-        System.out.println("📥 /api/DiFF/article/list 요청 도착");
+        System.out.println("📥 /api/DiFF/article/list 요청 도착 repoId: "+repositoryId);
         System.out.println("➡️ page: " + page);
         System.out.println("➡️ searchItem: " + searchItem);
         System.out.println("➡️ keyword: " + keyword);
