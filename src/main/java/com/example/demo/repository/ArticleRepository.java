@@ -10,9 +10,9 @@ public interface ArticleRepository {
 
     int getLastInsertId();
 
-    int getArticlesCnt(String keyword, int searchItem);
+    int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
 
-    List<Article> getArticles(String keyword, int searchItem, int limitFrom, int itemsInAPage);
+    List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
 
     int getArticleCnt();
 }
