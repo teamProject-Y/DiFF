@@ -14,9 +14,6 @@ public class DraftService {
         this.draftRepository = draftRepository;
     }
 
-    public void makeRepository(int memberId, String repoName, String firstCommit) {
-        draftRepository.makeRepository(memberId, repoName, firstCommit);
-    }
 
     public int getLastInsertId() {
         return draftRepository.getLastInsertId();
