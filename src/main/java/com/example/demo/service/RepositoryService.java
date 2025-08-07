@@ -19,8 +19,8 @@ public class RepositoryService {
         return repositoryRepository.getRepositoriesByMemberId(memberId);
     }
 
-    public void makeRepository(int memberId, String repoName, String firstCommit) {
-        repositoryRepository.makeRepository(memberId, repoName, firstCommit);
+    public void makeRepository(int memberId, String repoName, String lastRqCommit) {
+        repositoryRepository.makeRepository(memberId, repoName, lastRqCommit);
     }
 
 }

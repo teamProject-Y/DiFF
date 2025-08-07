@@ -7,7 +7,7 @@ import java.util.List;
 
 @Mapper
 public interface RepositoryRepository {
-    public void makeRepository(int memberId, String repoName, String firstCommit);
+    public void makeRepository(int memberId, String repoName, String lastRqCommit);
 
     List<Repository> getRepositoriesByMemberId(Long memberId);
 }

@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.example.demo.service.DraftService;
 import com.example.demo.service.GptService;
 import com.example.demo.service.MemberService;
-import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.ResultData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -26,9 +25,6 @@ public class UsrDraftController {
 
     @Autowired
     private MemberService memberService;
-
-    @Autowired
-    private RepositoryService repositoryService;
 
 
     @PostMapping("/verifyGitUser")
@@ -61,7 +57,7 @@ public class UsrDraftController {
         boolean existsRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
         if(!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
 
-        repositoryService.makeRepository(memberId, repoName, firstCommit);
+        draftService.makeRepository(memberId, repoName, firstCommit);
         int repoId = draftService.getLastInsertId();
 
         return ResultData.from("S-1", "리포지토리 생성", "repositoryID", repoId);

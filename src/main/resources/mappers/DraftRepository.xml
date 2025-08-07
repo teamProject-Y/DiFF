@@ -8,11 +8,11 @@
     <insert id="makeRepository" parameterType="map">
         INSERT INTO repository
         SET
-        memberId = #{memberId},
-        `name` = #{repoName},
-        lastRqCommit = #{firstCommit},
-        regDate = NOW(),
-        updateDate = NOW()
+            memberId = #{memberId},
+            `name` = #{repoName},
+            lastRqCommit = #{firstCommit},
+            regDate = NOW(),
+            updateDate = NOW()
     </insert>
 
     <select id="getLastInsertId" parameterType="int">
