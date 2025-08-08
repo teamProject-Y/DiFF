@@ -120,6 +120,10 @@ public class ArticleService {
         return articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
     }
 
+    public List<Article> getTrendingArticles(Integer count, Integer days) {
+        return articleRepository.getTrendingArticles(count, days);
+    }
+
 //
 //    public ResultData doIncHits(int id) {
 //

@@ -15,4 +15,6 @@ public interface ArticleRepository {
     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
 
     int getArticleCnt();
+
+    List<Article> getTrendingArticles(Integer count, Integer days);
 }
