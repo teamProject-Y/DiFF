@@ -5,10 +5,10 @@
 
 <mapper namespace="com.example.demo.repository.ArticleRepository">
     <select id="getArticlesCnt" resultType="int">
-        SELECT COUNT(*)
-        FROM article
+        SELECT COUNT(*) FROM article
         WHERE
-            (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
+            repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
           AND (#{searchItem} = 0 OR memberId = #{searchItem})
     </select>
 
@@ -17,6 +17,7 @@
         SELECT
             id,
             memberId,
+            repositoryId,
             title,
             body,
             hits,
@@ -24,9 +25,11 @@
             updateDate
         FROM article
         WHERE
-            (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
+            repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
           AND (#{searchItem} = 0 OR memberId = #{searchItem})
         ORDER BY id DESC
             LIMIT #{limitFrom}, #{itemsInAPage}
     </select>
+
 </mapper>
