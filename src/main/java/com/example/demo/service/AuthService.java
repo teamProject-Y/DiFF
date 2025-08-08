@@ -9,7 +9,6 @@ import com.example.demo.repository.MemberRepository;
 import com.example.demo.vo.Auth;
 import com.example.demo.vo.Member;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
