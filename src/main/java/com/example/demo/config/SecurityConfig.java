@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/api/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/list",
+                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
                                 "/upload","/gpt/test,","/usr/draft/mkDraft",
@@ -65,7 +65,9 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**", "/api/DiFF/article/list"
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
+                                "/api/DiFF/post/**", "/api/DiFF/article/list",
+                                "/api/DiFF/article/trending"
                         ).permitAll()
 
                         .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
