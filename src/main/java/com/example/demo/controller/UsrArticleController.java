@@ -1,9 +1,12 @@
 package com.example.demo.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.util.Ut;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,13 +34,14 @@ public class UsrArticleController {
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
+
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> showList(
             @RequestParam(defaultValue = "repositoryId") Long repositoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
-        System.out.println("📥 /api/DiFF/article/list 요청 도착 repoId: "+repositoryId);
+        System.out.println("📥 /api/DiFF/article/list 요청 도착 repoId: " + repositoryId);
         System.out.println("➡️ page: " + page);
         System.out.println("➡️ searchItem: " + searchItem);
         System.out.println("➡️ keyword: " + keyword);
@@ -59,8 +63,43 @@ public class UsrArticleController {
         return ResponseEntity.ok(result);
     }
 
-}
+    @PostMapping("/drafts")
+    public ResponseEntity<Map<String, Object>> drafts(@RequestBody Map<String, Object> param) {
+        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
 
+        return null;
+    }
+    @PostMapping("/doWrite")
+    public ResponseEntity<Map<String, Object>> doWrite(HttpServletRequest req,
+                                                       @RequestBody Map<String, Object> requestBody) {
+        System.out.println("📥 /api/DiFF/article/doWrite 요청 도착");
+        Rq rq = (Rq) req.getAttribute("rq");
+
+        String title = requestBody.get("title").toString();
+        System.out.println("입력 받은 제목: " + title);
+        String body = requestBody.get("body").toString();
+        System.out.println("입력 받은 내용: " + body);
+        Long repositoryId = Long.parseLong(requestBody.get("repositoryId").toString());
+        System.out.println("입력 받은 repositoryId: " + repositoryId);
+        LocalDateTime regDate = LocalDateTime.parse(requestBody.get("regDate").toString());
+        System.out.println("입력 받은 등록일: " + regDate);
+
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("repositoryId", repositoryId);
+        result.put("title", title);
+        result.put("body", body);
+        result.put("regDate", regDate);
+        return ResponseEntity.ok(result);
+    }
+//        // 암호화 비교
+//        if (!passwordEncoder.matches(pw, member.getLoginPw())) {
+//            return ResponseEntity.ok(ResultData.from("F-1", "비밀번호 불일치"));
+//        }
+//
+//        return ResponseEntity.ok(ResultData.from("S-1", "비밀번호 일치 성공"));
+//        return Ut.jsReplace("S-1", Ut.f("게시글 %d 번 작성 완료", id), Ut.f("../article/detail?id=%d", id));
+//    }
 
 
 //@GetMapping("/list")
@@ -275,24 +314,7 @@ public class UsrArticleController {
 //        return "/usr/article/write";
 //    }
 //
-//    @RequestMapping("/usr/article/doWrite")
-//    @ResponseBody
-//    public String doWrite(HttpServletRequest req, String title, String body, @RequestParam(defaultValue = "0")int boardId) {
-//
-//        Rq rq = (Rq) req.getAttribute("rq");
-//
-//        if (Ut.isEmpty(title))
-//            return Ut.jsHistoryBack("F-2", "제목 좀 써");
-//        if (Ut.isEmpty(body))
-//            return Ut.jsHistoryBack("F-2", "내용 좀 써");
-//        if (boardId == 0)
-//            return Ut.jsHistoryBack("F-3", "게시판 선택해주시오");
-//
-//        Article article = articleService.writeArticle(title, body, rq.getLoginedMemberId(), boardId);
-//        int id = articleService.getLastInsertId();
-//
-//        return Ut.jsReplace("S-1", Ut.f("게시글 %d 번 작성 완료", id), Ut.f("../article/detail?id=%d", id));
-//    }
+
 //
 //    @RequestMapping("/usr/article/modify")
 //    public String modify(Model model, HttpServletRequest req, int id) throws IOException { // , String title, String body
@@ -348,3 +370,4 @@ public class UsrArticleController {
 //
 //        return Ut.jsReplace("S-1", Ut.f("%d번 게시물 삭제 완료", id), "../article/list");
 //    }
+}
