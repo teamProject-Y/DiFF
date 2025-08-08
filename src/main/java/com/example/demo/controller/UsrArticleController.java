@@ -47,24 +47,22 @@ public class UsrArticleController {
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
-
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> showList(
+            @RequestParam(defaultValue = "repositoryId") Long repositoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
-
-        System.out.println("📥 /api/DiFF/article/list 요청 도착");
+        System.out.println("📥 /api/DiFF/article/list 요청 도착 repoId: "+repositoryId);
         System.out.println("➡️ page: " + page);
         System.out.println("➡️ searchItem: " + searchItem);
         System.out.println("➡️ keyword: " + keyword);
-
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
-        int totalCnt = articleService.getArticlesCnt(keyword, searchItem);
+        int totalCnt = articleService.getArticlesCnt(repositoryId, keyword, searchItem);
         int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
-        List<Article> articles = articleService.getArticles(keyword, searchItem, limitFrom, itemsInAPage);
+        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
 
         System.out.println("📤 조회된 게시글 수: " + articles.size());
 
