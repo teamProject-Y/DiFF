@@ -113,12 +113,12 @@ public class ArticleService {
 
 
 
-    public int getArticlesCnt(String keyword, int searchItem) {
-        return articleRepository.getArticlesCnt(keyword, searchItem);
+    public int getArticlesCnt(Long repository, String keyword, int searchItem) {
+        return articleRepository.getArticlesCnt(repository,keyword, searchItem);
     }
 
-    public List<Article> getArticles(String keyword, int searchItem, int limitFrom, int itemsInAPage) {
-        return articleRepository.getArticles(keyword, searchItem, limitFrom, itemsInAPage);
+    public List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage) {
+        return articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
     }
 
 //
