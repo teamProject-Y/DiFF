@@ -50,22 +50,24 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
+                                "/", "/api/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/list",
+                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
                                 "/upload","/gpt/test,","/usr/draft/mkDraft",
 
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
-                                "/api/DiFF/member/check/**",
+                                "/api/DiFF/member/check/**", "/api/DiFF/member/myPage",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**", "/api/DiFF/article/list"
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
+                                "/api/DiFF/post/**", "/api/DiFF/article/list",
+                                "/api/DiFF/article/trending"
                         ).permitAll()
 
                         .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")

@@ -89,7 +89,6 @@ public class UsrDraftController {
 
         Long memberId = memberIdNum.longValue();
         Long repositoryId = repositoryIdNum.longValue();
-
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
         System.out.println("memberId: " + memberId);

@@ -12,7 +12,6 @@
           AND (#{searchItem} = 0 OR memberId = #{searchItem})
     </select>
 
-    <!-- 게시글 리스트 조회 -->
     <select id="getArticles" resultType="com.example.demo.vo.Article">
         SELECT
             id,
@@ -30,6 +29,35 @@
           AND (#{searchItem} = 0 OR memberId = #{searchItem})
         ORDER BY id DESC
             LIMIT #{limitFrom}, #{itemsInAPage}
+    </select>
+
+    <select id="getTrendingArticles" resultType="com.example.demo.vo.Article">
+        SELECT
+            a.id,
+            a.title,
+            a.body,
+            a.hits,
+            a.regDate,
+            COALESCE(r.likes, 0) AS likes,
+            m.nickName AS extra_writer,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
+            (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
+        FROM
+            article a
+                LEFT JOIN
+            (SELECT articleId, COUNT(*) AS likes
+             FROM reaction
+             GROUP BY articleId) r
+            ON a.id = r.articleId
+                LEFT JOIN
+            member m
+            ON a.memberId = m.id
+        WHERE
+            a.regDate >= DATE_SUB(CURRENT_DATE, INTERVAL #{days} DAY)
+        ORDER BY
+            trending_score DESC
+            LIMIT #{count};
     </select>
 
 </mapper>
