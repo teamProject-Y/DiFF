@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
-import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.Auth;
@@ -11,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.MemberService;
@@ -115,15 +113,6 @@ public class UsrMemberController {
     }
 
 
-
-//    @RequestMapping("/login")
-//    public String login() {
-//
-//        System.out.println("login 메서드 진입");
-//
-//        return "/login";
-//    }
-
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
@@ -159,6 +148,8 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "로그아웃 되었습니다"));
 
     }
+
+
     @GetMapping("/myPage")
     public ResponseEntity<Map<String, Object>> myPage(HttpServletRequest req) {
         Rq rq = (Rq) req.getAttribute("rq");
@@ -177,17 +168,6 @@ public class UsrMemberController {
     }
 
 
-
-//    @RequestMapping("/modify")
-//    public String modify(Model model, HttpServletRequest req) {
-//
-//        Rq rq = (Rq) req.getAttribute("rq");
-//        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-//
-//        model.addAttribute("member", member);
-//
-//        return "/modify";
-//    }
 
     @PutMapping("/checkPw")
     public ResponseEntity<ResultData> checkPw(
