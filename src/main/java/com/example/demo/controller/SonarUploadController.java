@@ -19,7 +19,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Controller
@@ -33,44 +32,6 @@ public class SonarUploadController {
 
     @Autowired
     private Rq rq;
-
-//    @PostMapping("/upload")
-//    @ResponseBody
-//    public ResponseEntity<String> uploadSource(@RequestParam("file") MultipartFile zipFile) {
-//        try {
-//            // 1. 사용자 및 커밋 기반 projectKey 생성
-//            Long memberId = rq.getLoginedMemberId();
-//            String commitId = UUID.randomUUID().toString();
-//            String projectKey = "temp_" + memberId + "_" + commitId;
-//
-//            System.out.println("사용자 ID: " + memberId);
-//            System.out.println("생성된 Project Key: " + projectKey);
-//
-//            // 2. 압축 해제 및 sonar-project.properties 생성
-//            String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
-//            System.out.println("압축 해제 위치: " + extractedPath);
-//
-//            // 3. 분석 실행
-//            sonarService.runSonarScanner(extractedPath,projectKey);
-//            sonarService.analysisInsertDB(memberId, projectKey);
-//            // 4. 결과 조회
-//            String result = sonarService.getAnalysisResult(projectKey);
-//            System.out.println("분석 결과: " + result);
-//
-//            grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
-//            Thread.sleep(2000);
-//            sonarService.deleteProject(projectKey);
-//            System.out.println("SonarQube 프로젝트 삭제 완료: " + projectKey);
-//
-//
-//            return ResponseEntity.ok(result);
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
-//        }
-//
-//    }
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSource(
