@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.RepositoryRepository">
+
+    <select id="getRepositoriesByMemberId" parameterType="long" resultType="com.example.demo.vo.Repository">
+        SELECT *
+        FROM repository
+        WHERE memberId = #{memberId}
+          AND delStatus = 0
+    </select>
+
+    <insert id="makeRepository" parameterType="com.example.demo.vo.Repository">
+        INSERT INTO repository (
+            memberId,
+            name,
+            url,
+            lastRqCommit,
+            delStatus,
+            delDate,
+            regDate,
+            updateDate
+        )
+        VALUES (
+                   #{memberId},
+                   #{name},
+                   #{url},
+                   #{lastRqCommit},
+                   #{delStatus},
+                   #{delDate},
+                   NOW(),
+                   NOW()
+               )
+    </insert>
+
+</mapper>

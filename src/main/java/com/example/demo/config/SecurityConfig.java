@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
@@ -53,28 +52,25 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**",
-                                "/DiFF/member/login", "/DiFF/member/doLogin",
+                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/list",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/oauth2/**", "/login/**",
-                                "/upload","/gpt/test,","/usr/draft/mkDraft"
+                                "/upload","/gpt/test,","/usr/draft/mkDraft",
 
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
                                 "/api/DiFF/member/check/**",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "api/DiFF/member/login", "api/DiFF/member/doLogin"
+                                "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**",
-                                "/api/v1/diff/attachment/**", "/api/v2/diff/attachment/**",
-                                "/api/v1/diff/comment/**", "/api/v2/diff/comment/**",
-                                "/api/v1/diff/post/**", "/api/v2/diff/post/**"
+                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**", "/api/DiFF/post/**", "/api/DiFF/article/list"
                         ).permitAll()
 
-                        .requestMatchers("/api/DiFF/admin/**", "/api/v1/DiFF/admin/**", "/api/v2/diff/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/DiFF/member/**", "/api/v1/diff/member/**", "/api/v2/diff/member/**").authenticated()
-                        .requestMatchers("/api/DiFF/**", "/api/v1/diff/**", "/api/v2/diff/**").authenticated()
+                        .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/DiFF/member/**").authenticated()
+                        .requestMatchers("/api/DiFF/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)

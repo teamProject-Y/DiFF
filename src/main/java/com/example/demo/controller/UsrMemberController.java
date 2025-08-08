@@ -2,12 +2,14 @@ package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.service.AuthService;
+import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.Auth;
 import lombok.RequiredArgsConstructor;
+import org.aspectj.apache.bcel.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.ui.Model;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.MemberService;
@@ -18,6 +20,8 @@ import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.util.Ut;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -39,6 +43,10 @@ public class UsrMemberController {
     private JwtTokenProvider jwtTokenProvider;
     @Autowired
     private AuthService authService;
+    @Autowired
+    private RepositoryService repositoryService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
@@ -105,15 +113,6 @@ public class UsrMemberController {
     }
 
 
-
-//    @RequestMapping("/login")
-//    public String login() {
-//
-//        System.out.println("login 메서드 진입");
-//
-//        return "/login";
-//    }
-
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
@@ -128,7 +127,6 @@ public class UsrMemberController {
         authRq.setLoginId(member.getLoginId());
         authRq.setLoginPw(member.getLoginPw());
         Auth auth = authService.login(authRq);
-
         System.out.println(new BCryptPasswordEncoder().encode("diff"));
         if (auth == null)
 
@@ -151,63 +149,64 @@ public class UsrMemberController {
 
     }
 
-    @GetMapping("/myInfo")
-    public Member myInfo(HttpServletRequest req) {
 
+    @GetMapping("/myPage")
+    public ResponseEntity<Map<String, Object>> myPage(HttpServletRequest req) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById(rq.getLoginedMemberId());
 
-        return member;
+        Number memberIdNum = (Number) rq.getLoginedMemberId();
+        Long memberId = memberIdNum.longValue();
+
+        Member member = memberService.getMemberById(memberId);
+        List<Repository> repositories = repositoryService.getRepositoriesByMemberId(memberId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("member", member);
+        result.put("repositories", repositories);
+
+        return ResponseEntity.ok(result);
     }
 
-    @RequestMapping("/modify")
-    public String modify(Model model, HttpServletRequest req) {
+
+
+    @PutMapping("/checkPw")
+    public ResponseEntity<ResultData> checkPw(
+            HttpServletRequest req,
+            @RequestBody Map<String, String> requestBody) {
+
+        String pw = requestBody.get("pw");
 
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
+        Member member = memberService.getMemberById((Long) rq.getLoginedMemberId());
 
-        model.addAttribute("member", member);
-
-        return "/modify";
-    }
-
-    @RequestMapping("/checkPw")
-    @ResponseBody
-    public ResultData checkPw(HttpServletRequest req, String pw) {
-
-        Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-
-        if(!member.getLoginPw().equals(pw)) {
-            return ResultData.from("F-1", "비밀번호 불일치");
+        // 암호화 비교
+        if (!passwordEncoder.matches(pw, member.getLoginPw())) {
+            return ResponseEntity.ok(ResultData.from("F-1", "비밀번호 불일치"));
         }
 
-        return ResultData.from("S-1", "비밀번호 일치 성공");
+        return ResponseEntity.ok(ResultData.from("S-1", "비밀번호 일치 성공"));
     }
 
     // 로그인 체크 -> 유무 체크 -> 권한 체크
-    @PutMapping("/doModify")
+    @PutMapping("/modify")
     public ResponseEntity<ResultData> doModify(@RequestHeader("Authorization") String authorization, @RequestBody Member member) {
 
         // 토큰에서 memberId 추출
-        String token = authorization.substring(7);
+        String token = authorization.startsWith("Bearer ")
+                ? authorization.substring(7)
+                : authorization;
         Long memberId = jwtTokenProvider.getMemberIdFromToken(token);
 
         // 입력 검증
-        if (Ut.isEmpty(member.getLoginId())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getLoginPw())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
-        }
+
         if (Ut.isEmpty(member.getName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-1", "이름을 입력해주세요"));
         }
         if (Ut.isEmpty(member.getNickName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-2", "닉네임을 입력해주세요"));
         }
         if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-6", "유효한 이메일을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-3", "유효한 이메일을 입력해주세요"));
         }
 
         // 서비스에 수정 요청
@@ -222,6 +221,24 @@ public class UsrMemberController {
         // 성공 응답
         return ResponseEntity.ok(ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
         );
+    }
+
+
+    ////////////////////////////////////////////// CLI ///////////////////////////////////////////////////
+    @PostMapping("/verifyGitUser")
+    @ResponseBody
+    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
+
+        String email = requestMap.get("email");
+        Integer verifiedMemberId = memberService.isVerifiedUser(email);
+
+        if(verifiedMemberId != null) {
+            System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
+            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
+        }else {
+            System.err.println("git email로 찾은 member 없음");
+            return ResultData.from("F-1", "사용자 인증 실패");
+        }
     }
 
 }

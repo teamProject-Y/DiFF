@@ -8,11 +8,11 @@
     <insert id="makeRepository" parameterType="map">
         INSERT INTO repository
         SET
-        memberId = #{memberId},
-        `name` = #{repoName},
-        lastRqCommit = #{firstCommit},
-        regDate = NOW(),
-        updateDate = NOW()
+            memberId = #{memberId},
+            `name` = #{repoName},
+            lastRqCommit = #{firstCommit},
+            regDate = NOW(),
+            updateDate = NOW()
     </insert>
 
     <select id="getLastInsertId" parameterType="int">
@@ -24,5 +24,19 @@
         FROM repository
         WHERE memberId = #{memberId} AND `name` = #{repoName}
     </select>
+
+    <insert id="insertDraft" parameterType="com.example.demo.vo.Draft"
+            useGeneratedKeys="true"
+            keyProperty="id"
+            keyColumn="id">
+        INSERT INTO draft
+        SET
+            memberId = #{memberId},
+            repositoryId = #{repositoryId},
+            checksum = #{checksum},
+            title = #{title},
+            body = #{body},
+            regDate = #{regDate}
+    </insert>
 
 </mapper>

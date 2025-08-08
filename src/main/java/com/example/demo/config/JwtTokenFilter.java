@@ -29,20 +29,32 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         String accessToken = getTokenFromRequest(request);
         String path = request.getRequestURI();
         System.out.println("🔍 JwtTokenFilter - 요청 경로: " + path);
-        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/doLogin")) {
+
+        // 로그인/회원가입은 토큰 검사 생략
+        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login")) {
+            System.out.println("✅ 인증 생략 대상: " + path);
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            Long userId = jwtTokenProvider.getMemberIdFromToken(accessToken);
+        if (accessToken != null) {
+            System.out.println("🔑 추출된 accessToken: " + accessToken);
 
-            // 최소 정보(userId)만 SecurityContext에 저장
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userId, null, null);
+            if (jwtTokenProvider.validateToken(accessToken)) {
+                Long userId = jwtTokenProvider.getMemberIdFromToken(accessToken);
+                System.out.println("✅ 토큰 유효, 사용자 ID: " + userId);
 
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userId, null, null);
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("🔐 SecurityContext에 인증 정보 설정 완료");
+            } else {
+                System.out.println("❌ 토큰 유효성 검사 실패");
+            }
+        } else {
+            System.out.println("⚠️ Authorization 헤더에 Bearer 토큰 없음");
         }
 
         filterChain.doFilter(request, response);

@@ -1,5 +1,11 @@
 package com.example.demo.service;
 
+import com.example.demo.repository.AnalysisReppsitory;
+import com.example.demo.vo.Analysis;
+import com.example.demo.vo.AnalysisLanguage;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -23,7 +29,8 @@ import java.util.zip.ZipFile;
 
 @Service
 public class SonarService {
-
+    @Autowired
+    private AnalysisReppsitory analysisRepository;
     @Value("${sonarqube.host}")
     private String sonarHost;
 
@@ -135,6 +142,95 @@ public class SonarService {
 
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
+
+    public void analysisInsertDB(Long memberId, String projectKey) throws IOException, InterruptedException {
+        try {
+            // 분석 결과 가져오기
+            String resultJson = getAnalysisResult(projectKey);
+
+            // ✅ JSON 유효성 검사
+            if (resultJson == null || !resultJson.trim().startsWith("{")) {
+                System.out.println("❌ 분석 결과 JSON 아님! resultJson = " + resultJson);
+                return;
+            }
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(resultJson);
+            JsonNode component = root.get("component");
+
+            String projectKeyFromJson = component.get("key").asText();
+            String projectName = component.get("name").asText();
+            JsonNode measures = component.get("measures");
+
+            Map<String, String> metricMap = new HashMap<>();
+            for (JsonNode measure : measures) {
+                metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
+            }
+
+            // 1. Analysis 저장 (언어 제외)
+            Analysis analysis = Analysis.builder()
+                    .memberId(memberId)
+                    .projectKey(projectKeyFromJson)
+                    .projectName(projectName)
+                    .coverage(parseDouble(metricMap.get("coverage")))
+                    .bugs(parseInt(metricMap.get("bugs")))
+                    .complexity(parseInt(metricMap.get("complexity")))
+                    .codeSmells(parseInt(metricMap.get("code_smells")))
+                    .duplicatedLinesDensity(parseDouble(metricMap.get("duplicated_lines_density")))
+                    .vulnerabilities(parseInt(metricMap.get("vulnerabilities")))
+                    .build();
+
+            analysisRepository.insert(analysis);
+            Long analyzeId = analysis.getId();  // 방금 insert된 ID
+
+            System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
+
+            // 2. 언어 분포 파싱해서 analysis_language에 저장
+            String langRaw = metricMap.get("ncloc_language_distribution");
+            if (langRaw != null) {
+                List<AnalysisLanguage> languages = parseLanguageDistribution(langRaw, analyzeId);
+                for (AnalysisLanguage lang : languages) {
+                    analysisRepository.insertLanguage(lang);
+                }
+                System.out.println("✅ 언어 분포 저장 완료 - " + languages.size() + "개 언어");
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ analysisInsertDB 분석 결과 저장 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
+    public List<AnalysisLanguage> parseLanguageDistribution(String raw, Long analyzeId) {
+        System.out.println("parseLanguageDistribution 잔입 raw: " + raw);
+        List<AnalysisLanguage> result = new ArrayList<>();
+        String[] pairs = raw.split(";");
+        for (String pair : pairs) {
+            String[] parts = pair.split("=");
+            if (parts.length == 2) {
+                String lang = parts[0].trim();
+                int lines = Integer.parseInt(parts[1].trim());
+                result.add(AnalysisLanguage.builder()
+                        .analyzeId(analyzeId)
+                        .language(lang)
+                        .lines(lines)
+                        .build());
+            }
+        }
+        return result;
+    }
+
+    private Double parseDouble(String value) {
+        try { return value == null ? null : Double.parseDouble(value); }
+        catch (NumberFormatException e) { return null; }
+    }
+
+    private Integer parseInt(String value) {
+        try { return value == null ? null : Integer.parseInt(value); }
+        catch (NumberFormatException e) { return null; }
+    }
+
 
     public void deleteProject(String projectKey) {
         try {
