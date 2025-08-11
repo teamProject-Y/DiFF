@@ -70,10 +70,6 @@ public class UsrArticleController {
 
         List<Article> articles = articleService.getTrendingArticles(count, days);
 
-        for(Article article:articles) {
-            System.out.println(article.getTitle());
-        }
-
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
 
