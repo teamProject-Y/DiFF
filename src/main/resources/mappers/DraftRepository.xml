@@ -39,4 +39,11 @@
             regDate = #{regDate}
     </insert>
 
+    <select id="getDraftsByMember" parameterType="long" resultType="com.example.demo.vo.Draft">
+        SELECT id, memberId, repositoryId, checksum, title, body, regDate
+        FROM draft
+        WHERE memberId = #{memberId}
+        ORDER BY regDate DESC
+    </select>
+
 </mapper>
