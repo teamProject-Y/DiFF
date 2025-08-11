@@ -1,10 +1,15 @@
 package com.example.demo.controller;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.example.demo.service.DraftService;
+import com.example.demo.vo.Draft;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +32,9 @@ public class UsrArticleController {
     @Autowired
     private ArticleService articleService;
 
+    @Autowired
+    private DraftService draftService;
+
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -37,18 +45,12 @@ public class UsrArticleController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
-        System.out.println("📥 /api/DiFF/article/list 요청 도착 repoId: "+repositoryId);
-        System.out.println("➡️ page: " + page);
-        System.out.println("➡️ searchItem: " + searchItem);
-        System.out.println("➡️ keyword: " + keyword);
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
         int totalCnt = articleService.getArticlesCnt(repositoryId, keyword, searchItem);
         int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
         List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
-
-        System.out.println("📤 조회된 게시글 수: " + articles.size());
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
@@ -75,5 +77,21 @@ public class UsrArticleController {
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/drafts")
+    public ResponseEntity<Map<String, Object>> getDrafts() {
+        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
+
+        Number memberIdNum = (Number) rq.getLoginedMemberId();
+        Long memberId = memberIdNum.longValue();
+
+        List<Draft> drafts = draftService.getDraftsByMember(memberId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("drafts", drafts);
+
+        return ResponseEntity.ok(result);
+    }
+
 }
 

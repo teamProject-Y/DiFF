@@ -67,7 +67,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
                                 "/api/DiFF/post/**", "/api/DiFF/article/list",
-                                "/api/DiFF/article/trending"
+                                "/api/DiFF/article/trending","/api/DiFF/artilce/drafts"
                         ).permitAll()
 
                         .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
