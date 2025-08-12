@@ -3,6 +3,8 @@ package com.example.demo.repository;
 import com.example.demo.vo.Draft;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 @Mapper
 public interface DraftRepository {
 
@@ -13,4 +15,6 @@ public interface DraftRepository {
     public int existsByMemberIdAndRepoName(int memberId, String repoName);
 
     void insertDraft(Draft draft);
+
+    List<Draft> getDraftsByMember(Long memberId);
 }

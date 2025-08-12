@@ -49,17 +49,18 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 완전 공개
                         .requestMatchers(
-                                "/", "/api/DiFF/home/main", "/usr/draft/verifyGitUser", "/usr/draft/**",
-                                "/resource/**","/css/**", "/js/**", "/images/**",
+                                "/", "/usr/draft/**",
+                                "/resource/**","/css/**", "/js/**", "/images/**", "/oauth2/**", "/login/**",
+                                "/api/DiFF/home/main", "/usr/draft/verifyGitUser",
+
                                 "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/oauth2/**", "/login/**",
                                 "/upload","/gpt/test,","/usr/draft/mkDraft",
-
                                 // 회원 관련
-                                "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login",
-                                "/api/DiFF/member/check/**", "/api/DiFF/member/myPage",
+                                "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login", "/api/DiFF/auth/refresh",
+                                "/api/DiFF/member/check/**",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
@@ -67,12 +68,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
                                 "/api/DiFF/post/**", "/api/DiFF/article/list",
-                                "/api/DiFF/article/trending"
+                                "/api/DiFF/article/trending","/api/DiFF/article/drafts"
                         ).permitAll()
 
-                        .requestMatchers("/api/DiFF/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/DiFF/member/**").authenticated()
-                        .requestMatchers("/api/DiFF/**").authenticated()
+                        // 나머지 전부 인증
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -120,5 +119,21 @@ public class SecurityConfig {
             response.setStatus(403);
             response.getWriter().write("{\"error\": \"Forbidden\", \"message\": \"권한 없음\"}");
         };
+    }
+
+    // CORS: REFRESH_TOKEN 허용/노출
+    @Bean
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        var cfg = new org.springframework.web.cors.CorsConfiguration();
+        cfg.setAllowCredentials(true);
+        cfg.addAllowedOriginPattern("http://localhost:3000");
+        cfg.addAllowedHeader("*");
+        cfg.addAllowedMethod("*");
+        cfg.addExposedHeader("Authorization");
+        cfg.addExposedHeader("REFRESH_TOKEN");
+        cfg.addAllowedHeader("REFRESH_TOKEN"); // 요청 허용
+        var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 }
