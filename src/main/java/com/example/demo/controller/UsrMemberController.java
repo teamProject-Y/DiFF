@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
-import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.Auth;
@@ -10,7 +9,7 @@ import org.aspectj.apache.bcel.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.ui.Model;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.MemberService;
@@ -46,6 +45,9 @@ public class UsrMemberController {
     private AuthService authService;
     @Autowired
     private RepositoryService repositoryService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -111,15 +113,6 @@ public class UsrMemberController {
     }
 
 
-
-//    @RequestMapping("/login")
-//    public String login() {
-//
-//        System.out.println("login 메서드 진입");
-//
-//        return "/login";
-//    }
-
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
@@ -155,6 +148,8 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "로그아웃 되었습니다"));
 
     }
+
+
     @GetMapping("/myPage")
     public ResponseEntity<Map<String, Object>> myPage(HttpServletRequest req) {
         Rq rq = (Rq) req.getAttribute("rq");
@@ -174,54 +169,44 @@ public class UsrMemberController {
 
 
 
-    @RequestMapping("/modify")
-    public String modify(Model model, HttpServletRequest req) {
+    @PutMapping("/checkPw")
+    public ResponseEntity<ResultData> checkPw(
+            HttpServletRequest req,
+            @RequestBody Map<String, String> requestBody) {
+
+        String pw = requestBody.get("pw");
 
         Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
+        Member member = memberService.getMemberById((Long) rq.getLoginedMemberId());
 
-        model.addAttribute("member", member);
-
-        return "/modify";
-    }
-
-    @RequestMapping("/checkPw")
-    @ResponseBody
-    public ResultData checkPw(HttpServletRequest req, String pw) {
-
-        Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-
-        if(!member.getLoginPw().equals(pw)) {
-            return ResultData.from("F-1", "비밀번호 불일치");
+        // 암호화 비교
+        if (!passwordEncoder.matches(pw, member.getLoginPw())) {
+            return ResponseEntity.ok(ResultData.from("F-1", "비밀번호 불일치"));
         }
 
-        return ResultData.from("S-1", "비밀번호 일치 성공");
+        return ResponseEntity.ok(ResultData.from("S-1", "비밀번호 일치 성공"));
     }
 
     // 로그인 체크 -> 유무 체크 -> 권한 체크
-    @PutMapping("/doModify")
+    @PutMapping("/modify")
     public ResponseEntity<ResultData> doModify(@RequestHeader("Authorization") String authorization, @RequestBody Member member) {
 
         // 토큰에서 memberId 추출
-        String token = authorization.substring(7);
+        String token = authorization.startsWith("Bearer ")
+                ? authorization.substring(7)
+                : authorization;
         Long memberId = jwtTokenProvider.getMemberIdFromToken(token);
 
         // 입력 검증
-        if (Ut.isEmpty(member.getLoginId())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getLoginPw())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
-        }
+
         if (Ut.isEmpty(member.getName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-1", "이름을 입력해주세요"));
         }
         if (Ut.isEmpty(member.getNickName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-2", "닉네임을 입력해주세요"));
         }
         if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-6", "유효한 이메일을 입력해주세요"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-3", "유효한 이메일을 입력해주세요"));
         }
 
         // 서비스에 수정 요청
