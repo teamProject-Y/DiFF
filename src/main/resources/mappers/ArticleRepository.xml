@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.example.demo.repository.ArticleRepository">
+
     <select id="getArticlesCnt" resultType="int">
         SELECT COUNT(*) FROM article
         WHERE
@@ -60,4 +61,10 @@
             LIMIT #{count};
     </select>
 
+    <insert id="writeArticle" parameterType="map">
+        INSERT INTO article
+            (memberId, title, body, checksum, repositoryId, regDate)
+        VALUES
+            (#{memberId}, #{title}, #{body}, #{checksum}, #{repositoryId}, COALESCE(#{regDate}, NOW()))
+    </insert>
 </mapper>

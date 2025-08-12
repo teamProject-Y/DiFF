@@ -1,20 +1,24 @@
 package com.example.demo.repository;
 
 import com.example.demo.vo.Article;
+import com.example.demo.vo.ResultData;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
 public interface ArticleRepository {
 
-    int getLastInsertId();
+    public int getLastInsertId();
 
-    int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
+    public int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
 
-    List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
+    public  List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
 
-    int getArticleCnt();
+    public int getArticleCnt();
 
-    List<Article> getTrendingArticles(Integer count, Integer days);
+    public List<Article> getTrendingArticles(Integer count, Integer days);
+
+    public ResultData writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, LocalDate regDate);
 }

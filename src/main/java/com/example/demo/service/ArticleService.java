@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.example.demo.repository.ReactionRepository;
@@ -122,6 +123,10 @@ public class ArticleService {
 
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);
+    }
+
+    public ResultData writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, LocalDate regDate) {
+        return articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, regDate);
     }
 
 //

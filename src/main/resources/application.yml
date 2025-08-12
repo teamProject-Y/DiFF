@@ -17,7 +17,6 @@ spring:
     username: admin
     password: teamprojecty
 
-
   servlet:
     multipart:
       enabled: true
