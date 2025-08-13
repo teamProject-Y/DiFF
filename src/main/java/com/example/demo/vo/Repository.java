@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 public class Repository {
     private Long id;
     private Long memberId;
-    private String name;              // title → name 으로 수정
+    private String name;
     private String url;
-    private String lastRqCommit;     // Long → String 으로 수정 (commit hash는 문자열)
+    private String lastRqCommit;
     private boolean delStatus;
     private LocalDateTime delDate;
     private LocalDateTime regDate;

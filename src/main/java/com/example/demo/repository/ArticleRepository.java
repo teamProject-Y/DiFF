@@ -20,5 +20,5 @@ public interface ArticleRepository {
 
     public List<Article> getTrendingArticles(Integer count, Integer days);
 
-    public ResultData writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, LocalDate regDate);
+    public ResultData writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
 }

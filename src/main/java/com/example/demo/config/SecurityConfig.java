@@ -57,7 +57,7 @@ public class SecurityConfig {
 
                                 "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/upload","/gpt/test,","/usr/draft/mkDraft",
+                                "/upload","/gpt/test,","/usr/draft/mkDraft","/api/DiFF/article/doWrite",
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login", "/api/DiFF/auth/refresh",
                                 "/api/DiFF/member/check/**",
@@ -68,7 +68,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
                                 "/api/DiFF/post/**", "/api/DiFF/article/list",
-                                "/api/DiFF/article/trending","/api/DiFF/article/drafts"
+                                "/api/DiFF/article/trending","/api/DiFF/article/drafts","/api/DiFF/article/doWrite"
                         ).permitAll()
 
                         // 나머지 전부 인증
