@@ -126,8 +126,8 @@ public class UsrArticleController {
 
     @PostMapping("/doWrite")
     @ResponseBody
-    public ResultData<Map<String, Object>> doWrite(HttpServletRequest req,
-                                                   @RequestBody Draft draft) {
+    public ResultData<Integer> doWrite(HttpServletRequest req,
+                                       @RequestBody Draft draft) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
         draft.setMemberId(memberId);
@@ -156,24 +156,14 @@ public class UsrArticleController {
         }
 
         // 작성
-        ResultData<Long> wr = articleService.writeArticle(
+        int wr = articleService.writeArticle(
                 memberId,
                 draft.getTitle(),
                 draft.getBody(),
                 draft.getChecksum(),
                 draft.getRepositoryId()
         );
-        System.out.println("write.resultCode = " + wr.getResultCode() + ", articleId = " + wr.getData());
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("draft", draft);
-        data.put("repository", repo);
-
-        if (wr.isFail()) {
-            return ResultData.from(wr.getResultCode(), wr.getMsg(), data);
-        }
-
-        data.put("articleId", wr.getData());
-        return ResultData.from("S-1", "작성 성공", data);
+        return ResultData.from("S-1", "작성 성공", wr);
     }
 }

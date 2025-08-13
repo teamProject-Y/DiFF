@@ -48,7 +48,7 @@
             regDate,
             updateDate
         FROM repository
-        WHERE id = #{id}
+        WHERE id = #{repositoryId}
           AND memberId = #{memberId}
             LIMIT 1
     </select>

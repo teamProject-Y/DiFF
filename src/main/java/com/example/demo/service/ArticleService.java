@@ -125,7 +125,7 @@ public class ArticleService {
         return articleRepository.getTrendingArticles(count, days);
     }
 
-    public ResultData writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId) {
+    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId) {
         return articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
     }
 

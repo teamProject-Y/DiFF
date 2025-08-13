@@ -61,10 +61,11 @@
             LIMIT #{count};
     </select>
 
-    <insert id="writeArticle" parameterType="map">
-        INSERT INTO article
-            (memberId, title, body, checksum, repositoryId, regDate)
-        VALUES
-            (#{memberId}, #{title}, #{body}, #{checksum}, #{repositoryId}, COALESCE(#{regDate}, NOW()))
+    <insert id="writeArticle">
+        INSERT INTO article (
+            memberId, repositoryId, title, body, checksum, regDate, updateDate
+        ) VALUES (
+                     #{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW(), NOW()
+                 )
     </insert>
 </mapper>
