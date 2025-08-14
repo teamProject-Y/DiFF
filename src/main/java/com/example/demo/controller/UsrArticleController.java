@@ -9,6 +9,7 @@ import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.repository.MemberRepository;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -88,20 +89,7 @@ public class UsrArticleController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/drafts")
-    public ResponseEntity<Map<String, Object>> getDrafts() {
-        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
 
-        Number memberIdNum = (Number) rq.getLoginedMemberId();
-        Long memberId = memberIdNum.longValue();
-
-        List<Draft> drafts = draftService.getDraftsByMember(memberId);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("drafts", drafts);
-
-        return ResponseEntity.ok(result);
-    }
 
 //    @GetMapping("/write")
 //    public ResultData<Map<String, Object>> showWriteForm(HttpServletRequest req, @RequestParam Long repositoryId) {
@@ -166,4 +154,20 @@ public class UsrArticleController {
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
-}
+
+    @GetMapping("/drafts")
+    public ResponseEntity<Map<String, Object>> getDrafts() {
+        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
+
+        Number memberIdNum = (Number) rq.getLoginedMemberId();
+        Long memberId = memberIdNum.longValue();
+
+        List<Draft> drafts = draftService.getDraftsByMember(memberId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("drafts", drafts);
+
+        return ResponseEntity.ok(result);
+    }
+
+ }

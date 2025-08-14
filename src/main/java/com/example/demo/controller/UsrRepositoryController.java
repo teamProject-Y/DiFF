@@ -35,7 +35,7 @@ public class UsrRepositoryController {
         List<Repository> repos = repositoryService.getRepositoriesByMemberId(memberId);
         System.out.println("repo count = " + repos.size());
         for (Repository r : repos) {
-            System.out.println(" - repo[id=" + r.getId() + ", name=" + r.getName() + "]");
+            System.out.println(" - repoId=" + r.getId() + ", name=" + r.getName() + "]");
         }
 
         Map<String, Object> data = new HashMap<>();
