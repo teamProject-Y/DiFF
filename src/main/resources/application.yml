@@ -17,7 +17,6 @@ spring:
     username: admin
     password: teamprojecty
 
-
   servlet:
     multipart:
       enabled: true
@@ -28,15 +27,15 @@ spring:
       client:
         registration:
           github:
-            client-id: "Ov23li4CgQ8WOFU3RyjK"
-            client-secret: "59aa60b6ed40b30306e89c8b59cbfa7ddd622922"
+            client-id:
+            client-secret:
             scope: user:email
             redirect-uri: "{baseUrl}/login/oauth2/code/github"
             client-name: GitHub
 
           google:
-            client-id: "273376569132-kqh5mlteqi570g3sf88tdlmkc0c5qnjg.apps.googleusercontent.com"
-            client-secret: "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"
+            client-id:
+            client-secret:
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - profile
@@ -69,7 +68,7 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+  token: sqa_43167936242b59ad1212aebb78e06d3553c29551
 
 openai:
   api:

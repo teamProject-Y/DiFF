@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.RepositoryRepository;
-import org.aspectj.apache.bcel.Repository;
+import com.example.demo.vo.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,4 +23,7 @@ public class RepositoryService {
         repositoryRepository.makeRepository(memberId, repoName, lastRqCommit);
     }
 
+    public Repository getRepositoryByIdAndMember(Long repositoryId, Long memberId) {
+        return repositoryRepository.getRepositoryByIdAndMember(repositoryId, memberId);
+    }
 }

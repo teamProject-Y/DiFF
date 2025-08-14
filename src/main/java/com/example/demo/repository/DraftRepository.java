@@ -14,7 +14,11 @@ public interface DraftRepository {
 
     public int existsByMemberIdAndRepoName(int memberId, String repoName);
 
-    void insertDraft(Draft draft);
+    public void insertDraft(Draft draft);
 
-    List<Draft> getDraftsByMember(Long memberId);
+    public List<Draft> getDraftsByMember(Long memberId);
+
+    public int deleteDraft(Long id, Long memberId);
+
+    public Draft getDraftById(Long id);
 }
