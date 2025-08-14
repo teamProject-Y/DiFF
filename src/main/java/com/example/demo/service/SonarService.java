@@ -282,21 +282,25 @@ public class SonarService {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
         System.out.println(propertiesFile.getAbsolutePath() + " 소스 경로 감지 ");
 
-        String javaSourcePath = findJavaSourceFolder(projectDir);
-        String classPath = findClassFolder(projectDir);
-
-        // 여러 유효 폴더 모두 포함
-        List<String> sourcePaths = detectAllValidSourceFolders(projectDir)
-                .stream()
+        // 여러 유효 폴더 모두 포함 (하드코딩 제거, 외부 빌드/라이브러리 폴더 제외)
+        List<String> sourcePaths = detectAllValidSourceFolders(projectDir).stream()
                 .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
+                .distinct()
                 .collect(Collectors.toList());
 
-        //  .js, .py 탐색용 - 루트 전체 기준
+        // 멀티모듈 지원: 모든 모듈의 .class 경로 찾기
+        List<String> javaBins = findAllJavaBinaries(projectDir).stream()
+                .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 언어 포함 여부 체크
+        boolean containsJava = !javaBins.isEmpty();
         boolean containsJS = containsExtension(projectDir, ".js");
         boolean containsPY = containsExtension(projectDir, ".py");
 
-        System.out.println("✅ [DEBUG] .java 포함 여부: " + (javaSourcePath != null));
-        System.out.println("✅ [DEBUG] .class 경로 존재 여부: " + (classPath != null));
+        System.out.println("✅ [DEBUG] .java 포함 여부: " + containsJava);
+        System.out.println("✅ [DEBUG] .class 경로 개수: " + javaBins.size());
         System.out.println("✅ [DEBUG] .js 포함 여부: " + containsJS);
         System.out.println("✅ [DEBUG] .py 포함 여부: " + containsPY);
 
@@ -306,26 +310,80 @@ public class SonarService {
             writer.println("sonar.projectVersion=1.0");
             writer.println("sonar.host.url=" + sonarHost);
 
-            //  1. 소스 경로
+            // 1. 소스 경로
             writer.println("sonar.sources=" + String.join(",", sourcePaths));
 
-            //  2. Java 설정
-            if (javaSourcePath != null && classPath != null) {
-                String classPathRel = projectDir.toPath().relativize(Path.of(classPath)).toString();
-                writer.println("sonar.java.binaries=" + classPathRel);
+            // 2. 공통 제외 패턴 (외부 라이브러리/빌드 산출물)
+            writer.println("sonar.exclusions=" + String.join(",",
+                    "**/node_modules/**","**/build/**","**/dist/**","**/target/**",
+                    "**/.venv/**","**/venv/**","**/.tox/**","**/.pytest_cache/**",
+                    "**/.next/**","**/.nuxt/**","**/.yarn/**","**/.pnpm-store/**"));
+
+            // 3. 포함 패턴 (원본 코드 확장자)
+            writer.println("sonar.inclusions=" + String.join(",",
+                    "**/*.java","**/*.kt","**/*.kts","**/*.py","**/*.js","**/*.jsx","**/*.ts","**/*.tsx"));
+
+            // 4. Java 설정 (멀티모듈 binaries)
+            if (containsJava) {
+                writer.println("sonar.java.binaries=" + String.join(",", javaBins));
                 writer.println("sonar.java.source=17");
             }
 
-            //  3. Python 설정 (자동 감지)
+            // 5. Python 설정 (자동 감지)
             if (containsPY) {
-                writer.println("sonar.language=py");
                 writer.println("sonar.python.version=3.10");
+                // sonar.language는 지정 안 하면 JS/Java/Python 다 잡힘
             }
 
             writer.println("sonar.login=" + sonarToken);
         }
 
         System.out.println(" 최종 분석 대상 폴더들: " + sourcePaths);
+        if (containsJava) {
+            System.out.println(" Java 바이너리 경로들: " + javaBins);
+        }
+    }
+
+    private List<String> findAllJavaBinaries(File root) {
+        List<String> bins = new ArrayList<>();
+        Deque<File> dq = new ArrayDeque<>();
+        dq.add(root);
+
+        while (!dq.isEmpty()) {
+            File dir = dq.pollFirst();
+            File[] list = dir.listFiles();
+            if (list == null) continue;
+
+            boolean isModuleRoot =
+                    new File(dir, "pom.xml").isFile() ||
+                            new File(dir, "build.gradle").isFile() ||
+                            new File(dir, "build.gradle.kts").isFile() ||
+                            new File(dir, "src/main/java").isDirectory() ||
+                            new File(dir, "src/main/kotlin").isDirectory();
+
+            if (isModuleRoot) {
+                String[] candidates = {
+                        "target/classes","target/test-classes",
+                        "build/classes/java/main","build/classes/java/test",
+                        "build/classes/kotlin/main","build/classes/kotlin/test"
+                };
+                for (String rel : candidates) {
+                    File c = new File(dir, rel);
+                    if (c.isDirectory()) bins.add(c.getAbsolutePath());
+                }
+            }
+
+            for (File f : list) {
+                String name = f.getName();
+                if (f.isDirectory() &&
+                        !name.equals(".git") && !name.equals(".idea") && !name.equals(".gradle") &&
+                        !name.equals("node_modules") && !name.equals("build") && !name.equals("dist") &&
+                        !name.equals("target") && !name.equals(".venv") && !name.equals("venv")) {
+                    dq.add(f);
+                }
+            }
+        }
+        return bins.stream().distinct().collect(Collectors.toList());
     }
 
 
@@ -343,6 +401,7 @@ public class SonarService {
 
         return null;
     }
+
     private String findJavaSourceFolder(File projectDir) {
         return findDirectoryContainingExtension(projectDir, ".java");
     }

@@ -17,14 +17,15 @@ public class UsrAuthController {
 
     /** 로그인 API */
     @PostMapping("/api/DiFF/auth/login")
-    public ResponseEntity<?> login(@RequestBody Auth authRq) {
+    public ResponseEntity<Object> login(@RequestBody Auth authRq) {
+
         Auth authRp = this.authService.login(authRq);
         return ResponseEntity.ok( ResultData.from("S-1", "로그인 성공", "accessToken", authRp));
     }
 
     /** 토큰갱신 API */
     @GetMapping("/api/DiFF/auth/refresh")
-    public ResponseEntity<?> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
+    public ResponseEntity<Object> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
         String newAccessToken = this.authService.refreshToken(refreshToken);
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
