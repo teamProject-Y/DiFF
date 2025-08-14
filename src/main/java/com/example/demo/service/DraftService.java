@@ -31,6 +31,16 @@ public class DraftService {
 
 
     public List<Draft> getDraftsByMember(Long memberId) {
+
         return draftRepository.getDraftsByMember(memberId);
+    }
+
+
+    public Draft getDraftById(Long id) {
+        return draftRepository.getDraftById(id);
+    }
+
+    public int deleteDraft(Long id, Long memberId) {
+        return draftRepository.deleteDraft(id,memberId);
     }
 }
