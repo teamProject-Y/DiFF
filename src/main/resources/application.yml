@@ -17,7 +17,6 @@ spring:
     username: admin
     password: teamprojecty
 
-
   servlet:
     multipart:
       enabled: true
@@ -69,7 +68,7 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+  token: sqa_43167936242b59ad1212aebb78e06d3553c29551
 
 openai:
   api:

@@ -35,4 +35,22 @@
                )
     </insert>
 
+    <select id="getRepositoryByIdAndMember"
+            resultType="com.example.demo.vo.Repository">
+        SELECT
+            id,
+            memberId,
+            name,
+            url,
+            lastRqCommit,
+            delStatus,
+            delDate,
+            regDate,
+            updateDate
+        FROM repository
+        WHERE id = #{repositoryId}
+          AND memberId = #{memberId}
+            LIMIT 1
+    </select>
+
 </mapper>

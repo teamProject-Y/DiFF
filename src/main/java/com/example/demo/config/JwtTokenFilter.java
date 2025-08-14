@@ -31,7 +31,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         System.out.println("🔍 JwtTokenFilter - 요청 경로: " + path);
 
         // 로그인/회원가입은 토큰 검사 생략
-        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login")) {
+        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login") || path.equals("/upload")) {
             System.out.println("✅ 인증 생략 대상: " + path);
             filterChain.doFilter(request, response);
             return;
