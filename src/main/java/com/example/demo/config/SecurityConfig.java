@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         // 완전 공개
                         .requestMatchers(
                                 "/", "/usr/draft/**",
