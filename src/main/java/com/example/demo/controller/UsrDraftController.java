@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Controller
+@RestController
 @RequestMapping("/api/DiFF/draft")
 public class UsrDraftController {
 
@@ -117,7 +117,7 @@ public class UsrDraftController {
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
-        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
+        System.out.println("📥 /api/DiFF/draft/drafts 요청 도착");
 
         Number memberIdNum = (Number) rq.getLoginedMemberId();
         Long memberId = memberIdNum.longValue();
@@ -126,20 +126,22 @@ public class UsrDraftController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("drafts", drafts);
-
+        System.out.println(""+result);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/draft/{id}")
-    public ResultData<Integer> deleteDraft(HttpServletRequest req, @PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResultData<Integer> deleteDraft(
+            HttpServletRequest req, @PathVariable Long id) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
-        System.out.println("\n===== [DELETE] /api/DiFF/draft/" + id + " =====");
+
+        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/draft/" + id + " =====");
+
         Draft draft = draftService.getDraftById(id);
         if (draft == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
-
         if (!draft.getMemberId().equals(memberId)) {
             return ResultData.from("F-403", "해당 게시글에 대한 권한이 없습니다.");
         }
@@ -151,7 +153,6 @@ public class UsrDraftController {
 
         return ResultData.from("S-1", "게시글 삭제 성공", rows);
     }
-
 
 }
 

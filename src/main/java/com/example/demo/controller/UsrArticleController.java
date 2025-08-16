@@ -89,29 +89,6 @@ public class UsrArticleController {
         return ResponseEntity.ok(result);
     }
 
-
-
-//    @GetMapping("/write")
-//    public ResultData<Map<String, Object>> showWriteForm(HttpServletRequest req, @RequestParam Long repositoryId) {
-//        Rq rq = (Rq) req.getAttribute("rq");
-//        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
-//
-//        System.out.println("\n===== [GET] /article/write =====");
-//        System.out.println("\uD83C\uDF54 memberId      = " + memberId);
-//
-//        Repository repo = repositoryService.getRepositoryByIdAndMember(repositoryId, memberId);
-//        if (repo == null) {
-//            return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
-//        }
-//
-//        System.out.println("\uD83C\uDF54 repositoryId  = " + repositoryId);
-//        System.out.println("\uD83C\uDF54 repositoryName = " + repo.getName());
-//
-//        Map<String, Object> data = new HashMap<>();
-//        data.put("repository", repo);
-//        return ResultData.from("S-1", "작성 폼 로드 성공", data);
-//    }
-
     @PostMapping("/doWrite")
     @ResponseBody
     public ResultData<Integer> doWrite(HttpServletRequest req,
@@ -120,7 +97,7 @@ public class UsrArticleController {
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
         draft.setMemberId(memberId);
 
-        System.out.println("\n===== [POST] /article/doWrite =====");
+        System.out.println("\n===== \uD83D\uDC36\uD83D\uDC36 [POST] /article/doWrite =====");
         System.out.println("memberId      = " + draft.getMemberId());
         System.out.println("title         = " + draft.getTitle());
         System.out.println("body.length   = " + (draft.getBody() != null ? draft.getBody().length() : null));
@@ -153,21 +130,6 @@ public class UsrArticleController {
         );
 
         return ResultData.from("S-1", "작성 성공", wr);
-    }
-
-    @GetMapping("/drafts")
-    public ResponseEntity<Map<String, Object>> getDrafts() {
-        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
-
-        Number memberIdNum = (Number) rq.getLoginedMemberId();
-        Long memberId = memberIdNum.longValue();
-
-        List<Draft> drafts = draftService.getDraftsByMember(memberId);
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("drafts", drafts);
-
-        return ResponseEntity.ok(result);
     }
 
  }
