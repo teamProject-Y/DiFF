@@ -163,7 +163,6 @@ public class UsrArticleController {
             return ResultData.from("F-3", "권한이 없습니다. 본인 글만 수정 가능합니다.");
         }
 
-        // 필요한 필드만 반영
         article.setUpdateDate(LocalDateTime.now());
         int affectedRow = articleService.modifyArticle(article);
 
