@@ -5,7 +5,7 @@ server:
     max-swallow-size: 500MB
 
 jwt:
-  secret: 7a36d8d1c41b9e4d8f4260fa38fca973b33c14f2cfd7f1a9d3c848057c12a1e8b2dca3120f2ed014f9a4568ce841fb15b23051cd1e8763b64a0f12c29b2d9d0a
+  secret:
   access-token-expiration-time: 3600000
   refresh-token-expiration-time: 86400000
 
@@ -26,22 +26,6 @@ spring:
   security:
     oauth2:
       client:
-        registration:
-          github:
-            client-id: "Ov23li4CgQ8WOFU3RyjK"
-            client-secret: "59aa60b6ed40b30306e89c8b59cbfa7ddd622922"
-            scope: user:email
-            redirect-uri: "{baseUrl}/login/oauth2/code/github"
-            client-name: GitHub
-
-          google:
-            client-id: "273376569132-kqh5mlteqi570g3sf88tdlmkc0c5qnjg.apps.googleusercontent.com"
-            client-secret: "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"
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-            scope:
-              - profile
-              - email
-            client-name: Google
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize
@@ -69,7 +53,7 @@ logging:
 
 sonarqube:
   host: http://localhost:9000
-  token: sqa_51b039c183b6985ee4486ab5195fd964fb4d92ba
+  token:
 
 openai:
   api:

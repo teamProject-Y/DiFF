@@ -77,7 +77,6 @@ public class SonarUploadController {
         }
     }
 
-
     private void grantProjectAdminPermission(String projectKey) {
         String sonarBaseUrl = "http://localhost:9000";
         String apiEndpoint = sonarBaseUrl + "/api/permissions/add_user";
