@@ -1,6 +1,7 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.OAuthAccountRepository;
+import com.example.demo.vo.Follow;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.repository.MemberRepository;
 import com.example.demo.vo.Member;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -112,5 +115,9 @@ public class MemberService {
 
     public Member getByOauthId(String oauthId) {
         return memberRepository.getByOauthId(oauthId);
+    }
+
+    public List<Follow> getFollowsByMemberId(Long memberId) {
+        return memberRepository.getFollowsByMemberId(memberId);
     }
 }
