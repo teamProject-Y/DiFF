@@ -68,4 +68,27 @@
                      #{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW(), NOW()
                  )
     </insert>
+
+    <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
+        SELECT *
+        FROM article
+        WHERE id = #{id}
+            LIMIT 1
+    </select>
+
+    <update id="modifyArticle" parameterType="com.example.demo.vo.Article">
+        UPDATE article
+        SET
+            title = #{title},
+            body = #{body},
+            updateDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteArticle" parameterType="map">
+        DELETE FROM article
+        WHERE id = #{id}
+          AND memberId = #{memberId}
+    </delete>
+
 </mapper>
