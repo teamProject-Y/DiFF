@@ -16,8 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Controller
-@RequestMapping("/usr/draft")
+@RestController
+@RequestMapping("/api/DiFF/draft")
 public class UsrDraftController {
 
     @Autowired
@@ -117,7 +117,7 @@ public class UsrDraftController {
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
-        System.out.println("📥 /api/DiFF/article/drafts 요청 도착");
+        System.out.println("📥 /api/DiFF/draft/drafts 요청 도착");
 
         Number memberIdNum = (Number) rq.getLoginedMemberId();
         Long memberId = memberIdNum.longValue();
@@ -126,42 +126,35 @@ public class UsrDraftController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("drafts", drafts);
-
+        System.out.println(""+result);
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/draft/{id}")
-    public ResultData<Void> deleteDraft(HttpServletRequest req, @PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResultData<Integer> deleteDraft(
+            HttpServletRequest req, @PathVariable Long id) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("\n===== [DELETE] /draft/" + id + " =====");
-        System.out.println("memberId = " + memberId);
-        System.out.println("id       = " + id);
+        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/draft/" + id + " =====");
 
-        // 1) 존재 여부 확인
-        Draft found = draftService.getDraftById(id);
-        if (found == null) {
-            System.out.println("[FAIL] draft not found: id=" + id);
+        Draft draft = draftService.getDraftById(id);
+        if (draft == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
-
-        // 2) 소유자 검증
-        if (!found.getMemberId().equals(memberId)) {
-            System.out.println("[FAIL] 권한 없음. owner=" + found.getMemberId() + ", me=" + memberId);
+        if (!draft.getMemberId().equals(memberId)) {
             return ResultData.from("F-403", "해당 게시글에 대한 권한이 없습니다.");
         }
 
-        // 3) 삭제
-        int rows = draftService.deleteDraft(id, memberId); // WHERE id=? AND memberId=?
+        int rows = draftService.deleteDraft(id, memberId);
         if (rows == 0) {
-            System.out.println("[FAIL] delete 실패");
             return ResultData.from("F-500", "게시글 삭제 실패");
         }
 
-        System.out.println("[OK] delete 성공");
-        return ResultData.from("S-1", "게시글 삭제 성공");
+        return ResultData.from("S-1", "게시글 삭제 성공", rows);
     }
 
-
 }
+
+
+
