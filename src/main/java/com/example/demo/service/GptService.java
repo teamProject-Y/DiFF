@@ -19,6 +19,7 @@ public class GptService {
     private final DraftRepository draftRepository;
 
     public String makeDraft(String diff, Long repositoryId, Long memberId, String checksum) {
+        System.out.println("🍔🍔 DiFF 있음 ?  : "+diff);
         System.out.println("🍔🍔2summarizeDiff 진입");
         String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
 
