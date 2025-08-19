@@ -9,6 +9,7 @@ import java.util.Map;
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.repository.MemberRepository;
 import com.example.demo.service.ReplyService;
+import com.example.demo.service.MemberService;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class UsrArticleController {
     private DraftService draftService;
 
     @Autowired
-    private MemberRepository memberRepository;
+    private MemberService memberService;
 
     @Autowired
     private ReplyService replyService;
@@ -213,6 +214,37 @@ public class UsrArticleController {
         }
 
         return ResultData.from("S-1", "게시글 삭제 성공", rows);
+    }
+
+    @GetMapping("/followingArticleList")
+    public ResponseEntity<Map<String, Object>> showFollowingArticleList(
+            HttpServletRequest req,
+            @RequestParam(required = false, defaultValue = "0") Long repositoryId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int searchItem) {
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+        System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/followingArticleList =====");
+
+        int itemsInAPage = 10;
+        int limitFrom = (page - 1) * itemsInAPage;
+
+        List<Article> followingArticles = articleService.getFollowingArticles(memberId, limitFrom, itemsInAPage);
+
+        int totalCnt = articleService.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
+        int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("followingArticles", followingArticles);
+        result.put("totalCnt", totalCnt);
+        result.put("totalPage", totalPage);
+        result.put("page", page);
+
+        System.out.println("asas");
+
+        return ResponseEntity.ok(result);
     }
 
 }

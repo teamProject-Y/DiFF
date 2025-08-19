@@ -27,4 +27,8 @@ public interface ArticleRepository {
     public int modifyArticle(Article article);
 
     public int deleteArticle(Long id, Long memberId);
+
+    public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
+
+    public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
 }

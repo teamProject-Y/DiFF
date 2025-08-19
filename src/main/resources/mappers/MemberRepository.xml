@@ -89,4 +89,11 @@
         WHERE email = #{email} LIMIT 1
     </select>
 
+    <select id="getFollowingList" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM follow f
+        Inner JOIN member m ON f.fromMemberId = m.id
+        WHERE f.toMemberId = #{memberId}
+        ORDER BY f.regDate DESC;
+    </select>
 </mapper>

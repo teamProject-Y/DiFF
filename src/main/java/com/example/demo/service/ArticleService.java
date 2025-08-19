@@ -96,4 +96,12 @@ public class ArticleService {
     public int deleteArticle(Long id, Long memberId) {
         return articleRepository.deleteArticle(id, memberId);
     }
+
+    public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage) {
+        return articleRepository.getFollowingArticles(memberId, limitFrom, itemsInAPage);
+    }
+
+    public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
+        return articleRepository.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
+    }
 }
