@@ -14,16 +14,10 @@
     </select>
 
     <select id="getArticles" resultType="com.example.demo.vo.Article">
-        SELECT
-            id,
-            memberId,
-            repositoryId,
-            title,
-            body,
-            hits,
-            regDate,
-            updateDate
-        FROM article
+        SELECT A.*, M.nickName AS extra__writer
+        FROM article A
+        JOIN `member` M
+        ON A.memberId = M.id
         WHERE
             repositoryId = #{repositoryId}
           AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
@@ -40,7 +34,7 @@
             a.hits,
             a.regDate,
             COALESCE(r.likes, 0) AS likes,
-            m.nickName AS extra_writer,
+            m.nickName AS extra__writer,
             (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
             (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
             (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
@@ -70,9 +64,11 @@
     </insert>
 
     <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
-        SELECT *
-        FROM article
-        WHERE id = #{id}
+        SELECT A.*, M.nickName AS extra__writer
+        FROM article A
+        JOIN `member` M
+        ON A.memberId = M.id
+        WHERE A.id = #{id}
             LIMIT 1
     </select>
 
