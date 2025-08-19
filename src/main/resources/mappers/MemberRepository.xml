@@ -96,4 +96,10 @@
         ORDER BY f.regDate DESC;
     </select>
 
+    <select id="getMemberByNickName" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT *
+        FROM member
+        WHERE nickName = #{nickName}
+    </select>
+
 </mapper>

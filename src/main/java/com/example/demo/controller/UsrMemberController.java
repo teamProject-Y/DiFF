@@ -151,15 +151,27 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "로그아웃 되었습니다"));
 
     }
-    @GetMapping("/myPage")
-    public ResponseEntity<Map<String, Object>> myPage(HttpServletRequest req) {
-        Rq rq = (Rq) req.getAttribute("rq");
 
-        Number memberIdNum = (Number) rq.getLoginedMemberId();
-        Long memberId = memberIdNum.longValue();
+    @GetMapping("/profile")
+    public ResponseEntity<Map<String, Object>> profile(
+            HttpServletRequest req,
+            @RequestParam(required = false) String nickName) {
+        System.out.println("\n===== [GET] /api/DiFF/member/profile =====");
 
-        Member member = memberService.getMemberById(memberId);
-        List<Repository> repositories = repositoryService.getRepositoriesByMemberId(memberId);
+        Member member;
+        if (nickName != null) {
+            member = memberService.getMemberByNickName(nickName);
+            if (member == null) {
+                System.out.println("해당 닉네임을 가진 회원이 없습니다: " + nickName);
+            }
+        } else {
+            Rq rq = (Rq) req.getAttribute("rq");
+            Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+            member = memberService.getMemberById(memberId);
+        }
+
+        System.out.println("member 닉네임.  "+ member.getNickName());
+        List<Repository> repositories = repositoryService.getRepositoriesByMemberId(member.getId());
 
         Map<String, Object> result = new HashMap<>();
         result.put("member", member);
@@ -167,8 +179,6 @@ public class UsrMemberController {
 
         return ResponseEntity.ok(result);
     }
-
-
 
     @RequestMapping("/modify")
     public String modify(Model model, HttpServletRequest req) {

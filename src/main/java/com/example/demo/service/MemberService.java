@@ -116,4 +116,8 @@ public class MemberService {
     public List<Member> getFollowingList(Long memberId) {
         return memberRepository.getFollowingList(memberId);
     }
+
+    public Member getMemberByNickName(String nickName) {
+        return memberRepository.getMemberByNickName(nickName);
+    }
 }
