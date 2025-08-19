@@ -82,7 +82,6 @@
         SELECT * FROM member WHERE id = #{id}
     </select>
 
-
     <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
         SELECT id
         FROM `member`
@@ -96,4 +95,5 @@
         WHERE f.toMemberId = #{memberId}
         ORDER BY f.regDate DESC;
     </select>
+
 </mapper>

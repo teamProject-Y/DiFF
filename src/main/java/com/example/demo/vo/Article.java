@@ -17,10 +17,18 @@ public class Article {
     private Long repositoryId;
     private String title;
     private String body;
-    private String checksum;  // VARCHAR(64) 권장
+    private String checksum;
     private Integer hits;
     private Boolean isDraft;
     private Boolean isPublic;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
+
+    private int extra__sumReaction;
+    private int extra__sumComment;
+    private String extra__writer;
+
+    private boolean userCanModify;
+    private boolean userCanDelete;
+    private boolean userReaction;
 }
