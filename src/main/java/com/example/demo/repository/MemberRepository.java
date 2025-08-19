@@ -1,8 +1,11 @@
 package com.example.demo.repository;
 
+import com.example.demo.vo.Follow;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.example.demo.vo.Member;
+
+import java.util.List;
 
 @Mapper
 public interface MemberRepository {
@@ -33,5 +36,9 @@ public interface MemberRepository {
 
     public Member getById(Long memberId);
 
-    Member getByOauthIdAndProvider(String oauthId, String provider);
+    public Member getByOauthIdAndProvider(String oauthId, String provider);
+
+    public List<Follow> getFollowsByMemberId(Long memberId);
+
+    public List<Member> getFollowingList(Long memberId);
 }

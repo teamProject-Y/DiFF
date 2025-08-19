@@ -1,30 +1,111 @@
-package com.example.demo.repository;
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-import com.example.demo.vo.Article;
-import com.example.demo.vo.ResultData;
-import org.apache.ibatis.annotations.Mapper;
+<mapper namespace="com.example.demo.repository.ArticleRepository">
 
-import java.time.LocalDate;
-import java.util.List;
+    <select id="getArticlesCnt" resultType="int">
+        SELECT COUNT(*) FROM article
+        WHERE
+            repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
+          AND (#{searchItem} = 0 OR memberId = #{searchItem})
+    </select>
 
-@Mapper
-public interface ArticleRepository {
+    <select id="getArticles" resultType="com.example.demo.vo.Article">
+        SELECT
+            id,
+            memberId,
+            repositoryId,
+            title,
+            body,
+            hits,
+            regDate,
+            updateDate
+        FROM article
+        WHERE
+            repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
+          AND (#{searchItem} = 0 OR memberId = #{searchItem})
+        ORDER BY id DESC
+            LIMIT #{limitFrom}, #{itemsInAPage}
+    </select>
 
-    public int getLastInsertId();
+    <select id="getTrendingArticles" resultType="com.example.demo.vo.Article">
+        SELECT
+            a.id,
+            a.title,
+            a.body,
+            a.hits,
+            a.regDate,
+            COALESCE(r.likes, 0) AS likes,
+            m.nickName AS extra_writer,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
+            (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
+        FROM
+            article a
+                LEFT JOIN
+            (SELECT articleId, COUNT(*) AS likes
+             FROM reaction
+             GROUP BY articleId) r
+            ON a.id = r.articleId
+                LEFT JOIN
+            member m
+            ON a.memberId = m.id
+        WHERE
+            a.regDate >= DATE_SUB(CURRENT_DATE, INTERVAL #{days} DAY)
+        ORDER BY
+            trending_score DESC
+            LIMIT #{count};
+    </select>
 
-    public int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
+    <insert id="writeArticle">
+        INSERT INTO article (
+            memberId, repositoryId, title, body, checksum, regDate, updateDate
+        ) VALUES (
+                     #{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW(), NOW()
+                 )
+    </insert>
 
-    public  List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
+    <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
+        SELECT *
+        FROM article
+        WHERE id = #{id}
+            LIMIT 1
+    </select>
 
-    public int getArticleCnt();
+    <update id="modifyArticle" parameterType="com.example.demo.vo.Article">
+        UPDATE article
+        SET
+            title = #{title},
+            body = #{body},
+            updateDate = NOW()
+        WHERE id = #{id}
+    </update>
 
-    public List<Article> getTrendingArticles(Integer count, Integer days);
+    <delete id="deleteArticle" parameterType="map">
+        DELETE FROM article
+        WHERE id = #{id}
+          AND memberId = #{memberId}
+    </delete>
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
+    <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
+        SELECT a.*, m.nickName, m.email
+        FROM article a
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+                 INNER JOIN member m ON a.memberId = m.id
+        WHERE f.toMemberId = #{memberId}
+        ORDER BY a.regDate DESC
+    </select>
 
-    public Article getArticleById(Long id);
+    <select id="getFollowingArticlesCnt" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM article a
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+        WHERE f.fromMemberId = #{memberId}
+    </select>
 
-    public int modifyArticle(Article article);
 
-    public int deleteArticle(Long id, Long memberId);
-}
+</mapper>
