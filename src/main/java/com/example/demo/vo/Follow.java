@@ -7,18 +7,14 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Data
-public class Repository {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Follow {
     private Long id;
-    private Long memberId;
-    private String name;
-    private String url;
-    private String lastRqCommit;
-    private boolean delStatus;
-    private LocalDateTime delDate;
+    private Long toMemberId;
+    private Long fromMemberId;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
 }

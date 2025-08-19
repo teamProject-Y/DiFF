@@ -46,4 +46,23 @@
         ORDER BY regDate DESC
     </select>
 
+    <delete id="deleteDraft" parameterType="map">
+        DELETE FROM draft
+        WHERE id = #{id}
+          AND memberId = #{memberId}
+    </delete>
+
+    <select id="getDraftById" parameterType="long" resultType="com.example.demo.vo.Draft">
+        SELECT
+            id,
+            memberId,
+            repositoryId,
+            title,
+            body,
+            checksum,
+            regDate
+        FROM draft
+        WHERE id = #{id}
+    </select>
+
 </mapper>

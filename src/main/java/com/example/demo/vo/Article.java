@@ -12,28 +12,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class Article {
-    public Article(String title, String body, int memberId) {
-        this.title = title;
-        this.body = body;
-        this.memberId = memberId;
-    }
-
-    private int id;
-    private LocalDateTime regDate;
-    private LocalDateTime updateDate;
+    private Long id;
+    private Long memberId;
     private Long repositoryId;
     private String title;
     private String body;
-    private int memberId;
-    private int hits;
+    private String checksum;
+    private Integer hits;
+    private Boolean isDraft;
+    private Boolean isPublic;
+    private LocalDateTime regDate;
+    private LocalDateTime updateDate;
 
-    private String extra_writer;
-    private String extra_boardCode;
-
-    private int extra_ReactionPoint;
+    private int extra__sumReaction;
+    private int extra__sumComment;
+    private String extra__writer;
 
     private boolean userCanModify;
     private boolean userCanDelete;
-    private int userReaction;
-
+    private boolean userReaction;
 }

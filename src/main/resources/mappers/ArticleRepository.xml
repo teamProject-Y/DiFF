@@ -4,6 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.example.demo.repository.ArticleRepository">
+
     <select id="getArticlesCnt" resultType="int">
         SELECT COUNT(*) FROM article
         WHERE
@@ -13,16 +14,10 @@
     </select>
 
     <select id="getArticles" resultType="com.example.demo.vo.Article">
-        SELECT
-            id,
-            memberId,
-            repositoryId,
-            title,
-            body,
-            hits,
-            regDate,
-            updateDate
-        FROM article
+        SELECT A.*, M.nickName AS extra__writer
+        FROM article A
+        JOIN `member` M
+        ON A.memberId = M.id
         WHERE
             repositoryId = #{repositoryId}
           AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
@@ -39,7 +34,7 @@
             a.hits,
             a.regDate,
             COALESCE(r.likes, 0) AS likes,
-            m.nickName AS extra_writer,
+            m.nickName AS extra__writer,
             (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
             (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
             (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
@@ -58,6 +53,54 @@
         ORDER BY
             trending_score DESC
             LIMIT #{count};
+    </select>
+
+    <insert id="writeArticle">
+        INSERT INTO article (
+            memberId, repositoryId, title, body, checksum, regDate, updateDate
+        ) VALUES (
+                     #{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW(), NOW()
+                 )
+    </insert>
+
+    <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
+        SELECT A.*, M.nickName AS extra__writer
+        FROM article A
+        JOIN `member` M
+        ON A.memberId = M.id
+        WHERE A.id = #{id}
+            LIMIT 1
+    </select>
+
+    <update id="modifyArticle" parameterType="com.example.demo.vo.Article">
+        UPDATE article
+        SET
+            title = #{title},
+            body = #{body},
+            updateDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteArticle" parameterType="map">
+        DELETE FROM article
+        WHERE id = #{id}
+          AND memberId = #{memberId}
+    </delete>
+  
+    <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
+        SELECT a.*, m.nickName, m.email
+        FROM article a
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+                 INNER JOIN member m ON a.memberId = m.id
+        WHERE f.toMemberId = #{memberId}
+        ORDER BY a.regDate DESC
+    </select>
+
+    <select id="getFollowingArticlesCnt" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM article a
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+        WHERE f.fromMemberId = #{memberId}
     </select>
 
 </mapper>

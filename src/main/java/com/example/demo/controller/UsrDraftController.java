@@ -3,20 +3,25 @@ package com.example.demo.controller;
 import com.example.demo.service.DraftService;
 import com.example.demo.service.GptService;
 import com.example.demo.service.MemberService;
+import com.example.demo.vo.Draft;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Rq;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-@Controller
-@RequestMapping("/usr/draft")
+@RestController
+@RequestMapping("/api/DiFF/draft")
 public class UsrDraftController {
 
+    @Autowired
+    private Rq rq;
     @Autowired
     private DraftService draftService;
 
@@ -110,5 +115,46 @@ public class UsrDraftController {
         return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
 
+    @GetMapping("/drafts")
+    public ResponseEntity<Map<String, Object>> getDrafts() {
+        System.out.println("📥 /api/DiFF/draft/drafts 요청 도착");
+
+        Number memberIdNum = (Number) rq.getLoginedMemberId();
+        Long memberId = memberIdNum.longValue();
+
+        List<Draft> drafts = draftService.getDraftsByMember(memberId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("drafts", drafts);
+        System.out.println(""+result);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResultData<Integer> deleteDraft(
+            HttpServletRequest req, @PathVariable Long id) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/draft/" + id + " =====");
+
+        Draft draft = draftService.getDraftById(id);
+        if (draft == null) {
+            return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
+        }
+        if (!draft.getMemberId().equals(memberId)) {
+            return ResultData.from("F-403", "해당 게시글에 대한 권한이 없습니다.");
+        }
+
+        int rows = draftService.deleteDraft(id, memberId);
+        if (rows == 0) {
+            return ResultData.from("F-500", "게시글 삭제 실패");
+        }
+
+        return ResultData.from("S-1", "게시글 삭제 성공", rows);
+    }
 
 }
+
+
+

@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         // 완전 공개
                         .requestMatchers(
                                 "/", "/usr/draft/**",
@@ -57,18 +58,18 @@ public class SecurityConfig {
 
                                 "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/upload","/gpt/test,","/usr/draft/mkDraft",
+                                "/upload","/gpt/test,","/usr/draft/mkDraft","/api/DiFF/article/doWrite",
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login", "/api/DiFF/auth/refresh",
-                                "/api/DiFF/member/check/**",
+                                "/api/DiFF/member/check/**", "/api/DiFF/article/**",
                                 "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
                                 "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
-                                "/api/DiFF/post/**", "/api/DiFF/article/list",
-                                "/api/DiFF/article/trending","/api/DiFF/article/drafts"
+                                "/api/DiFF/post/**", "/api/DiFF/article/list","/api/DiFF/article/detail/**",
+                                "/api/DiFF/article/trending","/api/DiFF/article/drafts","/api/DiFF/article/doWrite"
                         ).permitAll()
 
                         // 나머지 전부 인증
