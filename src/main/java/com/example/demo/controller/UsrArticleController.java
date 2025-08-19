@@ -1,13 +1,11 @@
 package com.example.demo.controller;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.example.demo.interceptor.BeforeActionInterceptor;
-import com.example.demo.repository.MemberRepository;
 import com.example.demo.service.ReplyService;
 import com.example.demo.service.MemberService;
 import com.example.demo.vo.*;
@@ -101,8 +99,8 @@ public class UsrArticleController {
     public ResultData<Integer> doWrite(HttpServletRequest req,
                                        @RequestBody Draft draft) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
-        draft.setMemberId(memberId);
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        draft.setMemberId(loginedMemberId);
 
         System.out.println("\n===== \uD83D\uDC36\uD83D\uDC36 [POST] /article/doWrite =====");
         System.out.println("memberId      = " + draft.getMemberId());
@@ -121,7 +119,7 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), memberId);
+        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), loginedMemberId);
         if (repo == null) {
             System.out.println("[FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
@@ -129,7 +127,7 @@ public class UsrArticleController {
 
         // 작성
         int wr = articleService.writeArticle(
-                memberId,
+                loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
                 draft.getChecksum(),
@@ -149,7 +147,6 @@ public class UsrArticleController {
         Long loginedMemberId = rq.getLoginedMemberId();
 
         Article article = articleService.getArticleById(id, loginedMemberId);
-        List<Reply> replys = replyService.getReplys(id, rq.getLoginedMemberId());
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
