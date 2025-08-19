@@ -141,6 +141,7 @@ public class UsrArticleController {
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 
+        System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
         System.out.println("detail 진입" + id);
 
         Rq rq = (Rq) req.getAttribute("rq");
@@ -149,7 +150,6 @@ public class UsrArticleController {
         Article article = articleService.getArticleById(id, loginedMemberId);
         List<Reply> replys = replyService.getReplys(id, rq.getLoginedMemberId());
 
-        System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
@@ -173,11 +173,12 @@ public class UsrArticleController {
         }
 
         Article oldArticle = articleService.getArticleById(article.getId(), loginedMemberId);
+
         if (oldArticle == null) {
             return ResultData.from("F-2", "존재하지 않는 게시글입니다.");
         }
 
-        if (!oldArticle.getMemberId().equals(loginedMemberId)) {
+        if (!oldArticle.getMemberId().equals(loginedMemberId) || !article.isUserCanModify()) {
             return ResultData.from("F-3", "권한이 없습니다. 본인 글만 수정 가능합니다.");
         }
 
