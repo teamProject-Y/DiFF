@@ -66,6 +66,5 @@ public class ArticleService {
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
         return articleRepository.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
-
     }
 }
