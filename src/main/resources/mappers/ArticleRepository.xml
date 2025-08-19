@@ -90,7 +90,7 @@
         WHERE id = #{id}
           AND memberId = #{memberId}
     </delete>
-  
+
     <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT a.*, m.nickName, m.email
         FROM article a
@@ -106,5 +106,6 @@
                  INNER JOIN follow f ON f.fromMemberId = a.memberId
         WHERE f.fromMemberId = #{memberId}
     </select>
+
 
 </mapper>
