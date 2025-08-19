@@ -103,21 +103,4 @@
         WHERE f.fromMemberId = #{memberId}
     </select>
 
-    <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
-        SELECT a.*, m.nickName, m.email
-        FROM article a
-                 INNER JOIN follow f ON f.fromMemberId = a.memberId
-                 INNER JOIN member m ON a.memberId = m.id
-        WHERE f.toMemberId = #{memberId}
-        ORDER BY a.regDate DESC
-    </select>
-
-    <select id="getFollowingArticlesCnt" parameterType="long" resultType="int">
-        SELECT COUNT(*)
-        FROM article a
-                 INNER JOIN follow f ON f.fromMemberId = a.memberId
-        WHERE f.fromMemberId = #{memberId}
-    </select>
-
-
 </mapper>
