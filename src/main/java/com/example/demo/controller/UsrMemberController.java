@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.example.demo.config.JwtTokenProvider;
 import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
@@ -16,7 +18,9 @@ import com.example.demo.service.MemberService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.util.Ut;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,9 @@ public class UsrMemberController {
 
     @Autowired
     private Rq rq;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     @Autowired
     private MemberService memberService;
@@ -105,16 +112,6 @@ public class UsrMemberController {
             return ResponseEntity.status(500).body(ResultData.from("F-ERR", "서버 오류: " + e.getMessage()));
         }
     }
-
-
-
-//    @RequestMapping("/login")
-//    public String login() {
-//
-//        System.out.println("login 메서드 진입");
-//
-//        return "/login";
-//    }
 
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
@@ -273,6 +270,29 @@ public class UsrMemberController {
         }else {
             System.err.println("git email로 찾은 member 없음");
             return ResultData.from("F-1", "사용자 인증 실패");
+        }
+    }
+
+    @PostMapping("/uploadProfileImg")
+    @ResponseBody
+    public String uploadProfileImg(@RequestParam("file") MultipartFile file, HttpServletRequest req) {
+        System.out.println("uploadProfileImg 메서드 진입");
+        try {
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            String profileUrl = (String) uploadResult.get("secure_url");
+
+            Rq rq = (Rq) req.getAttribute("rq");
+            Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+            System.out.println("프로필 이미지 업로드 성공: " + profileUrl);
+            // DB에 프로필 이미지 URL 저장
+            memberService.uploadProfileImg(memberId, profileUrl);
+
+            return profileUrl;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "업로드 실패: " + e.getMessage();
         }
     }
 

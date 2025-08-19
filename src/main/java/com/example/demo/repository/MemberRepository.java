@@ -43,4 +43,6 @@ public interface MemberRepository {
     public List<Member> getFollowingList(Long memberId);
 
     public Member getMemberByNickName(String nickName);
+
+    public void uploadProfileImg(Long memberId, String profileUrl);
 }

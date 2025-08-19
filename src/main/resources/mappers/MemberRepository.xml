@@ -102,4 +102,10 @@
         WHERE nickName = #{nickName}
     </select>
 
+    <update id="uploadProfileImg">
+        UPDATE member
+        SET profileUrl = #{profileUrl}
+        WHERE id = #{memberId}
+    </update>
+
 </mapper>

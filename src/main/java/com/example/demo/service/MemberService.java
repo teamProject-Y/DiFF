@@ -120,4 +120,8 @@ public class MemberService {
     public Member getMemberByNickName(String nickName) {
         return memberRepository.getMemberByNickName(nickName);
     }
+
+    public void uploadProfileImg(Long memberId, String profileUrl) {
+        memberRepository.uploadProfileImg(memberId, profileUrl);
+    }
 }

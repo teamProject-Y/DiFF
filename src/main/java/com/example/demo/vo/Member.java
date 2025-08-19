@@ -32,7 +32,7 @@ public class Member {
     private String email;
     private boolean delStatus;
     private LocalDateTime delDate;
-
+    private String profileUrl;
     private boolean verified;
     private Role role;
     private String contact;
