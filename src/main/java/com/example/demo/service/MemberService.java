@@ -113,11 +113,8 @@ public class MemberService {
         return memberRepository.getByOauthIdAndProvider(oauthId, provider);
     }
 
-    public Member getByOauthId(String oauthId) {
-        return memberRepository.getByOauthId(oauthId);
-    }
 
-    public List<Follow> getFollowsByMemberId(Long memberId) {
-        return memberRepository.getFollowsByMemberId(memberId);
+    public List<Member> getFollowingList(Long memberId) {
+        return memberRepository.getFollowingList(memberId);
     }
 }

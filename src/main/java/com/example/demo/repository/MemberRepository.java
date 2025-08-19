@@ -36,7 +36,9 @@ public interface MemberRepository {
 
     public Member getById(Long memberId);
 
-    Member getByOauthIdAndProvider(String oauthId, String provider);
+    public Member getByOauthIdAndProvider(String oauthId, String provider);
 
     public List<Follow> getFollowsByMemberId(Long memberId);
+
+    public List<Member> getFollowingList(Long memberId);
 }
