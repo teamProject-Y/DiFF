@@ -8,10 +8,10 @@ import java.util.Map;
 
 import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.repository.MemberRepository;
+import com.example.demo.service.ReplyService;
 import com.example.demo.service.MemberService;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.ibatis.annotations.Delete;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +19,7 @@ import org.springframework.web.bind.annotation.*;
 // ==== 프로젝트 내부 클래스 (서비스/VO 등) ====
 import com.example.demo.service.ArticleService;
 import com.example.demo.service.RepositoryService;
-import com.example.demo.service.DraftService;   // 쓰는 경우만
-
-// 유틸/인터셉터(필요 시)
+import com.example.demo.service.DraftService;
 import com.example.util.Ut;
 
 @RestController
@@ -40,7 +38,13 @@ public class UsrArticleController {
     private RepositoryService repositoryService;
 
     @Autowired
+    private DraftService draftService;
+
+    @Autowired
     private MemberService memberService;
+
+    @Autowired
+    private ReplyService replyService;
 
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
@@ -52,6 +56,9 @@ public class UsrArticleController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
+
+        System.out.println("list 진입");
+
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
@@ -134,31 +141,45 @@ public class UsrArticleController {
 
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
-        Article article = articleService.getArticleById(id);
-        Rq rq = (Rq) req.getAttribute("rq");
+
         System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
+        System.out.println("detail 진입" + id);
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq.getLoginedMemberId();
+
+        Article article = articleService.getArticleById(id, loginedMemberId);
+        List<Reply> replys = replyService.getReplys(id, rq.getLoginedMemberId());
+
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
+
+        System.out.println(article.getExtra__writer());
+
         return ResultData.from("S-1", "게시글 조회 성공", article);
     }
 
     @PostMapping("/modify")
     @ResponseBody
     public ResultData<Integer> modifyArticle(HttpServletRequest req, @RequestBody Article article) {
+
+        System.out.println("\n===== 🐶🐶 [POST] /api/DiFF/article/modify =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
-        System.out.println("\n===== 🐶🐶 [POST] /api/DiFF/article/modify =====");
+
         if (loginedMemberId == null) {
             return ResultData.from("F-1", "로그인 후 이용 가능합니다.");
         }
 
-        Article oldArticle = articleService.getArticleById(article.getId());
+        Article oldArticle = articleService.getArticleById(article.getId(), loginedMemberId);
+
         if (oldArticle == null) {
             return ResultData.from("F-2", "존재하지 않는 게시글입니다.");
         }
 
-        if (!oldArticle.getMemberId().equals(loginedMemberId)) {
+        if (!oldArticle.getMemberId().equals(loginedMemberId) || !article.isUserCanModify()) {
             return ResultData.from("F-3", "권한이 없습니다. 본인 글만 수정 가능합니다.");
         }
 
@@ -175,19 +196,19 @@ public class UsrArticleController {
     public ResultData<Integer> deleteArticle(
             HttpServletRequest req, @PathVariable Long id) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/article/" + id + " =====");
 
-        Article article = articleService.getArticleById(id);
+        Article article = articleService.getArticleById(id, loginedMemberId);
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
-        if (!article.getMemberId().equals(memberId)) {
+        if (!article.getMemberId().equals(loginedMemberId)) {
             return ResultData.from("F-403", "해당 게시글에 대한 권한이 없습니다.");
         }
 
-        int rows = articleService.deleteArticle(id, memberId);
+        int rows = articleService.deleteArticle(id, loginedMemberId);
         if (rows == 0) {
             return ResultData.from("F-500", "게시글 삭제 실패");
         }
