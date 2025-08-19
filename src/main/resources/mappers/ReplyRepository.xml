@@ -20,4 +20,25 @@
         articleId = #{articleId},
         body = #{body}
     </insert>
+
+    <select id="getReplyById" resultType="com.example.demo.vo.Reply">
+        SELECT *
+        FROM reply
+        WHERE id = #{id}
+    </select>
+
+    <update id="modifyReply" parameterType="com.example.demo.vo.Reply">
+        UPDATE reply
+        SET
+        body = #{body},
+        updateDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteReply" parameterType="map">
+        DELETE FROM reply
+        WHERE id = #{id}
+        AND memberId = #{memberId}
+    </delete>
+
 </mapper>

@@ -16,4 +16,10 @@ public interface ReplyRepository {
             @Param("memberId") Long memberId,
             @Param("body") String body
     );
+
+    public Reply getReplyById(Long id);
+
+    public int deleteReply(Long id, Long memberId);
+
+    public int modifyReply(Reply reply);
 }

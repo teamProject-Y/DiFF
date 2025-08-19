@@ -26,6 +26,9 @@ public class ReplyService {
         this.replyRepository = replyRepository;
     }
 
+    public Reply getReplyById(Long replyId) {
+        return replyRepository.getReplyById(replyId);
+    }
 
     public int doReplyWrtie(Long articleId, Long loginedMemberId, String body) {
         return replyRepository.doReplyWrtie(articleId, loginedMemberId, body);
@@ -56,6 +59,14 @@ public class ReplyService {
 
     private boolean canDelete(Long loginedMemberId, Reply reply) {
         return reply.getMemberId().equals(loginedMemberId);
+    }
+
+    public int deleteReply(Long id, Long loginedMemberId) {
+        return replyRepository.deleteReply(id, loginedMemberId);
+    }
+
+    public int modifyReply(Reply reply) {
+        return replyRepository.modifyReply(reply);
     }
 
 //    private boolean hasReaction(Long loginedMemberId, Long replyId) {
