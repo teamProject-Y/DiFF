@@ -36,8 +36,12 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
 
+        System.out.println("👹 verifygituser 진입");
+
         String email = requestMap.get("email");
         Integer verifiedMemberId = memberService.isVerifiedUser(email);
+
+        System.out.println(verifiedMemberId);
 
         if(verifiedMemberId != null) {
             System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
@@ -155,6 +159,3 @@ public class UsrDraftController {
     }
 
 }
-
-
-
