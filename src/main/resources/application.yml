@@ -59,13 +59,13 @@ mybatis:
 
 logging:
   level:
+    root: INFO
     org.mybatis: DEBUG
     org.example.repository: DEBUG
     org.springframework.security: DEBUG
     org.springframework.security.web: DEBUG
     org.springframework.security.oauth2.client: DEBUG
     org.springframework.security.oauth2.core.endpoint: DEBUG
-    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
 
 sonarqube:
   host: http://localhost:9000
@@ -73,4 +73,4 @@ sonarqube:
 
 openai:
   api:
-    key: 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
+    key: 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

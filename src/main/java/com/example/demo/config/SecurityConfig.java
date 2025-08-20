@@ -52,9 +52,9 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // 완전 공개
                         .requestMatchers(
-                                "/", "/usr/draft/**",
+                                "/", "/api/DiFF/draft/**",
                                 "/resource/**","/css/**", "/js/**", "/images/**", "/oauth2/**", "/login/**",
-                                "/api/DiFF/home/main", "/usr/draft/verifyGitUser",
+                                "/api/DiFF/home/main", "/api/DiFF/draft/verifyGitUser",
 
                                 "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
