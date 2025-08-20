@@ -11,6 +11,7 @@ import com.example.demo.repository.ReplyRepository;
 import com.example.demo.repository.ReactionRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ReplyService {
@@ -25,63 +26,52 @@ public class ReplyService {
         this.replyRepository = replyRepository;
     }
 
+    public Reply getReplyById(Long replyId) {
+        return replyRepository.getReplyById(replyId);
+    }
 
     public int doReplyWrtie(Long articleId, Long loginedMemberId, String body) {
         return replyRepository.doReplyWrtie(articleId, loginedMemberId, body);
     }
 
-    public List<Reply> getReplys(Long articleId, Long loginedMemberId) {
+    public List<Reply> getReplies(Long articleId, Long loginedMemberId) {
 
-        List<Reply> replys = replyRepository.getReplys(articleId);
+        List<Reply> replys = replyRepository.getReplies(articleId);
+        System.err.println("replyservice에서 reply 개수: " + replys.size());
         updateForPrintData(loginedMemberId, replys);
 
         return replys;
     }
 
-    private void updateForPrintData(Long loginedMemberId, List<Reply> replys) {
+    public void updateForPrintData(Long loginedMemberId, List<Reply> replies) {
+        if (replies == null || replies.isEmpty()) return;
 
-        if (replys.size() == 0)
-            return;
-
-        for (Reply reply : replys) {
-
-            ResultData userCanModifyRd = userCanModify(loginedMemberId, reply);
-            reply.setUserCanModify(userCanModifyRd.isSuccess());
-
-            ResultData userCanDeleteRd = userCanDelete(loginedMemberId, reply);
-            reply.setUserCanDelete(userCanModifyRd.isSuccess());
-
-            ResultData userReactionRd = userReaction(loginedMemberId, reply.getId());
-            if (userReactionRd == null) continue;
-
-            reply.setUserReaction((boolean) userReactionRd.getData1());
+        for (Reply reply : replies) {
+            reply.setUserCanModify(canModify(loginedMemberId, reply));
+            reply.setUserCanDelete(canDelete(loginedMemberId, reply));
+//            reply.setUserReaction(hasReaction(loginedMemberId, reply.getId()));
         }
-
     }
 
-    private ResultData userReaction(Long loginedMemberId, Long id) {
-
-        Long isReactioned = reactionRepository.getIsReactioned(loginedMemberId, id, "reply");
-        if (isReactioned == 0)
-            return ResultData.from("F-1", Ut.f("%d번 댓글 반응", id), "없음", isReactioned);
-        return ResultData.from("S-1", Ut.f("%d번 댓글 반응", id), "있음", isReactioned);
+    private boolean canModify(Long loginedMemberId, Reply reply) {
+        return reply.getMemberId().equals(loginedMemberId);
     }
 
-    private ResultData userCanModify(Long loginedMemberId, Reply reply) {
-
-        if (reply.getMemberId() != loginedMemberId) {
-            return ResultData.from("F-A", Ut.f("%d번 게시글 수정 권한 없음", reply.getId()));
-        }
-
-        return ResultData.from("S-1", Ut.f("%d번 게시글 수정 권한 있음", reply.getId()));
+    private boolean canDelete(Long loginedMemberId, Reply reply) {
+        return reply.getMemberId().equals(loginedMemberId);
     }
 
-    private ResultData userCanDelete(Long loginedMemberId, Reply reply) {
-
-        if (reply.getMemberId() != loginedMemberId) {
-            return ResultData.from("F-A", Ut.f("%d번 게시글 삭제 권한 없음", reply.getId()));
-        }
-
-        return ResultData.from("S-1", Ut.f("%d번 게시글 삭제 권한 있음", reply.getId()));
+    public int deleteReply(Long id, Long loginedMemberId) {
+        return replyRepository.deleteReply(id, loginedMemberId);
     }
+
+    public int modifyReply(Reply reply) {
+        return replyRepository.modifyReply(reply);
+    }
+
+//    private boolean hasReaction(Long loginedMemberId, Long replyId) {
+//        Long count = reactionRepository.getIsReactioned(loginedMemberId, replyId, "reply");
+//        return Optional.ofNullable(count).orElse(0L) > 0;
+//    }
+
 }
