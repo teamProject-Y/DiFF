@@ -120,7 +120,7 @@ public class UsrReplyController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/article/" + id + " =====");
+        System.out.println("\n===== [DELETE] /api/DiFF/article/" + id + " =====");
 
         Reply reply = replyService.getReplyById(id);
         if (reply == null) {
