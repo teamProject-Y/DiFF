@@ -272,7 +272,7 @@ public class UsrArticleController {
 
     // 개수
     @GetMapping("/like/{articleId}")
-    public Map<String,Object> getPostLike(HttpServletRequest req, @PathVariable Long articleId) {
+    public Map<String,Object> getArticleLike(HttpServletRequest req, @PathVariable Long articleId) {
 
         System.out.println("get/like/article 진입");
 

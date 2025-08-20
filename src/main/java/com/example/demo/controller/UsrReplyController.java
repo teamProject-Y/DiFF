@@ -25,6 +25,9 @@ public class UsrReplyController {
     @Autowired
     private ReplyService replyService;
 
+    @Autowired
+    private ReactionService reactionService;
+
     public UsrReplyController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -114,13 +117,13 @@ public class UsrReplyController {
     }
 
     @DeleteMapping("/{id}")
-    public ResultData<Integer> deleteArticle(
+    public ResultData<Integer> deleteReply(
             HttpServletRequest req, @PathVariable Long id) {
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("\n===== [DELETE] /api/DiFF/article/" + id + " =====");
+        System.out.println("\n===== [DELETE] /api/DiFF/reply/" + id + " =====");
 
         Reply reply = replyService.getReplyById(id);
         if (reply == null) {
@@ -136,6 +139,59 @@ public class UsrReplyController {
         }
 
         return ResultData.from("S-1", "댓글 삭제 성공", rows);
+    }
+
+    // 좋아요
+    @PostMapping("/like/{replyId}")
+    public Map<String,Object> likeReply(HttpServletRequest req, @PathVariable Long replyId) {
+
+        System.out.println("post/like/reply 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int row = reactionService.like("reply", replyId, memberId);
+
+        System.out.println("like success: " + row);
+
+        return Map.of("relType","reply",
+                "relId",replyId,
+                "liked",true,
+                "count", reactionService.count("reply", replyId));
+    }
+
+    // 취소
+    @DeleteMapping("/like/{replyId}")
+    public Map<String,Object> unlikeReply(HttpServletRequest req, @PathVariable Long replyId) {
+
+        System.out.println("delete/like/reply 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int row = reactionService.unlike("reply", replyId, memberId);
+
+        System.out.println("unlike success: " + row);
+
+        return Map.of("relType","reply",
+                "relId",replyId,
+                "liked",false,
+                "count", reactionService.count("reply", replyId));
+    }
+
+    // 개수
+    @GetMapping("/like/{replyId}")
+    public Map<String,Object> getReplyLike(HttpServletRequest req, @PathVariable Long replyId) {
+
+        System.out.println("get/like/reply 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        return Map.of("relType","reply",
+                "relId",replyId,
+                "liked", reactionService.isLiked("reply", replyId, memberId),
+                "count", reactionService.count("reply", replyId));
     }
 
 }
