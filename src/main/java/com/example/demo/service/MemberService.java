@@ -116,4 +116,12 @@ public class MemberService {
     public List<Member> getFollowingList(Long memberId) {
         return memberRepository.getFollowingList(memberId);
     }
+
+    public Member getMemberByNickName(String nickName) {
+        return memberRepository.getMemberByNickName(nickName);
+    }
+
+    public void uploadProfileImg(Long memberId, String profileUrl) {
+        memberRepository.uploadProfileImg(memberId, profileUrl);
+    }
 }

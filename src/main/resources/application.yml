@@ -28,15 +28,15 @@ spring:
       client:
         registration:
           github:
-            client-id: "Ov23li4CgQ8WOFU3RyjK"
-            client-secret: "59aa60b6ed40b30306e89c8b59cbfa7ddd622922"
+            client-id:
+            client-secret:
             scope: user:email
             redirect-uri: "{baseUrl}/login/oauth2/code/github"
             client-name: GitHub
 
           google:
-            client-id: "273376569132-kqh5mlteqi570g3sf88tdlmkc0c5qnjg.apps.googleusercontent.com"
-            client-secret: "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"
+            client-id:
+            client-secret:
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             scope:
               - profile
@@ -73,4 +73,4 @@ sonarqube:
 
 openai:
   api:
-    key: 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
+    key:
