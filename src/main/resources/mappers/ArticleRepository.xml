@@ -41,10 +41,11 @@
         FROM
             article a
                 LEFT JOIN
-            (SELECT articleId, COUNT(*) AS likes
+            (SELECT relId, COUNT(*) AS likes
              FROM reaction
-             GROUP BY articleId) r
-            ON a.id = r.articleId
+            WHERE relType = 'article'
+            GROUP BY relId) r
+            ON a.id = r.relId
                 LEFT JOIN
             member m
             ON a.memberId = m.id
