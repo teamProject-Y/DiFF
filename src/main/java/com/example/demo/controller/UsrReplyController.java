@@ -105,7 +105,6 @@ public class UsrReplyController {
             return ResultData.from("F-3", "권한이 없습니다. 본인 글만 수정 가능합니다.");
         }
 
-        // oldReply.setUpdateDate(LocalDateTime.now());
         int row = replyService.modifyReply(reply);
 
         if (row == 0) {
