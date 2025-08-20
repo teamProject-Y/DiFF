@@ -82,6 +82,7 @@
         SELECT * FROM member WHERE id = #{id}
     </select>
 
+
     <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
         SELECT id
         FROM `member`
@@ -95,5 +96,17 @@
         WHERE f.toMemberId = #{memberId}
         ORDER BY f.regDate DESC;
     </select>
+
+    <select id="getMemberByNickName" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT *
+        FROM member
+        WHERE nickName = #{nickName}
+    </select>
+
+    <update id="uploadProfileImg">
+        UPDATE member
+        SET profileUrl = #{profileUrl}
+        WHERE id = #{memberId}
+    </update>
 
 </mapper>
