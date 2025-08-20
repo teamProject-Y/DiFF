@@ -5,4 +5,32 @@
 
 <mapper namespace="com.example.demo.repository.ReactionRepository">
 
+    <insert id="like" parameterType="map">
+        INSERT INTO `reaction` set
+        memberId = #{memberId},
+        relType = #{relType},
+        relId = #{relId}
+    </insert>
+
+    <delete id="unlike" parameterType="map">
+        DELETE FROM reaction
+        WHERE relType = #{relType}
+        AND relId = #{relId}
+        AND memberId = #{memberId}
+    </delete>
+
+    <select id="getCount" resultType="long">
+        SELECT COUNT(*)
+        FROM reaction
+        WHERE relType = #{relType} AND relId = #{relId}
+    </select>
+
+    <select id="isLiked" parameterType="map">
+        SELECT COUNT(*)
+        FROM reaction
+        WHERE relType = #{relType}
+        AND relId = #{relId}
+        AND memberId = #{memberId}
+    </select>
+
 </mapper>

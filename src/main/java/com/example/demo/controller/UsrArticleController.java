@@ -1,26 +1,18 @@
 package com.example.demo.controller;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.example.demo.interceptor.BeforeActionInterceptor;
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.service.ReplyService;
-import com.example.demo.service.MemberService;
+import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-// ==== 프로젝트 내부 클래스 (서비스/VO 등) ====
-import com.example.demo.service.ArticleService;
-import com.example.demo.service.RepositoryService;
-import com.example.demo.service.DraftService;
-import com.example.util.Ut;
 
 @RestController
 @RequestMapping("/api/DiFF/article")
@@ -38,13 +30,7 @@ public class UsrArticleController {
     private RepositoryService repositoryService;
 
     @Autowired
-    private DraftService draftService;
-
-    @Autowired
-    private MemberService memberService;
-
-    @Autowired
-    private ReplyService replyService;
+    private ReactionService reactionService;
 
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
@@ -101,8 +87,8 @@ public class UsrArticleController {
     public ResultData<Integer> doWrite(HttpServletRequest req,
                                        @RequestBody Draft draft) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
-        draft.setMemberId(memberId);
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        draft.setMemberId(loginedMemberId);
 
         System.out.println("\n===== \uD83D\uDC36\uD83D\uDC36 [POST] /article/doWrite =====");
         System.out.println("memberId      = " + draft.getMemberId());
@@ -121,7 +107,7 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), memberId);
+        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), loginedMemberId);
         if (repo == null) {
             System.out.println("[FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
@@ -129,7 +115,7 @@ public class UsrArticleController {
 
         // 작성
         int wr = articleService.writeArticle(
-                memberId,
+                loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
                 draft.getChecksum(),
@@ -149,7 +135,6 @@ public class UsrArticleController {
         Long loginedMemberId = rq.getLoginedMemberId();
 
         Article article = articleService.getArticleById(id, loginedMemberId);
-        List<Reply> replys = replyService.getReplys(id, rq.getLoginedMemberId());
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
@@ -245,6 +230,59 @@ public class UsrArticleController {
         System.out.println("asas");
 
         return ResponseEntity.ok(result);
+    }
+
+    // 좋아요
+    @PostMapping("/like/{articleId}")
+    public Map<String,Object> likeArticle(HttpServletRequest req, @PathVariable Long articleId) {
+
+        System.out.println("put/like/article 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int row = reactionService.like("article", articleId, memberId);
+
+        System.out.println("dolike success: " + row);
+
+        return Map.of("relType","article",
+                "relId",articleId,
+                "liked",true,
+                "count", reactionService.count("article", articleId));
+    }
+
+    // 취소
+    @DeleteMapping("/like/{articleId}")
+    public Map<String,Object> unlikeArticle(HttpServletRequest req, @PathVariable Long articleId) {
+
+        System.out.println("delete/like/article 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int row = reactionService.unlike("article", articleId, memberId);
+
+        System.out.println("dounlike success: " + row);
+
+        return Map.of("relType","article",
+                "relId",articleId,
+                "liked",false,
+                "count", reactionService.count("article", articleId));
+    }
+
+    // 개수
+    @GetMapping("/like/{articleId}")
+    public Map<String,Object> getArticleLike(HttpServletRequest req, @PathVariable Long articleId) {
+
+        System.out.println("get/like/article 진입");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        return Map.of("relType","article",
+                "relId",articleId,
+                "liked", reactionService.isLiked("article", articleId, memberId),
+                "count", reactionService.count("article", articleId));
     }
 
 }

@@ -14,17 +14,16 @@ import lombok.NoArgsConstructor;
 public class Reply {
 
     private Long id;
+    private Long memberId;
+    private Long articleId;
+    private String body;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
-    private Long memberId;
-    private Long relId;
-    private String body;
 
     private String extra__writer;
     private Long extra__ReactionPoint;
 
     private boolean userCanModify;
     private boolean userCanDelete;
-    private boolean userReaction;
 
 }
