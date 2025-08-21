@@ -16,12 +16,12 @@ public class UsrAuthController {
     private final AuthService authService;
 
     /** 로그인 API */
-    @PostMapping("/api/DiFF/auth/login")
-    public ResponseEntity<Object> login(@RequestBody Auth authRq) {
-
-        Auth authRp = this.authService.login(authRq);
-        return ResponseEntity.ok( ResultData.from("S-1", "로그인 성공", "accessToken", authRp));
-    }
+//    @PostMapping("/api/DiFF/auth/login")
+//    public ResponseEntity<Object> login(@RequestBody Auth authRq) {
+//
+//        Auth authRp = this.authService.login(authRq);
+//        return ResponseEntity.ok( ResultData.from("S-1", "로그인 성공", "accessToken", authRp));
+//    }
 
     /** 토큰갱신 API */
     @GetMapping("/api/DiFF/auth/refresh")
