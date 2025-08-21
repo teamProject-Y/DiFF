@@ -48,6 +48,7 @@ public class NotionInquiryService {
         Map<String, Object> requestBody = Map.of(
                 "parent", Map.of("database_id", databaseId),
                 "properties", Map.of(
+                        "id", Map.of("number", inquiry.getId()), // ✅ 숫자 타입
                         "title", Map.of("title",
                                 List.of(Map.of("text", Map.of("content", inquiry.getTitle())))),
                         "nickName", Map.of("rich_text",
