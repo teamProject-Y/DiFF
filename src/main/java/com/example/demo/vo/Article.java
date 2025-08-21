@@ -25,7 +25,7 @@ public class Article {
     private LocalDateTime updateDate;
 
     private int extra__sumReaction;
-    private int extra__sumComment;
+    private int extra__sumReplies;
     private String extra__writer;
 
     private boolean userCanModify;
