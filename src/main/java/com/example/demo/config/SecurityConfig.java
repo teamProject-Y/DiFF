@@ -58,7 +58,7 @@ public class SecurityConfig {
 
                                 "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
                                 "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/upload","/gpt/test,","/usr/draft/mkDraft","/api/DiFF/article/doWrite",
+                                "/upload","/gpt/test,","/api/DiFF/draft/mkDraft","/api/DiFF/article/doWrite",
                                 // 회원 관련
                                 "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login", "/api/DiFF/auth/refresh",
                                 "/api/DiFF/member/check/**", "/api/DiFF/article/**", "/api/DiFF/reply/list",
