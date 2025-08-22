@@ -3,6 +3,8 @@ package com.example.demo.repository;
 import com.example.demo.vo.OAuthAccount;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import java.util.List;
+
 
 @Mapper
 public interface OAuthAccountRepository {
@@ -12,8 +14,7 @@ public interface OAuthAccountRepository {
     OAuthAccount findByProviderAndOauthId(@Param("provider") String provider,
                                           @Param("oauthId") String oauthId);
 
-    public void saveOAuthAccount(OAuthAccount account);
-
+    void saveOAuthAccount(OAuthAccount account);
 
     OAuthAccount findById(@Param("id") Long id);
 
@@ -23,4 +24,7 @@ public interface OAuthAccountRepository {
 
     int attachToMember(@Param("id") Long id,
                        @Param("memberId") Long memberId);
+
+    List<String> findProvidersByMemberId(Long memberId);
+
 }
