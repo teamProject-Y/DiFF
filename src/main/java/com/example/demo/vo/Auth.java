@@ -10,12 +10,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Auth {
+
     private Long id; // PK
 
     // 클라이언트측에서 서버측으로 API 요청을 보낼 때 사용됨
     // 로그인 요청 시 사용
     private String loginId;
     private String loginPw;
+    private String email;
 
     // 토큰 정보
     private String tokenType;      // Bearer 등

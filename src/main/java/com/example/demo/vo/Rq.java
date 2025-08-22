@@ -76,11 +76,8 @@ public class Rq {
         }
 
         this.loginedMember = member;
-        System.out.println("rq");
         this.loginedMemberId = member.getId();
         this.loginedMemberNickName= member.getNickName();
-        System.out.println("Nickname = " + loginedMember.getNickName());
-        System.out.println("Nickname = " + loginedMemberNickName);
     }
 
 
