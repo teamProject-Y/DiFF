@@ -7,6 +7,7 @@ import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.*;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -66,12 +67,8 @@ public class UsrMemberController {
 
         try {
             // 1. 유효성 검사
-//            if (Ut.isEmpty(member.getLoginId()))
-//                return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 쓰시오"));
             if (Ut.isEmpty(member.getLoginPw()))
                 return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 작성하세요."));
-//            if (Ut.isEmpty(member.getName()))
-//                return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 쓰시오"));
             if (Ut.isEmpty(member.getNickName()))
                 return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 쓰시오"));
             if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@"))
@@ -79,10 +76,8 @@ public class UsrMemberController {
 
             // 2. 회원가입 처리
             long id = memberService.join(
-                    // member.getLoginId(),
                     member.getLoginPw(),
                     member.getCheckLoginPw(),
-                    // member.getName(),
                     member.getNickName(),
                     member.getEmail()
             );
@@ -115,7 +110,6 @@ public class UsrMemberController {
             System.out.println("🎸 rq 저장된 토큰: " + rq.getAccessToken());
 
             return ResponseEntity.ok(
-                    // .header(HttpHeaders.SET_COOKIE, cookie.toString()) // 쿠키 전략이면 활성화
                     ResultData.from("S-1",
                             member.getNickName() + " 님 회원가입을 축하합니다.",
                             "accessToken", auth.getAccessToken()
@@ -152,7 +146,7 @@ public class UsrMemberController {
             return ResponseEntity.status(401).body(ResultData.from("F-3","로그인 실패"));
 
         rq.setAccessToken(auth.getAccessToken());
-        rq.setLoginedMember(memberService.getMemberByLoginId(member.getEmail()));
+        rq.setLoginedMember(memberService.getMemberByEmail(member.getEmail()));
 
         return ResponseEntity.ok(ResultData.from("S-1", member.getNickName()+"님 환영", "accessToken", auth.getAccessToken()));
     }
@@ -196,16 +190,16 @@ public class UsrMemberController {
         return ResponseEntity.ok(result);
     }
 
-    @RequestMapping("/modify")
-    public String modify(Model model, HttpServletRequest req) {
-
-        Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-
-        model.addAttribute("member", member);
-
-        return "/modify";
-    }
+//    @RequestMapping("/modify")
+//    public String modify(Model model, HttpServletRequest req) {
+//
+//        Rq rq = (Rq) req.getAttribute("rq");
+//        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
+//
+//        model.addAttribute("member", member);
+//
+//        return "/modify";
+//    }
 
     @RequestMapping("/checkPw")
     @ResponseBody
@@ -273,24 +267,6 @@ public class UsrMemberController {
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followingList));
     }
-
-
-    ////////////////////////////////////////////// CLI ///////////////////////////////////////////////////
-//    @PostMapping("/verifyGitUser")
-//    @ResponseBody
-//    public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
-//
-//        String email = requestMap.get("email");
-//        Integer verifiedMemberId = memberService.isVerifiedUser(email);
-//
-//        if(verifiedMemberId != null) {
-//            System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
-//            return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
-//        }else {
-//            System.err.println("git email로 찾은 member 없음");
-//            return ResultData.from("F-1", "사용자 인증 실패");
-//        }
-//    }
 
     @PostMapping("/uploadProfileImg")
     @ResponseBody

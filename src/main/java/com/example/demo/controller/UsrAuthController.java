@@ -1,32 +1,41 @@
 package com.example.demo.controller;
 
-import com.example.demo.vo.Auth;
 import com.example.demo.service.AuthService;
-import com.example.demo.vo.ResultData;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/DiFF/auth")
 public class UsrAuthController {
 
     private final AuthService authService;
 
-    /** 로그인 API */
-//    @PostMapping("/api/DiFF/auth/login")
-//    public ResponseEntity<Object> login(@RequestBody Auth authRq) {
-//
-//        Auth authRp = this.authService.login(authRq);
-//        return ResponseEntity.ok( ResultData.from("S-1", "로그인 성공", "accessToken", authRp));
-//    }
-
     /** 토큰갱신 API */
-    @GetMapping("/api/DiFF/auth/refresh")
+    @GetMapping("/refresh")
     public ResponseEntity<Object> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
         String newAccessToken = this.authService.refreshToken(refreshToken);
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
+
+    /** 로컬, 소셜 통합 **/
+    @GetMapping("/link/{provider}")
+    public void socialLogin(
+            @PathVariable String provider,
+            HttpServletResponse response
+    ) throws IOException {
+        String redirectUrl = switch (provider.toLowerCase()) {
+            case "github" -> "/oauth2/authorization/github";
+            case "google" -> "/oauth2/authorization/google";
+            default -> throw new IllegalArgumentException("지원하지 않는 provider: " + provider);
+        };
+
+        response.sendRedirect(redirectUrl);
+    }
+
 }
