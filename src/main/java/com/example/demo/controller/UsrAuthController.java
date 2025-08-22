@@ -52,4 +52,5 @@ public class UsrAuthController {
         Map<String, Boolean> linked = oAuthAccountService.getLinkedProviders(memberId);
         return ResponseEntity.ok(linked);
     }
+
 }
