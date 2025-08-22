@@ -5,30 +5,34 @@
 
 <mapper namespace="com.example.demo.repository.MemberRepository">
 
+    <insert id="join" parameterType="map">
+        INSERT INTO `member`
+        SET regDate = NOW(),
+        loginPw = #{loginPw},
+        nickName = #{nickName},
+        email = #{email}
+    </insert>
+
     <select id="getByOauthIdAndProvider" resultType="com.example.demo.vo.Member">
         SELECT m.*
         FROM oauthAccount oa
-                 JOIN member m ON oa.memberId = m.id
+        JOIN member m ON oa.memberId = m.id
         WHERE oa.oauthId = #{oauthId}
-          AND oa.provider = #{provider}
+        AND oa.provider = #{provider}
     </select>
 
-    <insert id="save" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO member (oauthId, nickName, email)
-        VALUES (#{oauthId}, #{nickName}, #{email})
-    </insert>
+    <update id="uploadProfileImg">
+        UPDATE member
+        SET profileUrl = #{profileUrl}
+        WHERE id = #{memberId}
+    </update>
 
-    <insert id="doJoin" parameterType="map">
-        INSERT INTO `member`
-        SET regDate = NOW(),
-		loginId = #{loginId},
-            loginPw = #{loginPw},
-            `name` = #{name},
-            nickName = #{nickName},
-            email = #{email}
-    </insert>
+    <select id="isExistsEmail" parameterType="String">
+        SELECT COUNT(*) FROM `member`
+        WHERE email = #{email}
+    </select>
 
-    <select id="getLastInsertId" parameterType="long">
+    <select id="getLastInsertId">
         SELECT LAST_INSERT_ID()
     </select>
 
@@ -38,21 +42,9 @@
         WHERE id = #{id}
     </select>
 
-    <select id="isJoinableLogInId" parameterType="String">
-        SELECT COUNT(*) FROM `member`
-        WHERE loginId = #{loginId}
-    </select>
-
-    <select id="isExistsNameNEmail" parameterType="String">
-        SELECT COUNT(*) FROM `member`
-        WHERE `name` = #{name} AND
-            email = #{email}
-    </select>
-
-    <select id="getMemberByLoginId" parameterType="String"
-            resultType="com.example.demo.vo.Member">
-        SELECT * FROM `member`
-        WHERE loginId = #{loginId}
+    <!-- 이메일로 회원 조회 -->
+    <select id="getMemberByEmail" resultType="com.example.demo.vo.Member">
+        SELECT * FROM member WHERE email = #{email}
     </select>
 
     <update id="modifyMember" parameterType="map">
@@ -67,11 +59,6 @@
         WHERE id = #{loginedMemberId}
     </update>
 
-    <!-- 이메일로 회원 조회 -->
-    <select id="getMemberByEmail" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE email = #{email}
-    </select>
-
     <!-- 새 회원 저장 -->
     <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (nickName, email)
@@ -81,7 +68,6 @@
     <select id="getById" resultType="com.example.demo.vo.Member">
         SELECT * FROM member WHERE id = #{id}
     </select>
-
 
     <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
         SELECT id
@@ -97,16 +83,10 @@
         ORDER BY f.regDate DESC;
     </select>
 
-    <select id="getMemberByNickName" parameterType="string" resultType="com.example.demo.vo.Member">
+    <select id="getMemberByNickName" parameterType="String" resultType="com.example.demo.vo.Member">
         SELECT *
         FROM member
         WHERE nickName = #{nickName}
     </select>
-
-    <update id="uploadProfileImg">
-        UPDATE member
-        SET profileUrl = #{profileUrl}
-        WHERE id = #{memberId}
-    </update>
 
 </mapper>

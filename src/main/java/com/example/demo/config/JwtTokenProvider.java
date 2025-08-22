@@ -21,22 +21,21 @@ public class JwtTokenProvider {
     public String generateAccessToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtAccessTokenExpirationTime);
         return Jwts.builder()
-                .setSubject(nickName)
+                .setSubject(email)
                 .claim("memberId", memberId)
-                .claim("memberEmail", email)
+                .claim("nickName", nickName)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecretKey)
                 .compact();
     }
 
-
     public String generateRefreshToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtRefreshTokenExpirationTime);
         return Jwts.builder()
-                .setSubject(nickName)
+                .setSubject(email)
                 .claim("memberId", memberId)
-                .claim("memberEmail", email)
+                .claim("nickName", nickName)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(SignatureAlgorithm.HS512, jwtSecretKey)
@@ -50,15 +49,15 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .get("memberId", Long.class);
+                .get("memberId", Long.class);   // claim에서 꺼냄 (옵션)
     }
 
-    public String getMembernameFromToken(String token) {
+    public String getNickNameFromToken(String token) {
         return Jwts.parser()
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject();
+                .get("nickName", String.class);
     }
 
     public String getMemberEmailFromToken(String token) {
@@ -66,7 +65,7 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .get("memberEmail", String.class);
+                .getSubject();     // ✅ subject = email
     }
 
     public Date getExpirationFromToken(String token) {

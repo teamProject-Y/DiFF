@@ -1,34 +1,37 @@
 package com.example.demo.repository;
 
-import com.example.demo.vo.Follow;
 import org.apache.ibatis.annotations.Mapper;
 
 import com.example.demo.vo.Member;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 @Mapper
 public interface MemberRepository {
 
-    public int doJoin(String loginId, String loginPw, String name, String nickName, String email);
+    public int join(@Param("loginPw") String loginPw,
+                    @Param("nickName") String nickName,
+                    @Param("email") String email);
 
-    public void doLogin(int id);
+    public Member getByOauthIdAndProvider(@Param("oauthId") String oauthId,
+                                          @Param("provider") String provider);
+
+    public void uploadProfileImg(@Param("memberId") Long memberId,
+                                 @Param("profileUrl") String profileUrl);
+
+    public int modifyMember(@Param("loginedMemberId") long loginedMemberId,
+                            @Param("loginId") String loginId,
+                            @Param("loginPw") String loginPw,
+                            @Param("name") String name,
+                            @Param("nickName") String nickName,
+                            @Param("email") String email);
+
+    public int isExistsEmail(String email);
 
     public Long getLastInsertId();
 
     public Member getMemberById(Long id);
-
-    public int isJoinableLogInId(String loginId);
-
-    public int isExistsNameNEmail(String name, String email);
-
-    public Member getMemberByLoginId(String loginId);
-
-    public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
-
-    public Member getByOauthId(String oauthId);
-
-    public void save(Member member);
 
     public Member getMemberByEmail(String email);
 
@@ -36,13 +39,7 @@ public interface MemberRepository {
 
     public Member getById(Long memberId);
 
-    public Member getByOauthIdAndProvider(String oauthId, String provider);
-
-    public List<Follow> getFollowsByMemberId(Long memberId);
-
     public List<Member> getFollowingList(Long memberId);
 
     public Member getMemberByNickName(String nickName);
-
-    public void uploadProfileImg(Long memberId, String profileUrl);
 }

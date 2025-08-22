@@ -26,22 +26,21 @@ public class MemberService {
         return memberRepository.getMemberById(id);
     }
 
-    // 회원 가입
-    public Long doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
+    // 회원가입
+    public Long join(String loginPw, String checkLoginPw, String nickName, String email) {
 
-        if(memberRepository.isJoinableLogInId(loginId) == 1) return -1L; // 중복 아이디
-        if(memberRepository.isExistsNameNEmail(name, email) == 1) return -2L; // 중복 이름, 이메일
-        if(!loginPw.equals(checkLoginPw)) return -3L; // 비밀번호
+        if(memberRepository.isExistsEmail(email) == 1) return -409L; // 중복 이메일
+        if(!loginPw.equals(checkLoginPw)) return -400L; // 비밀번호
+
         // 비밀번호 암호화 후 저장
         String encPw = passwordEncoder.encode(loginPw);
-        memberRepository.doJoin(loginId, encPw, name, nickName, email);
+        memberRepository.join(encPw, nickName, email);
 
         return (long) memberRepository.getLastInsertId(); // 방금 가입된 멤버의 id 반환
     }
 
-    public Member getMemberByLoginId(String loginId) {
-
-        return memberRepository.getMemberByLoginId(loginId);
+    public Member getMemberByEmail(String email) {
+        return memberRepository.getMemberByEmail(email);
     }
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {

@@ -100,12 +100,13 @@ public class UsrDraftController {
         Long repositoryId = repositoryIdNum.longValue();
         String lastChecksum = (String) param.get("lastChecksum");
         String diff = (String) param.get("diff");
+
         System.out.println("memberId: " + memberId);
         // System.out.println("repositoryId: " + repositoryId);
         System.out.println("lastChecksum: " + lastChecksum);
-        System.out.println("diff:\n" + diff);
 
         if (diff == null || diff.trim().isEmpty()) {
+            System.err.println("diff 없음!!!!!!!!!!!!!!!!!!!!");
             return ResultData.from("F-1", "diff 내용이 비어있습니다.");
         }
 
