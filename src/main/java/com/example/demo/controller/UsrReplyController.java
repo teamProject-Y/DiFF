@@ -193,5 +193,4 @@ public class UsrReplyController {
                 "liked", reactionService.isLiked("reply", replyId, memberId),
                 "count", reactionService.count("reply", replyId));
     }
-
 }

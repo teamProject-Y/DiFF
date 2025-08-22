@@ -26,22 +26,7 @@ public class MemberService {
         return memberRepository.getMemberById(id);
     }
 
-    // 회원 가입
-    // 지울 거
-    public Long doJoin(String loginId, String loginPw, String checkLoginPw, String name, String nickName, String email) {
-
-        //if(memberRepository.isExistsNameNEmail(name, email) == 1) return -2L; // 중복 이름, 이메일
-
-        if(!loginPw.equals(checkLoginPw)) return -3L; // 비밀번호
-
-        // 비밀번호 암호화 후 저장
-        String encPw = passwordEncoder.encode(loginPw);
-        memberRepository.doJoin(loginId, encPw, name, nickName, email);
-
-        return (long) memberRepository.getLastInsertId(); // 방금 가입된 멤버의 id 반환
-    }
-
-    // 남길 거
+    // 회원가입
     public Long join(String loginPw, String checkLoginPw, String nickName, String email) {
 
         if(memberRepository.isExistsEmail(email) == 1) return -409L; // 중복 이메일
@@ -56,10 +41,6 @@ public class MemberService {
 
     public Member getMemberByEmail(String email) {
         return memberRepository.getMemberByEmail(email);
-    }
-
-    public Member getMemberByLoginId(String loginId) {
-        return memberRepository.getMemberByLoginId(loginId);
     }
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {
