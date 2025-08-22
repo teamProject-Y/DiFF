@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.repository.OAuthAccountRepository;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.Rq;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,8 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
     @Autowired
     private Rq rq;
+    @Autowired
+    private OAuthAccountRepository oAuthAccountRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {

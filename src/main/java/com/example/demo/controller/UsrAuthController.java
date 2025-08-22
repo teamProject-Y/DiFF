@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.AuthService;
+import com.example.demo.service.OAuthAccountService;
+import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,8 @@ import java.util.Map;
 public class UsrAuthController {
 
     private final AuthService authService;
+    private final OAuthAccountService oAuthAccountService;
+    private final Rq rq;
 
     /** 토큰갱신 API */
     @GetMapping("/refresh")
@@ -36,6 +40,17 @@ public class UsrAuthController {
         };
 
         response.sendRedirect(redirectUrl);
+    }
+
+    @GetMapping("/linked")
+    public ResponseEntity<?> getLinked() {
+
+        Long memberId = rq.getLoginedMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "로그인 필요"));
+        }
+        Map<String, Boolean> linked = oAuthAccountService.getLinkedProviders(memberId);
+        return ResponseEntity.ok(linked);
     }
 
 }
