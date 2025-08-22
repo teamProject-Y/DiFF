@@ -47,32 +47,59 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(hb -> hb.disable())
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sm
+                        -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/error").permitAll()
-                        // 완전 공개
-                        .requestMatchers(
-                                "/", "/api/DiFF/draft/**",
-                                "/resource/**","/css/**", "/js/**", "/images/**", "/oauth2/**", "/login/**",
-                                "/api/DiFF/home/main", "/api/DiFF/draft/verifyGitUser",
+                                .requestMatchers("/error").permitAll()
 
-                                "/DiFF/member/login", "/DiFF/member/doLogin","/DiFF/article/**",
-                                "/DiFF/member/join", "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/upload","/gpt/test,","/api/DiFF/draft/mkDraft","/api/DiFF/article/doWrite",
-                                // 회원 관련
-                                "/api/DiFF/auth/**", "/api/DiFF/member/doJoin", "/api/DiFF/member/login", "/api/DiFF/auth/refresh",
-                                "/api/DiFF/member/check/**", "/api/DiFF/article/**", "/api/DiFF/reply/list",
-                                "/DiFF/member/doJoin", "/DiFF/member/login?error=true",
-                                "/api/DiFF/member/login", "/api/DiFF/member/doLogin"
-                        ).permitAll()
+                                // 완전 공개 (누구나 접근 가능)
+                                .requestMatchers(
+                                        // 홈 & 기본
+                                        "/", "/api/DiFF/home/main",
+                                        "/resource/**", "/css/**", "/js/**", "/images/**",
+                                        "/oauth2/**", "/login/**",
 
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/DiFF/attachment/**", "/api/DiFF/comment/**",
-                                "/api/DiFF/post/**", "/api/DiFF/article/list","/api/DiFF/article/detail/**",
-                                "/api/DiFF/article/trending","/api/DiFF/article/drafts","/api/DiFF/article/doWrite"
-                        ).permitAll()
+                                        // 드래프트
+                                        "/api/DiFF/draft/**", "/upload",
 
-                        // 나머지 전부 인증
+                                        // 로그인 & 회원가입
+                                        "/DiFF/member/login", "/DiFF/member/doLogin",
+                                        "/DiFF/member/join", "/DiFF/member/doJoin",
+                                        "/DiFF/member/login?error=true",
+
+                                        // 회원 관련 API
+                                        "/api/DiFF/auth/**", "/api/DiFF/auth/refresh",
+                                        "/api/DiFF/member/login", "/api/DiFF/member/doJoin",
+                                        "/api/DiFF/member/check/**",
+
+                                        // 글 관련 API
+                                        "/api/DiFF/article/**", "/api/DiFF/reply/list"
+
+                                        // 글쓰기 (웹 & API 혼합)
+//                                        "/DiFF/article/**",
+//                                        "/gpt/test,",
+//                                        "/usr/draft/mkDraft",
+//                                        "/api/DiFF/article/doWrite",
+
+                                        // (중복된 경로 포함)
+//                                        "/DiFF/member/doJoin",
+//                                        "/DiFF/member/login?error=true",
+//                                        "/api/DiFF/member/login",
+//                                        "/api/DiFF/member/doLogin"
+                                ).permitAll()
+
+                                // GET 요청만 허용
+                                .requestMatchers(HttpMethod.GET,
+                                        "/api/DiFF/attachment/**",
+                                        "/api/DiFF/reply/**",
+                                        "/api/DiFF/article/**"
+//                                        , "/api/DiFF/article/detail/**",
+//                                        "/api/DiFF/article/trending"
+//                                        , "/api/DiFF/article/drafts",
+//                                        "/api/DiFF/article/doWrite"
+                                ).permitAll()
+
+                                // 나머지 전부 인증
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -100,7 +127,6 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
-
         return http.build();
     }
 

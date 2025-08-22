@@ -28,6 +28,14 @@
             email = #{email}
     </insert>
 
+    <insert id="join" parameterType="map">
+        INSERT INTO `member`
+        SET regDate = NOW(),
+        loginPw = #{loginPw},
+        nickName = #{nickName},
+        email = #{email}
+    </insert>
+
     <select id="getLastInsertId" parameterType="long">
         SELECT LAST_INSERT_ID()
     </select>
@@ -47,6 +55,11 @@
         SELECT COUNT(*) FROM `member`
         WHERE `name` = #{name} AND
             email = #{email}
+    </select>
+
+    <select id="isExistsEmail" parameterType="String">
+        SELECT COUNT(*) FROM `member`
+        WHERE email = #{email}
     </select>
 
     <select id="getMemberByLoginId" parameterType="String"

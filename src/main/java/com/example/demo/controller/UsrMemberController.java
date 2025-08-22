@@ -57,57 +57,73 @@ public class UsrMemberController {
     @ResponseBody
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
         System.out.println("✅ doJoin 진입");
-        System.out.println("입력 받은 아이디: " + member.getLoginId());
+        //System.out.println("입력 받은 아이디: " + member.getLoginId());
         System.out.println("입력 받은 비밀번호: " + member.getLoginPw());
         System.out.println("입력 받은 비밀번호 확인: " + member.getCheckLoginPw());
-        System.out.println("입력 받은 이름: " + member.getName());
+        //System.out.println("입력 받은 이름: " + member.getName());
         System.out.println("입력 받은 닉네임: " + member.getNickName());
         System.out.println("입력 받은 이메일: " + member.getEmail());
 
         try {
             // 1. 유효성 검사
-            if (Ut.isEmpty(member.getLoginId()))
-                return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 쓰시오"));
+//            if (Ut.isEmpty(member.getLoginId()))
+//                return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 쓰시오"));
             if (Ut.isEmpty(member.getLoginPw()))
-                return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 쓰시오"));
-            if (Ut.isEmpty(member.getName()))
-                return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 쓰시오"));
+                return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 작성하세요."));
+//            if (Ut.isEmpty(member.getName()))
+//                return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 쓰시오"));
             if (Ut.isEmpty(member.getNickName()))
                 return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 쓰시오"));
             if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@"))
                 return ResponseEntity.badRequest().body(ResultData.from("F-6", "이메일 정확히 쓰시오"));
 
             // 2. 회원가입 처리
-            long id = memberService.doJoin(
-                    member.getLoginId(),
+            long id = memberService.join(
+                    // member.getLoginId(),
                     member.getLoginPw(),
                     member.getCheckLoginPw(),
-                    member.getName(),
+                    // member.getName(),
                     member.getNickName(),
                     member.getEmail()
             );
 
-            if (id == -1)
-                return ResponseEntity.badRequest().body(ResultData.from("F-8", String.format("%s는 이미 사용 중인 아이디입니다.", member.getLoginId())));
-            if (id == -2)
-                return ResponseEntity.badRequest().body(ResultData.from("F-9", String.format("이름 %s과 이메일 %s은(는) 이미 사용 중입니다.", member.getName(), member.getEmail())));
+            if (id == -409)
+                return ResponseEntity.badRequest().body(ResultData.from("F-409", "이미 가입된 이메일입니다."));
+            if (id == -400)
+                return ResponseEntity.badRequest().body(ResultData.from("F-400", "비밀번호가 일치하지 않습니다."));
 
             // 3. 자동 로그인 처리
             Auth authRq = new Auth();
-            authRq.setLoginId(member.getLoginId());
+            authRq.setEmail(member.getEmail());
             authRq.setLoginPw(member.getLoginPw());
 
             Auth auth = authService.login(authRq);
 
             if (auth == null) {
+                System.out.println("자동 로그인 실패");
                 return ResponseEntity.status(401).body(ResultData.from("F-10", "자동 로그인에 실패했습니다. 로그인 페이지로 이동합니다."));
             }
 
-            rq.setAccessToken(auth.getAccessToken());
-            rq.setLoginedMember(memberService.getMemberByLoginId(member.getLoginId()));
+            System.out.println("🎸 자동 로그인 됐음 auth: " +  auth);
 
-            return ResponseEntity.ok(ResultData.from("S-1", member.getNickName() + " 님 회원가입을 축하합니다."));
+            rq.setAccessToken(auth.getAccessToken());
+            rq.setLoginedMember(memberService.getMemberByEmail(member.getEmail()));
+
+            System.out.println("email: " + member.getEmail());
+            System.out.println("logined member nickname: " + rq.getLoginedMember().getNickName());
+
+            System.out.println("🎸 rq 저장된 토큰: " + rq.getAccessToken());
+
+            return ResponseEntity.ok(
+                    // .header(HttpHeaders.SET_COOKIE, cookie.toString()) // 쿠키 전략이면 활성화
+                    ResultData.from("S-1",
+                            member.getNickName() + " 님 회원가입을 축하합니다.",
+                            "accessToken", auth.getAccessToken()
+                    )
+            );
+
         } catch (Exception e) {
+
             e.printStackTrace(); // 로그로 서버에서 어디서 죽었는지 추적
             return ResponseEntity.status(500).body(ResultData.from("F-ERR", "서버 오류: " + e.getMessage()));
         }
@@ -116,15 +132,18 @@ public class UsrMemberController {
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
 
-        System.out.println("doLogin 진입"+"제발 여기로 와라");
+        System.out.println("doLogin 진입" + " 제발 여기로 와라");
 
-        if (Ut.isEmpty(member.getLoginId()))
-            return ResponseEntity.badRequest().body(ResultData.from("F-1","아이디를 입력해주세요"));
+        System.out.println(member.getEmail());
+        System.out.println(member.getLoginPw());
+
+        if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@"))
+            return ResponseEntity.badRequest().body(ResultData.from("F-1","이메일을 바르게 입력해주세요"));
         if (Ut.isEmpty(member.getLoginPw()))
             return ResponseEntity.badRequest().body(ResultData.from("F-2","비밀번호를 입력해주세요"));
 
         Auth authRq = new Auth();
-        authRq.setLoginId(member.getLoginId());
+        authRq.setEmail(member.getEmail());
         authRq.setLoginPw(member.getLoginPw());
         Auth auth = authService.login(authRq);
         System.out.println(new BCryptPasswordEncoder().encode("diff"));
@@ -133,7 +152,7 @@ public class UsrMemberController {
             return ResponseEntity.status(401).body(ResultData.from("F-3","로그인 실패"));
 
         rq.setAccessToken(auth.getAccessToken());
-        rq.setLoginedMember(memberService.getMemberByLoginId(member.getLoginId()));
+        rq.setLoginedMember(memberService.getMemberByLoginId(member.getEmail()));
 
         return ResponseEntity.ok(ResultData.from("S-1", member.getNickName()+"님 환영", "accessToken", auth.getAccessToken()));
     }

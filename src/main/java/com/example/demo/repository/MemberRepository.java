@@ -10,7 +10,17 @@ import java.util.List;
 @Mapper
 public interface MemberRepository {
 
+    // 지울 거
     public int doJoin(String loginId, String loginPw, String name, String nickName, String email);
+
+    // 남길 거
+    public int join(String loginPw, String nickName, String email);
+
+    // 지울 거
+    public int isExistsNameNEmail(String name, String email);
+
+    // 남길 거
+    public int isExistsEmail(String email);
 
     public void doLogin(int id);
 
@@ -18,19 +28,16 @@ public interface MemberRepository {
 
     public Member getMemberById(Long id);
 
-    public int isJoinableLogInId(String loginId);
-
-    public int isExistsNameNEmail(String name, String email);
-
+    // 지울 거
     public Member getMemberByLoginId(String loginId);
+
+    public Member getMemberByEmail(String email);
 
     public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email);
 
     public Member getByOauthId(String oauthId);
 
     public void save(Member member);
-
-    public Member getMemberByEmail(String email);
 
     public void saveMember(Member member);
 

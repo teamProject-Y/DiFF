@@ -21,30 +21,31 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
-    /** 로그인 */
+    /** 로그인 **/
     @Transactional
     public Auth login(Auth authRq) {
 
-        String loginId = authRq.getLoginId();
+        String email = authRq.getEmail();
         String loginPw = authRq.getLoginPw();
 
-        Member member = memberRepository.getMemberByLoginId(loginId);
+        Member member = memberRepository.getMemberByEmail(email);
+
         if (member == null) {
-            throw new UsernameNotFoundException("해당 유저를 찾을 수 없습니다. username = " + loginId);
+            throw new UsernameNotFoundException("해당 유저를 찾을 수 없습니다. email = " + email);
         }
+
         // 2. 비밀번호 검증
         System.out.println("AuthService 입력 받은 비밀번호: " + loginPw);
         System.out.println(new BCryptPasswordEncoder().encode("diff"));
         System.out.println("AuthService DB에 저장된 해시: " + member.getLoginPw());
         System.out.println("AuthService 비교 결과: " + passwordEncoder.matches(loginPw, member.getLoginPw()));
         if (!passwordEncoder.matches(loginPw, member.getLoginPw())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. username = " + loginId);
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. email = " + email);
         }
+
         // 3. 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
-
-
 
         // 4. 기존 Auth 존재 여부 확인
         Auth auths = authRepository.findByMemberId(member.getId());
@@ -56,6 +57,7 @@ public class AuthService {
             authRepository.updateTokens(authRq);
             return authRq;
         }
+
         // 5. Auth 없으면 신규 저장
         Auth newAuth = Auth.builder()
                 .memberId(member.getId())
@@ -64,6 +66,7 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .build();
         authRepository.saveAuth(newAuth);
+
         return newAuth;
     }
 
