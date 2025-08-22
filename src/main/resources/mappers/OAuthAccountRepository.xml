@@ -23,4 +23,10 @@
         WHERE oauthId = #{oauthId}
     </select>
 
+    <select id="findProvidersByMemberId" parameterType="long" resultType="string">
+        SELECT provider
+        FROM oauthAccount
+        WHERE memberId = #{memberId}
+    </select>
+
 </mapper>
