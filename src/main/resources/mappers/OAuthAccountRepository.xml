@@ -22,4 +22,5 @@
         FROM oauthAccount
         WHERE oauthId = #{oauthId}
     </select>
+
 </mapper>

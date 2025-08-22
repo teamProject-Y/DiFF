@@ -19,8 +19,10 @@ public class GptService {
     private final DraftRepository draftRepository;
 
     public String makeDraft(String diff, Long repositoryId, Long memberId, String checksum) {
-        System.out.println("🍔🍔 DiFF 있음 ?  : "+diff);
-        System.out.println("🍔🍔2summarizeDiff 진입");
+
+        if(!diff.isEmpty()) {
+            System.out.println("🍔🍔2summarizeDiff 진입");
+        }
         String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
 
         Map<String, Object> requestBody = Map.of(
@@ -62,7 +64,9 @@ public class GptService {
 
             String content = (String) message.get("content");
 
-            // ✅ DB 저장
+            System.out.println("🐒🐒 content: " + content);
+
+            // DB 저장
             Draft draft = Draft.builder()
                     .memberId(memberId)
                     .repositoryId(repositoryId)
@@ -73,13 +77,16 @@ public class GptService {
                     .build();
 
             draftRepository.insertDraft(draft);
+            System.out.println(draft.getBody());
             System.out.println("✅ 초안 저장 완료 - ID: " + draft.getId());
 
             return content;
 
         } catch (WebClientResponseException e) {
+            System.out.println("[GPT 응답 오류]: " + e.getResponseBodyAsString());
             return "[GPT 응답 오류]: " + e.getResponseBodyAsString();
         } catch (Exception e) {
+            System.out.println("[GPT 예외 발생]: " + e.getMessage());
             return "[GPT 예외 발생]: " + e.getMessage();
         }
     }
