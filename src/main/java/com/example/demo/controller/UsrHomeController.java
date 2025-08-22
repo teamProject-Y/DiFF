@@ -16,11 +16,7 @@ public class UsrHomeController {
 
     @GetMapping("/api/DiFF/home/main")
     public Map<String, String> showMain() {
-
         System.err.println("home come in");
-
-
-
         return Map.of("text", "Spring에서 온 메인 메시지!");
     }
 
