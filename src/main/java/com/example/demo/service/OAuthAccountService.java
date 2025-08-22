@@ -6,6 +6,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class OAuthAccountService {
 
@@ -42,5 +45,12 @@ public class OAuthAccountService {
     @Transactional
     public void attachToMember(Long oauthAccountId, Long memberId) {
         oAuthAccountRepository.attachToMember(oauthAccountId, memberId);
+    }
+
+    public Map<String, Boolean> getLinkedProviders(Long memberId) {
+        List<String> providers = oAuthAccountRepository.findProvidersByMemberId(memberId);
+        boolean google = providers.stream().anyMatch("google"::equalsIgnoreCase);
+        boolean github = providers.stream().anyMatch("github"::equalsIgnoreCase);
+        return Map.of("google", google, "github", github);
     }
 }
