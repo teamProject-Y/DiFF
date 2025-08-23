@@ -124,29 +124,12 @@ public class MemberService {
         memberRepository.uploadProfileImg(memberId, profileUrl);
     }
 
-    public boolean follow(Long toMemberId, Long fromMemberId) {
-        if (toMemberId.equals(fromMemberId)) {
-            throw new IllegalArgumentException("자기 자신은 팔로우할 수 없습니다.");
-        }
-
-        if (memberRepository.isFollowing(toMemberId, fromMemberId) > 0) {
-            return false; // 이미 팔로우 중
-        }
-
+    public void follow(Long toMemberId, Long fromMemberId) {
         memberRepository.follow(toMemberId, fromMemberId);
-        return true;
     }
 
-    public boolean unfollow(Long toMemberId, Long fromMemberId) {
-        if (memberRepository.isFollowing(toMemberId, fromMemberId) == 0) {
-            return false; // 팔로우 상태 아님
-        }
-
+    public void unfollow(Long toMemberId, Long fromMemberId) {
         memberRepository.unfollow(toMemberId, fromMemberId);
-        return true;
     }
 
-    public boolean isFollowing(Long toMemberId, Long fromMemberId) {
-        return memberRepository.isFollowing(toMemberId, fromMemberId) > 0;
-    }
 }

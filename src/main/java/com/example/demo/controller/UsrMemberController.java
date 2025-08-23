@@ -272,62 +272,60 @@ public class UsrMemberController {
     public ResponseEntity<ResultData> follow(HttpServletRequest req,
                                              @RequestParam Long fromMemberId) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Long toMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue(); // 로그인한 사용자 ID
 
         System.out.println("\n===== [POST] /api/DiFF/member/follow =====");
-        System.out.println("👉 로그인 사용자(toMemberId, 팔로워): " + toMemberId);
-        System.out.println("👉 팔로우할 대상(fromMemberId, 피팔로우): " + fromMemberId);
+        System.out.println("👉 로그인 사용자(팔로워): " + memberId);
+        System.out.println("👉 팔로우 대상(피팔로우): " + fromMemberId);
 
-        boolean success = memberService.follow(toMemberId, fromMemberId);
+        // 1. 로그인 사용자의 팔로잉 리스트 조회
+        List<Member> followingList = memberService.getFollowingList(memberId);
 
-        if (success) {
-            System.out.println("✅ 팔로우 성공 → " + toMemberId + " → " + fromMemberId);
-            return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
-        } else {
-            System.out.println("⚠️ 팔로우 실패 (이미 팔로우 중) → " + toMemberId + " → " + fromMemberId);
+        // 2. 이미 팔로우 중인지 확인
+        boolean alreadyFollowing = followingList.stream()
+                .anyMatch(m -> m.getId().equals(fromMemberId));
+
+        if (alreadyFollowing) {
+            System.out.println("⚠️ 이미 팔로우 중 → " + memberId + " → " + fromMemberId);
             return ResponseEntity.ok(ResultData.from("F-1", "이미 팔로우 중입니다."));
         }
+
+        // 3. 팔로우 실행
+        memberService.follow(memberId, fromMemberId);
+        System.out.println("✅ 팔로우 성공 → " + memberId + " → " + fromMemberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
     }
+
 
     @DeleteMapping("/unfollow")
     public ResponseEntity<ResultData> unfollow(HttpServletRequest req,
                                                @RequestParam Long fromMemberId) {
         Rq rq = (Rq) req.getAttribute("rq");
-        Long toMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         System.out.println("\n===== [DELETE] /api/DiFF/member/unfollow =====");
-        System.out.println("👉 로그인 사용자(toMemberId, 팔로워): " + toMemberId);
-        System.out.println("👉 언팔로우 대상(fromMemberId, 피팔로우): " + fromMemberId);
+        System.out.println("👉 로그인 사용자(팔로워): " + memberId);
+        System.out.println("👉 언팔로우 대상(피팔로우): " + fromMemberId);
 
-        boolean success = memberService.unfollow(toMemberId, fromMemberId);
+        // 1. 로그인 사용자의 팔로잉 리스트 조회
+        List<Member> followingList = memberService.getFollowingList(memberId);
 
-        if (success) {
-            System.out.println("✅ 언팔로우 성공 → " + toMemberId + " ✂ " + fromMemberId);
-            return ResponseEntity.ok(ResultData.from("S-1", "언팔로우 성공"));
-        } else {
-            System.out.println("⚠️ 언팔로우 실패 (팔로우 상태 아님) → " + toMemberId + " ✂ " + fromMemberId);
+        // 2. 팔로우 중인지 확인
+        boolean alreadyFollowing = followingList.stream()
+                .anyMatch(m -> m.getId().equals(fromMemberId));
+
+        if (!alreadyFollowing) {
+            System.out.println("⚠️ 언팔로우 실패 (팔로우 중 아님) → " + memberId + " ✂ " + fromMemberId);
             return ResponseEntity.ok(ResultData.from("F-1", "팔로우 중이 아닙니다."));
         }
+
+        // 3. 언팔로우 실행
+        memberService.unfollow(memberId, fromMemberId);
+        System.out.println("✅ 언팔로우 성공 → " + memberId + " ✂ " + fromMemberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "언팔로우 성공"));
     }
-
-
-    @GetMapping("/isFollowing")
-    public ResponseEntity<ResultData> isFollowing(HttpServletRequest req,
-                                                  @RequestParam Long fromMemberId) {
-        Rq rq = (Rq) req.getAttribute("rq");
-        Long toMemberId = ((Number) rq.getLoginedMemberId()).longValue();
-
-        boolean following = memberService.isFollowing(toMemberId, fromMemberId);
-
-        System.out.println("\n===== [GET] /api/DiFF/member/isFollowing =====");
-        System.out.println("fromMemberId = " + fromMemberId + ", toMemberId = " + toMemberId);
-        System.out.println("팔로우 상태 = " + following);
-
-        return ResponseEntity.ok(
-                ResultData.from("S-1", "팔로우 상태 조회 성공", "following", following)
-        );
-    }
-
 
     @PostMapping("/uploadProfileImg")
     @ResponseBody
