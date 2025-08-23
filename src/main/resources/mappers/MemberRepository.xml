@@ -89,4 +89,25 @@
         WHERE nickName = #{nickName}
     </select>
 
+    <insert id="follow">
+        INSERT INTO follow (toMemberId, fromMemberId, regDate, updateDate)
+        VALUES (#{toMemberId}, #{fromMemberId}, NOW(), NOW())
+    </insert>
+
+    <select id="isFollowing" resultType="int">
+        SELECT COUNT(*)
+        FROM follow
+        WHERE toMemberId = #{toMemberId}
+          AND fromMemberId = #{fromMemberId}
+    </select>
+
+    <delete id="unfollow">
+        DELETE FROM follow
+        WHERE toMemberId = #{toMemberId}
+          AND fromMemberId = #{fromMemberId}
+    </delete>
+
+
+
+
 </mapper>

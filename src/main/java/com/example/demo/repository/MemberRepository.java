@@ -42,4 +42,13 @@ public interface MemberRepository {
     public List<Member> getFollowingList(Long memberId);
 
     public Member getMemberByNickName(String nickName);
+
+    int isFollowing(Long fromMemberId, Long toMemberId);
+
+    void follow(@Param("toMemberId") Long toMemberId,
+                @Param("fromMemberId") Long fromMemberId);
+
+    void unfollow(@Param("toMemberId") Long toMemberId,
+                  @Param("fromMemberId") Long fromMemberId);
+
 }
