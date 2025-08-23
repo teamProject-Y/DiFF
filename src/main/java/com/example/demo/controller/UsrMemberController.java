@@ -278,10 +278,8 @@ public class UsrMemberController {
         System.out.println("👉 로그인 사용자(팔로워): " + memberId);
         System.out.println("👉 팔로우 대상(피팔로우): " + fromMemberId);
 
-        // 1. 로그인 사용자의 팔로잉 리스트 조회
         List<Member> followingList = memberService.getFollowingList(memberId);
 
-        // 2. 이미 팔로우 중인지 확인
         boolean alreadyFollowing = followingList.stream()
                 .anyMatch(m -> m.getId().equals(fromMemberId));
 
@@ -290,7 +288,6 @@ public class UsrMemberController {
             return ResponseEntity.ok(ResultData.from("F-1", "이미 팔로우 중입니다."));
         }
 
-        // 3. 팔로우 실행
         memberService.follow(memberId, fromMemberId);
         System.out.println("✅ 팔로우 성공 → " + memberId + " → " + fromMemberId);
 
@@ -308,10 +305,8 @@ public class UsrMemberController {
         System.out.println("👉 로그인 사용자(팔로워): " + memberId);
         System.out.println("👉 언팔로우 대상(피팔로우): " + fromMemberId);
 
-        // 1. 로그인 사용자의 팔로잉 리스트 조회
         List<Member> followingList = memberService.getFollowingList(memberId);
 
-        // 2. 팔로우 중인지 확인
         boolean alreadyFollowing = followingList.stream()
                 .anyMatch(m -> m.getId().equals(fromMemberId));
 
@@ -320,7 +315,6 @@ public class UsrMemberController {
             return ResponseEntity.ok(ResultData.from("F-1", "팔로우 중이 아닙니다."));
         }
 
-        // 3. 언팔로우 실행
         memberService.unfollow(memberId, fromMemberId);
         System.out.println("✅ 언팔로우 성공 → " + memberId + " ✂ " + fromMemberId);
 
@@ -339,7 +333,7 @@ public class UsrMemberController {
             Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
             System.out.println("프로필 이미지 업로드 성공: " + profileUrl);
-            // DB에 프로필 이미지 URL 저장
+
             memberService.uploadProfileImg(memberId, profileUrl);
 
             return profileUrl;
