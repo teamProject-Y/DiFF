@@ -132,4 +132,7 @@ public class MemberService {
         memberRepository.unfollow(toMemberId, fromMemberId);
     }
 
+    public List<Member> getFollowerList(Long memberId) {
+       return memberRepository.getFollowerList(memberId);
+    }
 }

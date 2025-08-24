@@ -83,6 +83,14 @@
         ORDER BY f.regDate DESC;
     </select>
 
+    <select id="getFollowerList" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM follow f
+        JOIN member m ON f.toMemberId = m.id
+        WHERE f.fromMemberId = #{memberId}
+        ORDER BY f.regDate DESC;
+    </select>
+
     <select id="getMemberByNickName" parameterType="String" resultType="com.example.demo.vo.Member">
         SELECT *
         FROM member
@@ -99,8 +107,4 @@
         WHERE toMemberId = #{toMemberId}
           AND fromMemberId = #{fromMemberId}
     </delete>
-
-
-
-
 </mapper>

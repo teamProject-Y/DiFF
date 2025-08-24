@@ -51,4 +51,5 @@ public interface MemberRepository {
     void unfollow(@Param("toMemberId") Long toMemberId,
                   @Param("fromMemberId") Long fromMemberId);
 
+   public List<Member> getFollowerList(Long memberId);
 }

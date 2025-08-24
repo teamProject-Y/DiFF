@@ -263,9 +263,22 @@ public class UsrMemberController {
         System.out.println("memberId = " + memberId);
 
         List<Member> followingList = memberService.getFollowingList(memberId);
-        System.out.println("팔로잉 수: " + followingList.size());
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followingList));
+    }
+
+
+    @GetMapping("/followerList")
+    public ResponseEntity<ResultData> showFollowerList(HttpServletRequest req) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("\n===== [GET] /api/DiFF/member/followingList =====");
+        System.out.println("memberId = " + memberId);
+
+        List<Member> followerList = memberService.getFollowerList(memberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followerList));
     }
 
     @PostMapping("/follow")
