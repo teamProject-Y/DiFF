@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.service.AnalysisService;
 import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.Repository;
 import com.example.demo.vo.ResultData;
@@ -7,6 +8,7 @@ import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -23,7 +25,8 @@ public class UsrRepositoryController {
 
     @Autowired
     private  RepositoryService repositoryService;
-
+    @Autowired
+    private AnalysisService analysisService;
     @GetMapping("/my")
     public ResultData<Map<String, Object>> getMyRepositories(HttpServletRequest req) {
         Rq rq = (Rq) req.getAttribute("rq");
@@ -42,5 +45,10 @@ public class UsrRepositoryController {
         data.put("repositories", repos);
 
         return ResultData.from("S-1", "내 리포지토리 목록", data);
+    }
+
+    @GetMapping("/average/{repositoryId}")
+    public ResponseEntity<Map<String, Object>> getAverageMetrics(@PathVariable Long repositoryId) {
+        return ResponseEntity.ok(analysisService.getAverageMetrics(repositoryId));
     }
 }
