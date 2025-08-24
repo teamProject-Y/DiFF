@@ -3,8 +3,8 @@ package com.example.demo.repository;
 import com.example.demo.vo.OAuthAccount;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 import java.util.List;
+
 
 @Mapper
 public interface OAuthAccountRepository {
@@ -26,4 +26,5 @@ public interface OAuthAccountRepository {
                        @Param("memberId") Long memberId);
 
     List<String> findProvidersByMemberId(Long memberId);
+
 }

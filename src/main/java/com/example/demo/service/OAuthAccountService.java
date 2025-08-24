@@ -5,7 +5,6 @@ import com.example.demo.vo.OAuthAccount;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Map;
 
@@ -53,4 +52,5 @@ public class OAuthAccountService {
         boolean github = providers.stream().anyMatch("github"::equalsIgnoreCase);
         return Map.of("google", google, "github", github);
     }
+
 }
