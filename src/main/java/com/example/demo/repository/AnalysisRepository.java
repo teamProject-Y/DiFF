@@ -5,7 +5,7 @@ import com.example.demo.vo.AnalysisLanguage;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface AnalysisReppsitory {
+public interface AnalysisRepository {
     void insert(Analysis analysis);
 
     void insertLanguage(AnalysisLanguage lang);

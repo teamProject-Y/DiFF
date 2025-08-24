@@ -71,7 +71,7 @@ public class GptService {
                     .memberId(memberId)
                     .repositoryId(repositoryId)
                     .checksum(checksum)
-                    .title(null) // 필요 시 추출 또는 별도 입력
+                    .title(null)
                     .body(content)
                     .regDate(LocalDateTime.now())
                     .build();

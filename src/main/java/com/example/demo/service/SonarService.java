@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.repository.AnalysisReppsitory;
+import com.example.demo.repository.AnalysisRepository;
 import com.example.demo.vo.Analysis;
 import com.example.demo.vo.AnalysisLanguage;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,7 +30,7 @@ import java.util.zip.ZipFile;
 @Service
 public class SonarService {
     @Autowired
-    private AnalysisReppsitory analysisRepository;
+    private AnalysisRepository analysisRepository;
     @Value("${sonarqube.host}")
     private String sonarHost;
 

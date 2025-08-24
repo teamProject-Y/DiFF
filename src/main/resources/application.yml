@@ -1,0 +1,80 @@
+server:
+  address: 0.0.0.0
+  port: 8080
+  tomcat:
+    max-swallow-size: 500MB
+
+jwt:
+  secret: 7a36d8d1c41b9e4d8f4260fa38fca973b33c14f2cfd7f1a9d3c848057c12a1e8b2dca3120f2ed014f9a4568ce841fb15b23051cd1e8763b64a0f12c29b2d9d0a
+  access-token-expiration-time: 3600000
+  refresh-token-expiration-time: 86400000
+
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://diff.c78k86o8iw7w.ap-northeast-2.rds.amazonaws.com:3306/project_Y?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=Asia/Seoul
+    username: admin
+    password: teamprojecty
+
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB
+      max-request-size: 500MB
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: "Ov23li4CgQ8WOFU3RyjK"
+            client-secret: "59aa60b6ed40b30306e89c8b59cbfa7ddd622922"
+            scope: user:email
+            redirect-uri: "{baseUrl}/login/oauth2/code/github"
+            client-name: GitHub
+
+          google:
+            client-id: "273376569132-kqh5mlteqi570g3sf88tdlmkc0c5qnjg.apps.googleusercontent.com"
+            client-secret: "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"
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            scope:
+              - profile
+              - email
+            client-name: Google
+        provider:
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+mybatis:
+  type-aliases-package: org.example.vo
+  mapper-locations: classpath*:/mappers/**/*.xml
+
+logging:
+  level:
+    root: INFO
+    org.mybatis: DEBUG
+    org.example.repository: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.oauth2.client: DEBUG
+    org.springframework.security.oauth2.core.endpoint: DEBUG
+
+sonarqube:
+  host: http://localhost:9000
+  token: sqa_1925bd95d1e13890934221434b67afed21014206
+
+openai:
+  api:
+    key: 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
+
+notion:
+  secret: "ntn_Q3159481870aG5LjWG9KlJWgAhWY7lERKIRk27xYeIK7ok"
+  database-id: "2560bc51de0e80b288e0e3bc170508ee"
