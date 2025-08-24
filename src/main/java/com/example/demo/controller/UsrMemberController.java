@@ -262,10 +262,74 @@ public class UsrMemberController {
         System.out.println("memberId = " + memberId);
 
         List<Member> followingList = memberService.getFollowingList(memberId);
-        System.out.println("팔로잉 수: " + followingList.size());
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followingList));
     }
+
+
+    @GetMapping("/followerList")
+    public ResponseEntity<ResultData> showFollowerList(HttpServletRequest req) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("\n===== [GET] /api/DiFF/member/followingList =====");
+        System.out.println("memberId = " + memberId);
+
+        List<Member> followerList = memberService.getFollowerList(memberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followerList));
+    }
+
+    @PostMapping("/follow")
+    public ResponseEntity<ResultData> follow(HttpServletRequest req,
+                                             @RequestParam Long fromMemberId) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        List<Member> followingList = memberService.getFollowingList(memberId);
+
+        boolean alreadyFollowing = false;
+        for (Member m : followingList) {
+            if (m.getId().equals(fromMemberId)) {
+                alreadyFollowing = true;
+                break;
+            }
+        }
+
+        if (alreadyFollowing) {
+            return ResponseEntity.ok(ResultData.from("F-1", "이미 팔로우 중입니다."));
+        }
+
+        memberService.follow(memberId, fromMemberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
+    }
+
+    @DeleteMapping("/unfollow")
+    public ResponseEntity<ResultData> unfollow(HttpServletRequest req,
+                                               @RequestParam Long fromMemberId) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        List<Member> followingList = memberService.getFollowingList(memberId);
+
+        boolean alreadyFollowing = false;
+        for (Member m : followingList) {
+            if (m.getId().equals(fromMemberId)) {
+                alreadyFollowing = true;
+                break;
+            }
+        }
+
+        if (!alreadyFollowing) {
+            return ResponseEntity.ok(ResultData.from("F-1", "팔로우 중이 아닙니다."));
+        }
+
+        memberService.unfollow(memberId, fromMemberId);
+
+        return ResponseEntity.ok(ResultData.from("S-1", "언팔로우 성공"));
+    }
+
 
     @PostMapping("/uploadProfileImg")
     @ResponseBody
@@ -279,7 +343,7 @@ public class UsrMemberController {
             Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
             System.out.println("프로필 이미지 업로드 성공: " + profileUrl);
-            // DB에 프로필 이미지 URL 저장
+
             memberService.uploadProfileImg(memberId, profileUrl);
 
             return profileUrl;
