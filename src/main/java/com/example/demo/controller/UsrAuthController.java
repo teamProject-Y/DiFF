@@ -1,28 +1,68 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.service.AuthService;
 import com.example.demo.service.MemberService;
+import com.example.demo.service.OAuthAccountService;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.ResultData;
+import com.example.demo.vo.Rq;
 import com.example.util.Ut;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.Map;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/DiFF/auth")
-@RequiredArgsConstructor
-public class AuthController {
+public class UsrAuthController {
 
+    private final AuthService authService;
+    private final OAuthAccountService oAuthAccountService;
+    private final Rq rq;
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
-    /** ✅ 로컬 로그인 */
+    /** 토큰갱신 API */
+    @GetMapping("/refresh")
+    public ResponseEntity<Object> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
+        String newAccessToken = this.authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
+    }
+
+    /** 로컬, 소셜 통합 **/
+    @GetMapping("/link/{provider}")
+    public void socialLogin(
+            @PathVariable String provider,
+            HttpServletResponse response
+    ) throws IOException {
+        String redirectUrl = switch (provider.toLowerCase()) {
+            case "github" -> "/oauth2/authorization/github";
+            case "google" -> "/oauth2/authorization/google";
+            default -> throw new IllegalArgumentException("지원하지 않는 provider: " + provider);
+        };
+
+        response.sendRedirect(redirectUrl);
+    }
+
+    @GetMapping("/linked")
+    public ResponseEntity<?> getLinked() {
+
+        Long memberId = rq.getLoginedMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(401).body(Map.of("message", "로그인 필요"));
+        }
+        Map<String, Boolean> linked = oAuthAccountService.getLinkedProviders(memberId);
+        return ResponseEntity.ok(linked);
+    }
+
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
         String email = member.getEmail();
@@ -58,9 +98,9 @@ public class AuthController {
                         "refreshToken", refreshToken)
         );
 
-}
+    }
 
-    /** ✅ 회원가입 + 자동 로그인 */
+
     @PostMapping("/join")
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
         if (Ut.isEmpty(member.getLoginPw())) {
@@ -89,7 +129,6 @@ public class AuthController {
 
         Member newMember = memberService.getMemberByEmail(member.getEmail());
 
-        // ✅ 자동 로그인 효과: 토큰 바로 발급
         String accessToken = jwtTokenProvider.generateAccessToken(newMember.getId(), newMember.getNickName(), newMember.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(newMember.getId(), newMember.getNickName(), newMember.getEmail());
 
@@ -99,7 +138,7 @@ public class AuthController {
                 "refreshToken", refreshToken));
     }
 
-    /** ✅ 토큰 재발급 */
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
         String refreshToken = body.get("refreshToken");
@@ -115,4 +154,5 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
+
 }
