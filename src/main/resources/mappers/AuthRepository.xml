@@ -27,7 +27,7 @@
         WHERE memberId = #{memberId}
     </update>
 
-    <select id="findByRefreshToken" parameterType="string" resultType="com.example.demo.vo.Auth">
+    <select id="findByRefreshToken" parameterType="String" resultType="com.example.demo.vo.Auth">
         SELECT *
         FROM auth
         WHERE refreshToken = #{refreshToken}
@@ -39,6 +39,13 @@
             updateDate = NOW()
         WHERE memberId = #{id}
     </update>
+
+    <select id="getTokenByMemberIdAndProvider" resultType="String">
+        SELECT oauthId
+        FROM oauthAccount
+        WHERE memberId = #{memberId}
+        AND provider = #{provider}
+    </select>
 
 </mapper>
 

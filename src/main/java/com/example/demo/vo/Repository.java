@@ -16,9 +16,19 @@ public class Repository {
     private Long memberId;
     private String name;
     private String url;
+    private String defaultBranch;
     private String lastRqCommit;
+    private boolean aPrivate;
     private boolean delStatus;
     private LocalDateTime delDate;
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
+
+    public Repository(Long id, String fullName, boolean aPrivate, String defaultBranch, String htmlUrl) {
+        this.id = id;
+        this.name = fullName;
+        this.aPrivate = aPrivate;
+        this.defaultBranch = defaultBranch;
+        this.url = htmlUrl;
+    }
 }

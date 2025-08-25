@@ -17,6 +17,17 @@
         VALUES (#{memberId}, #{provider}, #{oauthId})
     </insert>
 
+    <insert id="insert">
+        INSERT INTO oauthAccount (memberId, provider, oauthId, accessToken)
+        VALUES (#{memberId}, #{provider}, #{oauthId}, NULL)
+    </insert>
+
+    <update id="attachToMember">
+        UPDATE oauthAccount
+        SET member_id = #{memberId}
+        WHERE id = #{id}
+    </update>
+
     <select id="findByOauthId" resultType="com.example.demo.vo.OAuthAccount">
         SELECT *
         FROM oauthAccount
@@ -27,6 +38,28 @@
         SELECT provider
         FROM oauthAccount
         WHERE memberId = #{memberId}
+    </select>
+
+    <update id="updateAccessToken">
+        UPDATE oauthAccount
+        SET accessToken = #{accessToken}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateAccessTokenByProviderAndOauthId">
+        UPDATE oauthAccount
+        SET accessToken = #{accessToken}
+        WHERE provider = #{provider}
+          AND oauthId = #{oauthId}
+    </update>
+
+    <select id="findAccessTokenByMemberIdAndProvider" resultType="string">
+        SELECT accessToken
+        FROM oauthAccount
+        WHERE memberId = #{memberId}
+          AND provider = #{provider}
+        ORDER BY id DESC
+            LIMIT 1
     </select>
 
 </mapper>

@@ -56,6 +56,7 @@ public class UsrMemberController {
     @PostMapping("/doJoin")
     @ResponseBody
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
+
         System.out.println("✅ doJoin 진입");
         //System.out.println("입력 받은 아이디: " + member.getLoginId());
         System.out.println("입력 받은 비밀번호: " + member.getLoginPw());
