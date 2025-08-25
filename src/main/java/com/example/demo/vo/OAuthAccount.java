@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class OAuthAccount {
     private Long id;
     private Long memberId;
-    private String provider; // google or github
+    private String provider;
     private String oauthId;
+    private String accessToken;
 }

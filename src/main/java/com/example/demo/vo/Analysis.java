@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class Analysis {
 
     private Long id;
-
+    private Long repositoryId;
     private Long memberId;
 
     private String projectKey;

@@ -123,4 +123,16 @@ public class MemberService {
     public void uploadProfileImg(Long memberId, String profileUrl) {
         memberRepository.uploadProfileImg(memberId, profileUrl);
     }
+
+    public void follow(Long toMemberId, Long fromMemberId) {
+        memberRepository.follow(toMemberId, fromMemberId);
+    }
+
+    public void unfollow(Long toMemberId, Long fromMemberId) {
+        memberRepository.unfollow(toMemberId, fromMemberId);
+    }
+
+    public List<Member> getFollowerList(Long memberId) {
+       return memberRepository.getFollowerList(memberId);
+    }
 }

@@ -83,10 +83,28 @@
         ORDER BY f.regDate DESC;
     </select>
 
+    <select id="getFollowerList" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM follow f
+        JOIN member m ON f.toMemberId = m.id
+        WHERE f.fromMemberId = #{memberId}
+        ORDER BY f.regDate DESC;
+    </select>
+
     <select id="getMemberByNickName" parameterType="String" resultType="com.example.demo.vo.Member">
         SELECT *
         FROM member
         WHERE nickName = #{nickName}
     </select>
 
+    <insert id="follow">
+        INSERT INTO follow (toMemberId, fromMemberId, regDate, updateDate)
+        VALUES (#{toMemberId}, #{fromMemberId}, NOW(), NOW())
+    </insert>
+
+    <delete id="unfollow">
+        DELETE FROM follow
+        WHERE toMemberId = #{toMemberId}
+          AND fromMemberId = #{fromMemberId}
+    </delete>
 </mapper>

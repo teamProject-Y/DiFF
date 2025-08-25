@@ -53,4 +53,14 @@
             LIMIT 1
     </select>
 
+    <select id="existsByMemberIdAndRepoName" resultType="int">
+        SELECT COUNT(*)
+        FROM repository
+        WHERE memberId = #{memberId} AND `name` = #{repoName}
+    </select>
+
+    <select id="getLastInsertId" parameterType="int">
+        SELECT LAST_INSERT_ID()
+    </select>
+
 </mapper>

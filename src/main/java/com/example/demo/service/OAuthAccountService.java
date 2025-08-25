@@ -5,8 +5,11 @@ import com.example.demo.vo.OAuthAccount;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class OAuthAccountService {
@@ -22,15 +25,9 @@ public class OAuthAccountService {
         return oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
     }
 
-    public OAuthAccount findByOauthId(String oauthId) {
-        return oAuthAccountRepository.findByOauthId(oauthId);
-    }
-
-    public OAuthAccount getById(Long id) {
-        return oAuthAccountRepository.findById(id);
-    }
-
-    /** 존재하면 그대로 반환, 없으면 생성 후 반환 */
+    /**
+     * 존재하면 그대로 반환, 없으면 생성 후 반환
+     */
     @Transactional
     public OAuthAccount create(Long memberId, String provider, String oauthId) {
         OAuthAccount existing = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
@@ -40,7 +37,9 @@ public class OAuthAccountService {
         return oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
     }
 
-    /** 기존 oauthAccount 레코드를 특정 회원에 연결 */
+    /**
+     * 기존 oauthAccount 레코드를 특정 회원에 연결
+     */
     @Transactional
     public void attachToMember(Long oauthAccountId, Long memberId) {
         oAuthAccountRepository.attachToMember(oauthAccountId, memberId);
@@ -53,4 +52,20 @@ public class OAuthAccountService {
         return Map.of("google", google, "github", github);
     }
 
+    public void upsertAccessToken(Long memberId, String provider, String oauthId,
+                                  String accessToken, String tokenType) {
+        // provider+oauthId로 찾고 없으면 insert, 있으면 update
+        var row = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
+        if (row == null) {
+            oAuthAccountRepository.insert(memberId, provider, oauthId); //, accessToken);
+        } else {
+            oAuthAccountRepository.updateAccessToken(row.getId(), accessToken);
+            if (row.getMemberId() == null) oAuthAccountRepository.attachToMember(row.getId(), memberId);
+        }
+    }
+
+    public String findGithubAccessTokenByMemberId(Long memberId) {
+        return oAuthAccountRepository.findAccessTokenByMemberIdAndProvider(memberId, "github");
+    }
 }
+

@@ -36,5 +36,4 @@ public class Member {
     private boolean verified;
     private Role role;
     private String contact;
-
 }

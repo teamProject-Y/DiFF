@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -22,6 +24,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
 
     /** 로그인 **/
+    // curl로 로그인 시 이녀석 반응
     @Transactional
     public Auth login(Auth authRq) {
 
@@ -101,6 +104,7 @@ public class AuthService {
         authRepository.updateAccessToken(auth.getId(), newAccessToken);
         return newAccessToken;
     }
+
     public void saveToken(long memberId, String accessToken, String refreshToken) {
         Auth auth = Auth.builder()
                 .memberId(memberId)
@@ -112,4 +116,7 @@ public class AuthService {
         authRepository.saveAuth(auth);
     }
 
+    public String getGithubToken(Long memberId) {
+        return authRepository.getTokenByMemberIdAndProvider(memberId, "github");
+    }
 }
