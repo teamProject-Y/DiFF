@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.repository.AnalysisReppsitory;
+import com.example.demo.repository.AnalysisRepository;
 import com.example.demo.vo.Analysis;
 import com.example.demo.vo.AnalysisLanguage;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,7 +30,7 @@ import java.util.zip.ZipFile;
 @Service
 public class SonarService {
     @Autowired
-    private AnalysisReppsitory analysisRepository;
+    private AnalysisRepository analysisRepository;
     @Value("${sonarqube.host}")
     private String sonarHost;
 
@@ -143,7 +143,7 @@ public class SonarService {
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    public void analysisInsertDB(Long memberId, String projectKey) throws IOException, InterruptedException {
+    public void analysisInsertDB(Long repositoryId, Long memberId, String projectKey) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
@@ -169,6 +169,7 @@ public class SonarService {
 
             // 1. Analysis 저장 (언어 제외)
             Analysis analysis = Analysis.builder()
+                    .repositoryId(repositoryId)
                     .memberId(memberId)
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
