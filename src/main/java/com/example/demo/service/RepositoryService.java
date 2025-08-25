@@ -26,4 +26,12 @@ public class RepositoryService {
     public Repository getRepositoryByIdAndMember(Long repositoryId, Long memberId) {
         return repositoryRepository.getRepositoryByIdAndMember(repositoryId, memberId);
     }
+
+    public boolean existsByMemberIdAndRepoName(int memberId, String repoName) {
+        return repositoryRepository.existsByMemberIdAndRepoName(memberId, repoName) == 0;
+    }
+
+    public int getLastInsertId() {
+        return repositoryRepository.getLastInsertId();
+    }
 }
