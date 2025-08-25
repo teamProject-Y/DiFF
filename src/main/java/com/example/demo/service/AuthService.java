@@ -68,7 +68,7 @@ public class AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .build();
-        authRepository.saveAuth(newAuth);
+        // authRepository.saveAuth(newAuth);
 
         return newAuth;
     }
@@ -113,7 +113,7 @@ public class AuthService {
                 .tokenType("Bearer")
                 .build();
 
-        authRepository.saveAuth(auth);
+        // authRepository.saveAuth(auth);
     }
 
     public String getGithubToken(Long memberId) {
