@@ -6,12 +6,12 @@
 
     <insert id="insert" parameterType="com.example.demo.vo.Analysis" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO analysis (
-            memberId, projectKey, projectName, coverage,
+            repositoryId, memberId, projectKey, projectName, coverage,
             bugs, complexity, codeSmells, duplicatedLinesDensity,
             vulnerabilities, analyzeDate
         )
         VALUES (
-                   #{memberId}, #{projectKey}, #{projectName}, #{coverage},
+                   #{repositoryId}, #{memberId}, #{projectKey}, #{projectName}, #{coverage},
                    #{bugs}, #{complexity}, #{codeSmells}, #{duplicatedLinesDensity},
                    #{vulnerabilities}, NOW()
                )
@@ -24,5 +24,18 @@
                      #{analyzeId}, #{language}, #{lines}
                  );
     </insert>
+
+    <select id="getAverageMetrics" parameterType="long" resultType="map">
+        SELECT
+            AVG(coverage) AS coverage,
+            AVG(bugs) AS bugs,
+            AVG(complexity) AS complexity,
+            AVG(codeSmells) AS codeSmells,
+            AVG(duplicatedLinesDensity) AS duplicatedLinesDensity,
+            AVG(vulnerabilities) AS vulnerabilities,
+            AVG(totalScore) AS totalScore
+        FROM analysis
+        WHERE repositoryId = #{repositoryId}
+    </select>
 
 </mapper>
