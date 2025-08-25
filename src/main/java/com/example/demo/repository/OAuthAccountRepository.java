@@ -5,7 +5,6 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
-
 @Mapper
 public interface OAuthAccountRepository {
 
@@ -13,8 +12,6 @@ public interface OAuthAccountRepository {
 
     OAuthAccount findByProviderAndOauthId(@Param("provider") String provider,
                                           @Param("oauthId") String oauthId);
-
-    void saveOAuthAccount(OAuthAccount account);
 
     OAuthAccount findById(@Param("id") Long id);
 
@@ -25,6 +22,20 @@ public interface OAuthAccountRepository {
     int attachToMember(@Param("id") Long id,
                        @Param("memberId") Long memberId);
 
-    List<String> findProvidersByMemberId(Long memberId);
+    void saveOAuthAccount(OAuthAccount account);
 
+    List<String> findProvidersByMemberId(@Param("memberId") Long memberId);
+
+    // ★ accessToken 업데이트 (id로)
+    int updateAccessToken(@Param("id") Long id,
+                          @Param("accessToken") String accessToken);
+
+    // ★ accessToken 업데이트 (provider + oauthId로)
+    int updateAccessTokenByProviderAndOauthId(@Param("provider") String provider,
+                                              @Param("oauthId") String oauthId,
+                                              @Param("accessToken") String accessToken);
+
+    // ★ memberId + provider 로 accessToken 조회
+    String findAccessTokenByMemberIdAndProvider(@Param("memberId") Long memberId,
+                                                @Param("provider") String provider);
 }

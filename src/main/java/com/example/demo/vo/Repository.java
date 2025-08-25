@@ -24,6 +24,11 @@ public class Repository {
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
 
-    public Repository(long id, String fullName, boolean aPrivate, String defaultBranch, String htmlUrl) {
+    public Repository(Long id, String fullName, boolean aPrivate, String defaultBranch, String htmlUrl) {
+        this.id = id;
+        this.name = fullName;
+        this.aPrivate = aPrivate;
+        this.defaultBranch = defaultBranch;
+        this.url = htmlUrl;
     }
 }
