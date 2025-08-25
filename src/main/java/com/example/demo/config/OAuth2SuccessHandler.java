@@ -1,6 +1,5 @@
 package com.example.demo.config;
 
-import com.example.demo.service.AuthService;
 import com.example.demo.service.MemberService;
 import com.example.demo.service.OAuthAccountService;
 import com.example.demo.vo.Member;
@@ -29,9 +28,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Autowired
     private OAuthAccountService oAuthAccountService;
 
-    @Autowired
-    private AuthService authService;
-
     private final JwtTokenProvider jwtTokenProvider;
 
     @Autowired
@@ -52,7 +48,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 🔗 링크 모드
         if ("link".equalsIgnoreCase(mode) && linkTargetMemberId != null) {
-            // ✅ provider 포함 조회로 충돌 방지
             OAuthAccount existing = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
 
             if (existing != null && existing.getMemberId() != null && !existing.getMemberId().equals(linkTargetMemberId)) {
@@ -76,10 +71,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             request.getSession().removeAttribute("OAUTH_MODE");
             request.getSession().removeAttribute("LINK_TARGET_MEMBER_ID");
 
-            // JWT 발급 + 리다이렉트
+            // ✅ JWT 발급 (DB 저장 X)
             String accessToken = jwtTokenProvider.generateAccessToken(linked.getId(), linked.getNickName(), linked.getEmail());
             String refreshToken = jwtTokenProvider.generateRefreshToken(linked.getId(), linked.getNickName(), linked.getEmail());
-            authService.saveToken(linked.getId(), accessToken, refreshToken);
 
             String redirectUrl = "http://localhost:3000/DiFF/home/main"
                     + "?access_token=" + accessToken
@@ -90,7 +84,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         // 🔐 일반 소셜 로그인
-        // ✅ 여기서도 provider 포함 조회 사용
         OAuthAccount oAuthAccount = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
         if (oAuthAccount == null) {
             throw new RuntimeException("❌ 해당 OAuth 계정을 찾을 수 없습니다.");
@@ -104,9 +97,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         rq.login(member);
         rq.setLoginedMember(member);
 
+        // ✅ JWT 발급 (DB 저장 X)
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
-        authService.saveToken(member.getId(), accessToken, refreshToken);
 
         String redirectUrl = "http://localhost:3000/DiFF/home/main"
                 + "?access_token=" + accessToken
