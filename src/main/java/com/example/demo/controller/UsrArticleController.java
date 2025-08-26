@@ -284,4 +284,17 @@ public class UsrArticleController {
                 "count", reactionService.count("article", articleId));
     }
 
+    @PostMapping("/hits/{articleId}")
+    @ResponseBody
+    public Map<String, Object> increaseHits(@PathVariable Long articleId) {
+
+        int rows = articleService.increaseHits(articleId);
+
+        return Map.of(
+                "resultCode", rows > 0 ? "S-1" : "F-1",
+                "msg", rows > 0 ? "조회수가 증가했습니다." : "조회 실패"
+        );
+    }
+
+
 }
