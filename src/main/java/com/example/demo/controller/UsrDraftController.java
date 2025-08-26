@@ -61,7 +61,7 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData mkRepo(@RequestBody Map<String, Object> param) {
 
-        int memberId = (Integer) param.get("memberId");
+        Long memberId = (Long) param.get("memberId");
         String repoName = (String) param.get("repoName");
         String firstCommit = (String) param.get("firstCommit");
         System.out.println(memberId);
@@ -177,7 +177,6 @@ public class UsrDraftController {
         if (!draft.getMemberId().equals(memberId)) {
             return ResultData.from("F-403", "해당 임시저장에 접근 권한이 없습니다.");
         }
-
         return ResultData.from("S-1", "임시저장 조회 성공", draft);
     }
 

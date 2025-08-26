@@ -11,7 +11,6 @@ import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -104,7 +103,10 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), loginedMemberId);
+        Repository repo = repositoryService.getRepositoryByIdAndMember(
+                draft.getRepositoryId(),
+                loginedMemberId
+        );
         if (repo == null) {
             System.out.println("[FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
@@ -121,7 +123,6 @@ public class UsrArticleController {
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
-
 
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
