@@ -121,4 +121,10 @@
         WHERE f.fromMemberId = #{memberId}
     </select>
 
+    <update id="increaseHits" parameterType="long">
+        UPDATE article
+        SET hits = hits + 1
+        WHERE id = #{articleId}
+    </update>
+
 </mapper>
