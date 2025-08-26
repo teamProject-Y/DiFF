@@ -164,4 +164,21 @@ public class UsrDraftController {
         return ResultData.from("S-1", "게시글 삭제 성공", rows);
     }
 
+    @GetMapping("/{id}")
+    public ResultData<Draft> getDraftById(HttpServletRequest req, @PathVariable Long id) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        Draft draft = draftService.getDraftById(id);
+
+        if (draft == null) {
+            return ResultData.from("F-404", "해당 임시저장이 존재하지 않습니다.");
+        }
+        if (!draft.getMemberId().equals(memberId)) {
+            return ResultData.from("F-403", "해당 임시저장에 접근 권한이 없습니다.");
+        }
+
+        return ResultData.from("S-1", "임시저장 조회 성공", draft);
+    }
+
 }

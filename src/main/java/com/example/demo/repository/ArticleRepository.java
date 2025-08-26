@@ -20,7 +20,7 @@ public interface ArticleRepository {
 
     public List<Article> getTrendingArticles(Integer count, Integer days);
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
+    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId);
 
     public Article getArticleById(Long id);
 
