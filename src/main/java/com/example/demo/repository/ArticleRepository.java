@@ -1,10 +1,8 @@
 package com.example.demo.repository;
 
 import com.example.demo.vo.Article;
-import com.example.demo.vo.ResultData;
 import org.apache.ibatis.annotations.Mapper;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
@@ -20,7 +18,7 @@ public interface ArticleRepository {
 
     public List<Article> getTrendingArticles(Integer count, Integer days);
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId);
+    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
 
     public Article getArticleById(Long id);
 
