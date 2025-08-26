@@ -112,7 +112,6 @@ public class UsrArticleController {
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
-        // ✅ 서비스로 위임
         int wr = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
@@ -124,8 +123,6 @@ public class UsrArticleController {
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
-
-
 
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {

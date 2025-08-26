@@ -48,7 +48,7 @@ public class ArticleService {
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);
     }
-
+  
     public Article getArticleById(Long id, Long loginedMemberId) {
         Article article = articleRepository.getArticleById(id);
         updateForPrintData(loginedMemberId, article);

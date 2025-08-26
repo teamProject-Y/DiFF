@@ -177,8 +177,6 @@ public class UsrDraftController {
         if (!draft.getMemberId().equals(memberId)) {
             return ResultData.from("F-403", "해당 임시저장에 접근 권한이 없습니다.");
         }
-
-
         return ResultData.from("S-1", "임시저장 조회 성공", draft);
     }
 
