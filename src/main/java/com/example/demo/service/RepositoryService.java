@@ -19,7 +19,7 @@ public class RepositoryService {
         return repositoryRepository.getRepositoriesByMemberId(memberId);
     }
 
-    public void makeRepository(int memberId, String repoName, String lastRqCommit) {
+    public void makeRepository(Long memberId, String repoName, String lastRqCommit) {
         repositoryRepository.makeRepository(memberId, repoName, lastRqCommit);
     }
 
@@ -27,11 +27,15 @@ public class RepositoryService {
         return repositoryRepository.getRepositoryByIdAndMember(repositoryId, memberId);
     }
 
-    public boolean existsByMemberIdAndRepoName(int memberId, String repoName) {
-        return repositoryRepository.existsByMemberIdAndRepoName(memberId, repoName) == 0;
+    public boolean existsByMemberIdAndRepoName(Long memberId, String name) {
+        return repositoryRepository.existsByMemberIdAndRepoName(memberId, name) > 0;
     }
 
     public int getLastInsertId() {
         return repositoryRepository.getLastInsertId();
+    }
+
+    public void insertRepository(Long memberId, String name) {
+        repositoryRepository.insertRepository(memberId, name);
     }
 }
