@@ -20,8 +20,6 @@ public interface ArticleRepository {
 
     public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
 
-    // public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId);
-
     public Article getArticleById(Long id);
 
     public int modifyArticle(Article article);
@@ -31,4 +29,6 @@ public interface ArticleRepository {
     public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
+
+    public int increaseHits(Long articleId);
 }
