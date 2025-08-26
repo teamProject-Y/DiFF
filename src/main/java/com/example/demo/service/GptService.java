@@ -26,7 +26,7 @@ public class GptService {
         String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
 
         Map<String, Object> requestBody = Map.of(
-                "model", "gpt-4o",
+                "model", "gpt-4.1-mini",
                 "messages", List.of(
                         Map.of("role", "system", "content",
                                 "너는 내가 블로그 작성을 편하게 하기 위해, 코드 변경 사항을 분석하고 간결하게 요약해주는 도우미야.\n" +
