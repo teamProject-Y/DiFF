@@ -61,7 +61,7 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData mkRepo(@RequestBody Map<String, Object> param) {
 
-        int memberId = (Integer) param.get("memberId");
+        Long memberId = (Long) param.get("memberId");
         String repoName = (String) param.get("repoName");
         String firstCommit = (String) param.get("firstCommit");
         System.out.println(memberId);
