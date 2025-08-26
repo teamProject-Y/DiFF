@@ -43,6 +43,7 @@ public class UsrAuthController {
             @PathVariable String provider,
             HttpServletResponse response
     ) throws IOException {
+        System.out.println("🐞🐞 link/" +  provider + "진입");
         String redirectUrl = switch (provider.toLowerCase()) {
             case "github" -> "/oauth2/authorization/github";
             case "google" -> "/oauth2/authorization/google";

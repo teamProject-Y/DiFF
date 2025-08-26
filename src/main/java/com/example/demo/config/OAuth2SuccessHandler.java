@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -33,20 +35,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Autowired
     private Rq rq;
 
+    private final OAuth2AuthorizedClientService authorizedClientService;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
-        String registrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+        OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+        String registrationId = oauthToken.getAuthorizedClientRegistrationId();
 
         String oauthId = "google".equals(registrationId) ? oauthUser.getAttribute("sub") : oauthUser.getName();
         if (oauthId == null) throw new RuntimeException("❌ OAuth ID 를 가져올 수 없습니다.");
 
-        String provider = registrationId; // "github" | "google"
+        String provider = registrationId;
+
+        OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                oauthToken.getAuthorizedClientRegistrationId(),
+                oauthToken.getName()
+        );
+        String providerAccessToken = client.getAccessToken().getTokenValue();
 
         String mode = (String) request.getSession().getAttribute("OAUTH_MODE");
         Long linkTargetMemberId = (Long) request.getSession().getAttribute("LINK_TARGET_MEMBER_ID");
 
-        // 🔗 링크 모드
         if ("link".equalsIgnoreCase(mode) && linkTargetMemberId != null) {
             OAuthAccount existing = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
 
@@ -61,17 +71,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 oAuthAccountService.attachToMember(existing.getId(), linkTargetMemberId);
             }
 
+            oAuthAccountService.upsertAccessToken(linkTargetMemberId, provider, oauthId, providerAccessToken, "Bearer");
+
             Member linked = memberService.getMemberById(linkTargetMemberId);
             if (linked == null) {
                 response.sendError(404, "연동 대상 회원을 찾을 수 없습니다.");
                 return;
             }
 
-            // 세션 플래그 정리
             request.getSession().removeAttribute("OAUTH_MODE");
             request.getSession().removeAttribute("LINK_TARGET_MEMBER_ID");
 
-            // ✅ JWT 발급 (DB 저장 X)
             String accessToken = jwtTokenProvider.generateAccessToken(linked.getId(), linked.getNickName(), linked.getEmail());
             String refreshToken = jwtTokenProvider.generateRefreshToken(linked.getId(), linked.getNickName(), linked.getEmail());
 
@@ -83,7 +93,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        // 🔐 일반 소셜 로그인
         OAuthAccount oAuthAccount = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
         if (oAuthAccount == null) {
             throw new RuntimeException("❌ 해당 OAuth 계정을 찾을 수 없습니다.");
@@ -97,7 +106,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         rq.login(member);
         rq.setLoginedMember(member);
 
-        // ✅ JWT 발급 (DB 저장 X)
+        oAuthAccountService.upsertAccessToken(member.getId(), provider, oauthId, providerAccessToken, "Bearer");
+
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
 
