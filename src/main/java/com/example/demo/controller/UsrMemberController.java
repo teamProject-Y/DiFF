@@ -106,44 +106,51 @@ public class UsrMemberController {
         return ResultData.from("S-1", "비밀번호 일치 성공");
     }
 
-    // 로그인 체크 -> 유무 체크 -> 권한 체크
-    @PutMapping("/doModify")
-    public ResponseEntity<ResultData> doModify(@RequestHeader("Authorization") String authorization, @RequestBody Member member) {
+    @PutMapping("/doModifyNickName")
+    public ResponseEntity<ResultData> doModifyNickName(
+            HttpServletRequest req,
+            @RequestBody Member member
+    ) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        // 토큰에서 memberId 추출
-        String token = authorization.substring(7);
-        Long memberId = jwtTokenProvider.getMemberIdFromToken(token);
+        int updated = memberService.modifyNickName(memberId, member.getNickName());
 
-        // 입력 검증
-        if (Ut.isEmpty(member.getLoginId())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-1", "아이디를 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getLoginPw())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-3", "이름을 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getNickName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 입력해주세요"));
-        }
-        if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-6", "유효한 이메일을 입력해주세요"));
+        if (updated == -1) {
+            return ResponseEntity.badRequest()
+                    .body(ResultData.from("F-8", "이미 사용 중인 닉네임입니다"));
         }
 
-        // 서비스에 수정 요청
-        int updated = memberService.modifyMember(memberId, member.getLoginId(), member.getLoginPw(), member.getName(), member.getNickName(), member.getEmail()
-        );
-
-        //  결과 검사
         if (updated == 0) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-7", "회원정보 수정에 실패했습니다"));
+            return ResponseEntity.badRequest()
+                    .body(ResultData.from("F-7", "회원정보 수정에 실패했습니다"));
         }
 
-        // 성공 응답
-        return ResponseEntity.ok(ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
+        return ResponseEntity.ok(
+                ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
         );
     }
+
+    @PutMapping("/doModifyIntroduce")
+    public ResponseEntity<ResultData> doModifyIntroduce(
+            HttpServletRequest req,
+            @RequestBody Member member
+    ) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int updated = memberService.modifyIntroduce(memberId, member.getIntroduce());
+
+        if (updated == 0) {
+            return ResponseEntity.badRequest()
+                    .body(ResultData.from("F-7", "자기소개 수정에 실패했습니다"));
+        }
+
+        return ResponseEntity.ok(
+                ResultData.from("S-1", "자기소개가 성공적으로 수정되었습니다")
+        );
+    }
+
 
     @GetMapping("/followingList")
     public ResponseEntity<ResultData> showFollowingList(HttpServletRequest req) {
