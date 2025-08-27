@@ -43,8 +43,6 @@ public interface MemberRepository {
 
     public Member getMemberByNickName(String nickName);
 
-    int isFollowing(Long fromMemberId, Long toMemberId);
-
     void follow(@Param("toMemberId") Long toMemberId,
                 @Param("fromMemberId") Long fromMemberId);
 
@@ -52,4 +50,10 @@ public interface MemberRepository {
                   @Param("fromMemberId") Long fromMemberId);
 
    public List<Member> getFollowerList(Long memberId);
+
+    int modifyNickName(Long memberId,String nickName);
+
+    int countByNickName(String nickName);
+
+    int modifyIntroduce(Long memberId, String introduce);
 }
