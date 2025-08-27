@@ -52,4 +52,6 @@ public interface MemberRepository {
    public List<Member> getFollowerList(Long memberId);
 
     int modifyNickName(Long memberId,String nickName);
+
+    int countByNickName(String nickName);
 }

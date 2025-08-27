@@ -115,20 +115,23 @@ public class UsrMemberController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("\n===== [PUT] /api/DiFF/member/doModifyNickName =====");
-
-        // 서비스에 (로그인한 사람 ID, 새 닉네임) 전달
         int updated = memberService.modifyNickName(memberId, member.getNickName());
+
+        if (updated == -1) {
+            return ResponseEntity.badRequest()
+                    .body(ResultData.from("F-8", "이미 사용 중인 닉네임입니다"));
+        }
 
         if (updated == 0) {
             return ResponseEntity.badRequest()
-                    .body(ResultData.from("F-7", "닉네임 수정에 실패했습니다"));
+                    .body(ResultData.from("F-7", "회원정보 수정에 실패했습니다"));
         }
 
         return ResponseEntity.ok(
-                ResultData.from("S-1", "닉네임이 성공적으로 수정되었습니다")
+                ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
         );
     }
+
 
     @GetMapping("/followingList")
     public ResponseEntity<ResultData> showFollowingList(HttpServletRequest req) {

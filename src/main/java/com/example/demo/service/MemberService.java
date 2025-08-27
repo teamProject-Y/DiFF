@@ -137,6 +137,11 @@ public class MemberService {
     }
 
     public int modifyNickName(Long memberId, String nickName) {
+
+        if (memberRepository.countByNickName(nickName) > 0) {
+            return -1;
+        }
+
         return memberRepository.modifyNickName(memberId, nickName);
     }
 }

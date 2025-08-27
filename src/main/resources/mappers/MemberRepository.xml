@@ -114,4 +114,8 @@
         WHERE id = #{memberId}
     </update>
 
+    <select id="countByNickName" resultType="int">
+        SELECT COUNT(*) FROM member WHERE nickName = #{nickName}
+    </select>
+
 </mapper>
