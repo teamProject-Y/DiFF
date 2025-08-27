@@ -132,6 +132,26 @@ public class UsrMemberController {
         );
     }
 
+    @PutMapping("/doModifyIntroduce")
+    public ResponseEntity<ResultData> doModifyIntroduce(
+            HttpServletRequest req,
+            @RequestBody Member member
+    ) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        int updated = memberService.modifyIntroduce(memberId, member.getIntroduce());
+
+        if (updated == 0) {
+            return ResponseEntity.badRequest()
+                    .body(ResultData.from("F-7", "자기소개 수정에 실패했습니다"));
+        }
+
+        return ResponseEntity.ok(
+                ResultData.from("S-1", "자기소개가 성공적으로 수정되었습니다")
+        );
+    }
+
 
     @GetMapping("/followingList")
     public ResponseEntity<ResultData> showFollowingList(HttpServletRequest req) {

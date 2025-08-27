@@ -118,4 +118,11 @@
         SELECT COUNT(*) FROM member WHERE nickName = #{nickName}
     </select>
 
+    <update id="modifyIntroduce">
+        UPDATE member
+        SET introduce = #{introduce}
+        WHERE id = #{memberId}
+    </update>
+
+
 </mapper>

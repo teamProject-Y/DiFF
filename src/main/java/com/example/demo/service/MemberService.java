@@ -43,19 +43,6 @@ public class MemberService {
         return memberRepository.getMemberByEmail(email);
     }
 
-    public int modifyMember(long loginedMemberId, String loginId, String loginPw, String name, String nickName, String email) {
-        Member member = memberRepository.getMemberById(loginedMemberId);
-
-        if (loginPw != null && !loginPw.trim().isEmpty()) {
-            member.setLoginPw(passwordEncoder.encode(loginPw));
-        }
-        if (loginId != null) member.setLoginId(loginId);
-        if (name != null) member.setName(name);
-        if (nickName != null) member.setNickName(nickName);
-        if (email != null) member.setEmail(email);
-
-        return memberRepository.modifyMember(loginedMemberId, loginId, loginPw, name, nickName, email);
-    }
 
     // OAuth 로그인/연동 처리
     public Member processOAuthLogin(String provider, String oauthId, String email, String nickName) {
@@ -139,9 +126,14 @@ public class MemberService {
     public int modifyNickName(Long memberId, String nickName) {
 
         if (memberRepository.countByNickName(nickName) > 0) {
-            return -1;
+            return -1; // 중복
         }
-
+        // 2. 수정
         return memberRepository.modifyNickName(memberId, nickName);
     }
+
+    public int modifyIntroduce(Long memberId, String introduce) {
+        return memberRepository.modifyIntroduce(memberId, introduce);
+    }
+
 }
