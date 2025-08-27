@@ -135,4 +135,8 @@ public class MemberService {
     public List<Member> getFollowerList(Long memberId) {
        return memberRepository.getFollowerList(memberId);
     }
+
+    public int modifyNickName(Long memberId, String nickName) {
+        return memberRepository.modifyNickName(memberId, nickName);
+    }
 }

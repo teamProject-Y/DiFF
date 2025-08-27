@@ -107,4 +107,11 @@
         WHERE toMemberId = #{toMemberId}
           AND fromMemberId = #{fromMemberId}
     </delete>
+
+    <update id="modifyNickName">
+        UPDATE member
+        SET nickName = #{nickName}
+        WHERE id = #{memberId}
+    </update>
+
 </mapper>
