@@ -18,7 +18,7 @@ public interface ArticleRepository {
 
     public List<Article> getTrendingArticles(Integer count, Integer days);
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId);
+    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
 
     public Article getArticleById(Long id);
 
@@ -29,4 +29,6 @@ public interface ArticleRepository {
     public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
+
+    public int increaseHits(Long articleId);
 }
