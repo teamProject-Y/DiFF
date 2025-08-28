@@ -127,4 +127,25 @@
         WHERE id = #{articleId}
     </update>
 
+    <select id="getRepositoryArticles" parameterType="Long" resultType="com.example.demo.vo.Article">
+        SELECT a.*,
+               COALESCE(r.likes, 0) AS extra__sumReaction,
+               COALESCE(re.replies, 0) AS extra__sumReplies
+        FROM article a
+                 LEFT JOIN
+             (SELECT relId, COUNT(*) AS likes
+              FROM reaction
+              WHERE relType = 'article'
+              GROUP BY relId) r
+             ON a.id = r.relId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
+        ) re
+                           ON a.id = re.articleId
+        WHERE a.repositoryId = #{repositoryId}
+        ORDER BY a.regDate DESC
+    </select>
+
 </mapper>

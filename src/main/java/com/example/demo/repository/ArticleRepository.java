@@ -8,27 +8,29 @@ import java.util.List;
 @Mapper
 public interface ArticleRepository {
 
-    public int getLastInsertId();
+    int getLastInsertId();
 
-    public int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
+    int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
 
-    public  List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
+     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
 
-    public int getArticleCnt();
+    int getArticleCnt();
 
-    public List<Article> getTrendingArticles(Integer count, Integer days);
+    List<Article> getTrendingArticles(Integer count, Integer days);
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
+    int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
 
-    public Article getArticleById(Long id);
+    Article getArticleById(Long id);
 
-    public int modifyArticle(Article article);
+    int modifyArticle(Article article);
 
-    public int deleteArticle(Long id, Long memberId);
+    int deleteArticle(Long id, Long memberId);
 
-    public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
+    List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
 
-    public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
+    int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
 
-    public int increaseHits(Long articleId);
+    int increaseHits(Long articleId);
+
+    List<Article> getRepositoryArticles(Long repositoryId);
 }
