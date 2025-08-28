@@ -16,8 +16,8 @@
     <select id="getArticles" resultType="com.example.demo.vo.Article">
         SELECT A.*, M.nickName AS extra__writer
         FROM article A
-        JOIN `member` M
-        ON A.memberId = M.id
+                 JOIN `member` M
+                      ON A.memberId = M.id
         WHERE
             repositoryId = #{repositoryId}
           AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
@@ -38,8 +38,8 @@
     <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT A.*, M.nickName AS extra__writer
         FROM article A
-        JOIN `member` M
-        ON A.memberId = M.id
+                 JOIN `member` M
+                      ON A.memberId = M.id
         WHERE A.id = #{id}
             LIMIT 1
     </select>
@@ -61,55 +61,55 @@
 
     <select id="getTrendingArticles" resultType="com.example.demo.vo.Article">
         SELECT
-        a.*,
-        COALESCE(r.likes, 0) AS extra__sumReaction,
-        COALESCE(re.replies, 0) AS extra__sumReplies,
-        m.nickName AS extra__writer,
-        (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
-        (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
-        (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
+            a.*,
+            COALESCE(r.likes, 0) AS extra__sumReaction,
+            COALESCE(re.replies, 0) AS extra__sumReplies,
+            m.nickName AS extra__writer,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
+            (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
         FROM
-        article a
-            LEFT JOIN
-                (SELECT relId, COUNT(*) AS likes
-                FROM reaction
-                WHERE relType = 'article'
-                GROUP BY relId) r
-                ON a.id = r.relId
-            LEFT JOIN (
+            article a
+                LEFT JOIN
+            (SELECT relId, COUNT(*) AS likes
+             FROM reaction
+             WHERE relType = 'article'
+             GROUP BY relId) r
+            ON a.id = r.relId
+                LEFT JOIN (
                 SELECT articleId, COUNT(*) AS replies
                 FROM reply
                 GROUP BY articleId
-                ) re
-                ON a.id = re.articleId
-            LEFT JOIN
-                member m
-                ON a.memberId = m.id
+            ) re
+                          ON a.id = re.articleId
+                LEFT JOIN
+            member m
+            ON a.memberId = m.id
         WHERE
             a.regDate >= DATE_SUB(CURRENT_DATE, INTERVAL #{days} DAY)
         ORDER BY trending_score DESC
-        LIMIT #{count};
+            LIMIT #{count};
     </select>
 
     <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT a.*, m.nickName as extra__writer, m.email,
-            COALESCE(r.likes, 0) AS extra__sumReaction,
-            COALESCE(re.replies, 0) AS extra__sumReplies
+               COALESCE(r.likes, 0) AS extra__sumReaction,
+               COALESCE(re.replies, 0) AS extra__sumReplies
         FROM article a
-            LEFT JOIN
-                (SELECT relId, COUNT(*) AS likes
-                FROM reaction
-                WHERE relType = 'article'
-                GROUP BY relId) r
-                ON a.id = r.relId
-            LEFT JOIN (
-                SELECT articleId, COUNT(*) AS replies
-                FROM reply
-                GROUP BY articleId
-                ) re
-                ON a.id = re.articleId
-            INNER JOIN follow f ON f.fromMemberId = a.memberId
-            INNER JOIN member m ON a.memberId = m.id
+                 LEFT JOIN
+             (SELECT relId, COUNT(*) AS likes
+              FROM reaction
+              WHERE relType = 'article'
+              GROUP BY relId) r
+             ON a.id = r.relId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
+        ) re
+                           ON a.id = re.articleId
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+                 INNER JOIN member m ON a.memberId = m.id
         WHERE f.toMemberId = #{memberId}
         ORDER BY a.regDate DESC
     </select>
@@ -126,5 +126,26 @@
         SET hits = hits + 1
         WHERE id = #{articleId}
     </update>
+
+    <select id="getRepositoryArticles" parameterType="Long" resultType="com.example.demo.vo.Article">
+        SELECT a.*,
+               COALESCE(r.likes, 0) AS extra__sumReaction,
+               COALESCE(re.replies, 0) AS extra__sumReplies
+        FROM article a
+                 LEFT JOIN
+             (SELECT relId, COUNT(*) AS likes
+              FROM reaction
+              WHERE relType = 'article'
+              GROUP BY relId) r
+             ON a.id = r.relId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
+        ) re
+                           ON a.id = re.articleId
+        WHERE a.repositoryId = #{repositoryId}
+        ORDER BY a.regDate DESC
+    </select>
 
 </mapper>

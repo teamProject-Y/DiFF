@@ -34,6 +34,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     @Autowired
     private Rq rq;
+
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
@@ -69,6 +70,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             } else if (existing.getMemberId() == null) {
                 oAuthAccountService.attachToMember(existing.getId(), linkTargetMemberId);
             }
+
             oAuthAccountService.upsertAccessToken(linkTargetMemberId, provider, oauthId, providerAccessToken, "Bearer");
 
             Member linked = memberService.getMemberById(linkTargetMemberId);
@@ -104,7 +106,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         rq.login(member);
         rq.setLoginedMember(member);
 
-
         oAuthAccountService.upsertAccessToken(member.getId(), provider, oauthId, providerAccessToken, "Bearer");
 
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
@@ -115,6 +116,4 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 + "&refresh_token=" + refreshToken;
         response.sendRedirect(redirectUrl);
     }
-
 }
-

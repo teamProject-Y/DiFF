@@ -1,5 +1,6 @@
 package com.example.demo.repository;
 
+import com.example.demo.vo.Article;
 import com.example.demo.vo.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -19,4 +20,5 @@ public interface RepositoryRepository {
 
     int getLastInsertId();
 
+    Long getMemberIdByRepositoryId(Long repositoryId);
 }

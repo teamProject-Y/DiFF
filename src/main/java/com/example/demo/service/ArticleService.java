@@ -101,4 +101,7 @@ public class ArticleService {
         return articleRepository.increaseHits(articleId);
     }
 
+    public List<Article> getRepositoryArticles(Long repositoryId) {
+        return articleRepository.getRepositoryArticles(repositoryId);
+    }
 }
