@@ -1,17 +1,14 @@
 package com.example.demo.service;
 
-import java.time.LocalDate;
 import java.util.List;
 
-import com.example.demo.repository.ReactionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.ReactionRepository;
 import com.example.demo.vo.Article;
 import com.example.demo.vo.ResultData;
-
 import com.example.util.Ut;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class ArticleService {
@@ -22,8 +19,18 @@ public class ArticleService {
     @Autowired
     private ReactionRepository reactionRepository;
 
-    public ArticleService(ArticleRepository articleRepository) {
-        this.articleRepository = articleRepository;
+    @Autowired
+    private DraftService draftService;
+
+
+    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId) {
+
+        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
+
+        if (draftId != null) {
+            draftService.deleteDraft(draftId, memberId);
+        }
+        return rows;
     }
 
     public int getLastInsertId() {
@@ -41,17 +48,10 @@ public class ArticleService {
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);
     }
-
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId) {
-        return articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
-    }
-    
+  
     public Article getArticleById(Long id, Long loginedMemberId) {
-
         Article article = articleRepository.getArticleById(id);
-
         updateForPrintData(loginedMemberId, article);
-
         return article;
     }
 
@@ -66,31 +66,24 @@ public class ArticleService {
         article.setUserCanDelete(userCanDeleteRd.isSuccess());
         System.err.println("📌 userCanDeleteRd: " + userCanDeleteRd.isSuccess());
 
-//      좋아요 여부
-//		ResultData userReactionRd = userReaction(loginedMemberId, article.getId());
-//		if(userReactionRd == null) return;
-//		article.setUserReaction((int)userReactionRd.getData1());
-
     }
 
     public ResultData userCanModify(Long loginedMemberId, Article article) {
-
-        if (article.getMemberId() != loginedMemberId) {
+        if (!article.getMemberId().equals(loginedMemberId)) {
             return ResultData.from("F-A", Ut.f("%d번 게시글 수정 권한 없음", article.getId()));
         }
         return ResultData.from("S-1", Ut.f("%d번 게시글 수정 권한 있음", article.getId()));
     }
 
     private ResultData userCanDelete(Long loginedMemberId, Article article) {
-
-        if (article.getMemberId() != loginedMemberId) {
+        if (!article.getMemberId().equals(loginedMemberId)) {
             return ResultData.from("F-A", Ut.f("%d번 게시글 삭제 권한 없음", article.getId()));
         }
         return ResultData.from("S-1", Ut.f("%d번 게시글 삭제 권한 있음", article.getId()));
     }
 
     public int modifyArticle(Article article) {
-        return articleRepository.modifyArticle(article); // update된 row 수 반환
+        return articleRepository.modifyArticle(article);
     }
 
     public int deleteArticle(Long id, Long memberId) {
@@ -103,5 +96,12 @@ public class ArticleService {
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
         return articleRepository.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
+    }
+    public int increaseHits(Long articleId) {
+        return articleRepository.increaseHits(articleId);
+    }
+
+    public List<Article> getRepositoryArticles(Long repositoryId) {
+        return articleRepository.getRepositoryArticles(repositoryId);
     }
 }

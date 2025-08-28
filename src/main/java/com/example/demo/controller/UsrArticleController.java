@@ -11,7 +11,6 @@ import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -81,17 +80,18 @@ public class UsrArticleController {
     @PostMapping("/doWrite")
     @ResponseBody
     public ResultData<Integer> doWrite(HttpServletRequest req,
-                                       @RequestBody Draft draft) {
+                                       @RequestBody Article draft) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
         draft.setMemberId(loginedMemberId);
 
-        System.out.println("\n===== \uD83D\uDC36\uD83D\uDC36 [POST] /article/doWrite =====");
+        System.out.println("\n===== 🐶🐶 [POST] /article/doWrite =====");
         System.out.println("memberId      = " + draft.getMemberId());
         System.out.println("title         = " + draft.getTitle());
         System.out.println("body.length   = " + (draft.getBody() != null ? draft.getBody().length() : null));
         System.out.println("checksum      = " + draft.getChecksum());
         System.out.println("repositoryId  = " + draft.getRepositoryId());
+        System.out.println("draftId       = " + draft.getDraftId());
 
         if (draft.getRepositoryId() == null) {
             return ResultData.from("F-400", "repositoryId가 필요합니다.");
@@ -103,19 +103,22 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        Repository repo = repositoryService.getRepositoryByIdAndMember(draft.getRepositoryId(), loginedMemberId);
+        Repository repo = repositoryService.getRepositoryByIdAndMember(
+                draft.getRepositoryId(),
+                loginedMemberId
+        );
         if (repo == null) {
             System.out.println("[FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
-        // 작성
         int wr = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
                 draft.getChecksum(),
-                draft.getRepositoryId()
+                draft.getRepositoryId(),
+                draft.getDraftId()
         );
 
         return ResultData.from("S-1", "작성 성공", wr);
@@ -280,5 +283,18 @@ public class UsrArticleController {
                 "liked", reactionService.isLiked("article", articleId, memberId),
                 "count", reactionService.count("article", articleId));
     }
+
+    @PostMapping("/hits/{articleId}")
+    @ResponseBody
+    public Map<String, Object> increaseHits(@PathVariable Long articleId) {
+
+        int rows = articleService.increaseHits(articleId);
+
+        return Map.of(
+                "resultCode", rows > 0 ? "S-1" : "F-1",
+                "msg", rows > 0 ? "조회수가 증가했습니다." : "조회 실패"
+        );
+    }
+
 
 }

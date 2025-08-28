@@ -29,57 +29,42 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
-    private final MemberRepository memberRepository;
-
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         String accessToken = getTokenFromRequest(request);
         String path = request.getRequestURI();
-        System.out.println("🔍 JwtTokenFilter - 요청 경로: " + path);
 
         // 로그인/회원가입은 토큰 검사 생략
         if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login") || path.equals("/upload")) {
-            System.out.println("✅ 인증 생략 대상: " + path);
             filterChain.doFilter(request, response);
             return;
         }
 
-        if (accessToken != null) {
-            System.out.println("🔑 추출된 accessToken: " + accessToken);
+        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
+            // ✅ 토큰에서 사용자 정보 직접 꺼냄
+            Long memberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
+            String email = jwtTokenProvider.getMemberEmailFromToken(accessToken);
+            String nickName = jwtTokenProvider.getNickNameFromToken(accessToken);
 
-            if (jwtTokenProvider.validateToken(accessToken)) {
-                String email = jwtTokenProvider.getMemberEmailFromToken(accessToken);
-                System.out.println("✅ 토큰 유효, 사용자 Email: " + email);
+            CustomUserDetails userDetails = new CustomUserDetails(memberId, nickName, email);
 
-                Member member = Optional.ofNullable(memberRepository.getMemberByEmail(email))
-                        .orElseThrow(() -> new UsernameNotFoundException("Member not found with email: " + email));
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(member, null, new ArrayList<>());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("🔐 SecurityContext에 인증 정보 설정 완료");
-            } else {
-                System.out.println("❌ 토큰 유효성 검사 실패");
-            }
-        } else {
-            System.out.println("⚠️ Authorization 헤더에 Bearer 토큰 없음");
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-
         String bearerToken = request.getHeader("Authorization");
-        System.out.println("🙋‍♂️🙋‍♂️request: " + request.getRequestURI());
-        System.out.println("🐻🐻 bearer token: " + bearerToken);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
         return null;
     }
-
 }

@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,7 +28,7 @@ public class AuthService {
     /** 로그인 **/
     // curl로 로그인 시 이녀석 반응
     @Transactional
-    public Auth login(Auth authRq) {
+    public Map<String, String> login(Auth authRq) {
 
         String email = authRq.getEmail();
         String loginPw = authRq.getLoginPw();
@@ -38,40 +40,25 @@ public class AuthService {
         }
 
         // 2. 비밀번호 검증
-        System.out.println("AuthService 입력 받은 비밀번호: " + loginPw);
-        System.out.println(new BCryptPasswordEncoder().encode("diff"));
-        System.out.println("AuthService DB에 저장된 해시: " + member.getLoginPw());
-        System.out.println("AuthService 비교 결과: " + passwordEncoder.matches(loginPw, member.getLoginPw()));
         if (!passwordEncoder.matches(loginPw, member.getLoginPw())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. email = " + email);
         }
 
-        // 3. 토큰 발급
-        String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
+        // 3. 토큰 발급 (DB 저장 ❌)
+        String accessToken = jwtTokenProvider.generateAccessToken(
+                member.getId(), member.getNickName(), member.getEmail()
+        );
+        String refreshToken = jwtTokenProvider.generateRefreshToken(
+                member.getId(), member.getNickName(), member.getEmail()
+        );
 
-        // 4. 기존 Auth 존재 여부 확인
-        Auth auths = authRepository.findByMemberId(member.getId());
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("accessToken", accessToken);
+        tokens.put("refreshToken", refreshToken);
 
-        if (auths != null) {
-            // 토큰만 갱신
-            authRq.setAccessToken(accessToken);
-            authRq.setRefreshToken(refreshToken);
-            authRepository.updateTokens(authRq);
-            return authRq;
-        }
-
-        // 5. Auth 없으면 신규 저장
-        Auth newAuth = Auth.builder()
-                .memberId(member.getId())
-                .tokenType("Bearer")
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .build();
-        authRepository.saveAuth(newAuth);
-
-        return newAuth;
+        return tokens;
     }
+
 
 //    /** 회원가입 */
 //    @Transactional
@@ -103,17 +90,6 @@ public class AuthService {
         auth.setAccessToken(newAccessToken);
         authRepository.updateAccessToken(auth.getId(), newAccessToken);
         return newAccessToken;
-    }
-
-    public void saveToken(long memberId, String accessToken, String refreshToken) {
-        Auth auth = Auth.builder()
-                .memberId(memberId)
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .tokenType("Bearer")
-                .build();
-
-        authRepository.saveAuth(auth);
     }
 
     public String getGithubToken(Long memberId) {

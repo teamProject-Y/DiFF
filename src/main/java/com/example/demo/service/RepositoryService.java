@@ -1,11 +1,13 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.RepositoryRepository;
+import com.example.demo.vo.Article;
 import com.example.demo.vo.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class RepositoryService {
@@ -19,7 +21,7 @@ public class RepositoryService {
         return repositoryRepository.getRepositoriesByMemberId(memberId);
     }
 
-    public void makeRepository(int memberId, String repoName, String lastRqCommit) {
+    public void makeRepository(Long memberId, String repoName, String lastRqCommit) {
         repositoryRepository.makeRepository(memberId, repoName, lastRqCommit);
     }
 
@@ -27,11 +29,19 @@ public class RepositoryService {
         return repositoryRepository.getRepositoryByIdAndMember(repositoryId, memberId);
     }
 
-    public boolean existsByMemberIdAndRepoName(int memberId, String repoName) {
-        return repositoryRepository.existsByMemberIdAndRepoName(memberId, repoName) == 0;
+    public boolean existsByMemberIdAndRepoName(Long memberId, String name) {
+        return repositoryRepository.existsByMemberIdAndRepoName(memberId, name) > 0;
     }
 
     public int getLastInsertId() {
         return repositoryRepository.getLastInsertId();
+    }
+
+    public void insertRepository(Long memberId, String name) {
+        repositoryRepository.insertRepository(memberId, name);
+    }
+
+    public boolean isRepoOwner(Long memberId, Long repositoryId) {
+        return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
     }
 }
