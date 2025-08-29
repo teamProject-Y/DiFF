@@ -59,9 +59,13 @@ public class UsrRepositoryController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
         System.out.println("\n===== [POST] /api/DiFF/repository/createRepository =====");
+        System.out.println("repo is private? " + repo.isAPrivate());
+        System.out.println("description: ");
+        System.out.println("repository name: " + repo.getName());
+
         // 필수 값 검증
         if (repo.getName() == null || repo.getName().trim().isEmpty()) {
-            return ResultData.from("F-2", "레포지토리 이름이 필요합니다.");
+            return ResultData.from("F-2", "리포지토리 이름이 필요합니다.");
         }
 
         // 중복 확인
@@ -69,7 +73,8 @@ public class UsrRepositoryController {
             return ResultData.from("F-1", "이미 존재하는 리포지토리명입니다.");
         }
 
-        repositoryService.insertRepository(memberId, repo.getName());
+
+        repositoryService.insertRepository(memberId, repo.getName(), repo.isAPrivate(), repo.getUrl());
 
         int newRepoId = repositoryService.getLastInsertId();
 
