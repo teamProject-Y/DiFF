@@ -37,8 +37,12 @@ public class RepositoryService {
         return repositoryRepository.getLastInsertId();
     }
 
-    public void insertRepository(Long memberId, String name) {
-        repositoryRepository.insertRepository(memberId, name);
+    public void insertRepository(Long memberId, String name, boolean aPrivate, String url) {
+        repositoryRepository.insertRepository(memberId, name, aPrivate, url);
+    }
+
+    public boolean isRepoOwner(Long memberId, Long repositoryId) {
+        return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
     }
 
     public boolean isRepoOwner(Long memberId, Long repositoryId) {

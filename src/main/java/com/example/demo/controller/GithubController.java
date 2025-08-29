@@ -39,6 +39,7 @@ public class GithubController {
         System.out.println("🐳🐳 github token: " + token);
 
         List<Map<String, Object>> res;
+
         try {
             res = github.get()
                     .uri(uri -> uri.path("/user/repos")
@@ -71,10 +72,18 @@ public class GithubController {
 
         List<Repository> repos = res.stream().map(m -> {
             Repository r = new Repository();
-            r.setName((String) m.get("full_name"));
+
+            Object ghIdObj = m.get("id");
+            if (ghIdObj instanceof Number) {
+                r.setId(((Number) ghIdObj).longValue());
+            }
+
+            r.setName((String) m.get("name"));
             r.setUrl((String) m.get("html_url"));
             r.setAPrivate(Boolean.TRUE.equals(m.get("private")));
             r.setDefaultBranch((String) m.get("default_branch"));
+            Map<?,?> owner = (Map<?,?>) m.get("owner");
+            if (owner != null) r.setOwner((String) owner.get("login"));
             return r;
         }).toList();
 

@@ -24,6 +24,8 @@ public class Repository {
     private LocalDateTime regDate;
     private LocalDateTime updateDate;
 
+    private String owner;
+
     public Repository(Long id, String fullName, boolean aPrivate, String defaultBranch, String htmlUrl) {
         this.id = id;
         this.name = fullName;
