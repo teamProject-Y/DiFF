@@ -254,4 +254,26 @@ public class UsrMemberController {
         }
     }
 
+    @PostMapping("/updateToken")
+    public ResponseEntity<String> updateToken(@RequestBody Map<String, String> body) {
+        Long memberId = rq.getLoginedMemberId();
+        String token = body.get("token");
+        memberService.updateFcmToken(memberId, token);
+        return ResponseEntity.ok("토큰 저장 완료");
+    }
+
+    @PostMapping("/saveFcmToken")
+    public ResponseEntity<String> saveFcmToken(@RequestBody Map<String, String> request,
+                                               HttpServletRequest req) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        System.out.println("📥 /api/DiFF/member/saveFcmToken 요청 도착 → memberId: " + loginedMemberId);
+        String token = request.get("fcmToken");
+        if (token == null || token.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ fcmToken 값이 비어있습니다.");
+        }
+        System.out.println("🎯 추출된 fcmToken: " + token);
+        memberService.saveFcmToken(loginedMemberId, token);
+        return ResponseEntity.ok("✅ fcmToken 저장 완료");
+    }
 }

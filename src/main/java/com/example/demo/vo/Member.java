@@ -26,4 +26,5 @@ public class Member {
     private String profileUrl;
     private Role role;
     private String introduce;
+    private String fcmToken;
 }
