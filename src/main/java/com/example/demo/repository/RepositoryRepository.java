@@ -16,7 +16,7 @@ public interface RepositoryRepository {
 
     int existsByMemberIdAndRepoName(Long memberId, String name);
 
-    void insertRepository(Long memberId, String name);
+    void insertRepository(Long memberId, String name, boolean aPrivate, String url);
 
     int getLastInsertId();
 
