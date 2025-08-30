@@ -1,10 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.service.DraftService;
-import com.example.demo.service.GptService;
-import com.example.demo.service.MemberService;
-import com.example.demo.service.RepositoryService;
+import com.example.demo.service.*;
 import com.example.demo.vo.Draft;
+import com.example.demo.vo.Member;
 import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +33,9 @@ public class UsrDraftController {
 
     @Autowired
     private MemberService memberService;
+
+    @Autowired
+    private FcmService fcmService;
 
 
     @PostMapping("/verifyGitUser")
@@ -95,7 +96,7 @@ public class UsrDraftController {
     @PostMapping("/mkDraft")
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
-        System.out.println("receiveDiff 메서드 진입" );
+        System.out.println("receiveDiff 메서드 진입");
         System.out.println("🍔param: " + param);
 
         Number memberIdNum = (Number) param.get("memberId");
@@ -107,7 +108,6 @@ public class UsrDraftController {
         String diff = (String) param.get("diff");
 
         System.out.println("memberId: " + memberId);
-        // System.out.println("repositoryId: " + repositoryId);
         System.out.println("lastChecksum: " + lastChecksum);
 
         if (diff == null || diff.trim().isEmpty()) {
@@ -118,12 +118,27 @@ public class UsrDraftController {
         String draft;
         try {
             draft = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
+
+            Member member = memberService.getFcmTokenById(memberId);
+            if (member != null && member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                fcmService.sendMessage(
+                        member.getFcmToken(),
+                        "Draft 생성 완료 🎉",
+                        "당신의 커밋 diff가 초안으로 변환되었습니다!",
+                        null
+                );
+                System.out.println("✅ FCM 알림 전송 완료");
+            } else {
+                System.out.println("⚠️ fcmToken 없음 → 알림 생략");
+            }
+
         } catch (Exception e) {
             return ResultData.from("F-2", "초안 생성에 실패했습니다.", "error", e.getMessage());
         }
 
         return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
+
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {

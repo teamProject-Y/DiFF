@@ -154,31 +154,64 @@ public class UsrMemberController {
 
 
     @GetMapping("/followingList")
-    public ResponseEntity<ResultData> showFollowingList(HttpServletRequest req) {
-        Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+    public ResponseEntity<ResultData> showFollowingList(
+            @RequestParam(required = false) String nickName,
+            HttpServletRequest req) {
 
         System.out.println("\n===== [GET] /api/DiFF/member/followingList =====");
-        System.out.println("memberId = " + memberId);
+        System.out.println("👉 프론트에서 전달된 nickName = " + nickName);
 
-        List<Member> followingList = memberService.getFollowingList(memberId);
+        Long targetId;
+        if (nickName != null) {
+            Member target = memberService.getMemberByNickName(nickName);
+            if (target == null) {
+                System.out.println("⚠️ 해당 닉네임 없음: " + nickName);
+                return ResponseEntity.ok(ResultData.from("F-1", "해당 닉네임 회원 없음", "followingList", List.of()));
+            }
+            targetId = target.getId();
+            System.out.println("✅ targetId(조회 대상 회원) = " + targetId);
+        } else {
+            Rq rq = (Rq) req.getAttribute("rq");
+            targetId = ((Number) rq.getLoginedMemberId()).longValue();
+            System.out.println("👉 닉네임 없음 → 로그인 사용자 기준 targetId = " + targetId);
+        }
+
+        List<Member> followingList = memberService.getFollowingList(targetId);
+        System.out.println("📌 팔로잉 수 = " + followingList.size());
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followingList));
     }
 
-
     @GetMapping("/followerList")
-    public ResponseEntity<ResultData> showFollowerList(HttpServletRequest req) {
-        Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+    public ResponseEntity<ResultData> showFollowerList(
+            @RequestParam(required = false) String nickName,
+            HttpServletRequest req) {
 
-        System.out.println("\n===== [GET] /api/DiFF/member/followingList =====");
-        System.out.println("memberId = " + memberId);
+        System.out.println("\n===== [GET] /api/DiFF/member/followerList =====");
+        System.out.println("👉 프론트에서 전달된 nickName = " + nickName);
 
-        List<Member> followerList = memberService.getFollowerList(memberId);
+        Long targetId;
+        if (nickName != null) {
+            Member target = memberService.getMemberByNickName(nickName);
+            if (target == null) {
+                System.out.println("⚠️ 해당 닉네임 없음: " + nickName);
+                return ResponseEntity.ok(ResultData.from("F-1", "해당 닉네임 회원 없음", "followerList", List.of()));
+            }
+            targetId = target.getId();
+            System.out.println("✅ targetId(조회 대상 회원) = " + targetId);
+        } else {
+            Rq rq = (Rq) req.getAttribute("rq");
+            targetId = ((Number) rq.getLoginedMemberId()).longValue();
+            System.out.println("👉 닉네임 없음 → 로그인 사용자 기준 targetId = " + targetId);
+        }
 
-        return ResponseEntity.ok(ResultData.from("S-1", "팔로잉 목록 조회 성공", "followingList", followerList));
+        List<Member> followerList = memberService.getFollowerList(targetId);
+        System.out.println("📌 팔로워 수 = " + followerList.size());
+
+        return ResponseEntity.ok(ResultData.from("S-1", "팔로워 목록 조회 성공", "followerList", followerList));
     }
+
+
 
     @PostMapping("/follow")
     public ResponseEntity<ResultData> follow(HttpServletRequest req,
@@ -254,4 +287,26 @@ public class UsrMemberController {
         }
     }
 
+    @PostMapping("/updateToken")
+    public ResponseEntity<String> updateToken(@RequestBody Map<String, String> body) {
+        Long memberId = rq.getLoginedMemberId();
+        String token = body.get("token");
+        memberService.updateFcmToken(memberId, token);
+        return ResponseEntity.ok("토큰 저장 완료");
+    }
+
+    @PostMapping("/saveFcmToken")
+    public ResponseEntity<String> saveFcmToken(@RequestBody Map<String, String> request,
+                                               HttpServletRequest req) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+        System.out.println("📥 /api/DiFF/member/saveFcmToken 요청 도착 → memberId: " + loginedMemberId);
+        String token = request.get("fcmToken");
+        if (token == null || token.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ fcmToken 값이 비어있습니다.");
+        }
+        System.out.println("🎯 추출된 fcmToken: " + token);
+        memberService.saveFcmToken(loginedMemberId, token);
+        return ResponseEntity.ok("✅ fcmToken 저장 완료");
+    }
 }

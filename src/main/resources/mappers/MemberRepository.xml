@@ -124,5 +124,20 @@
         WHERE id = #{memberId}
     </update>
 
+    <select id="getFcmTokenById" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT
+            id,
+            nickName,
+            email,
+            fcmToken
+        FROM member
+        WHERE id = #{memberId}
+    </select>
+
+    <update id="saveFcmToken">
+        UPDATE member
+        SET fcmToken = #{fcmToken}
+        WHERE id = #{memberId}
+    </update>
 
 </mapper>
