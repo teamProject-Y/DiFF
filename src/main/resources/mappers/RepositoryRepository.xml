@@ -60,12 +60,18 @@
     </select>
 
     <insert id="insertRepository">
-        INSERT INTO repository (memberId, name, regDate, updateDate)
-        VALUES (#{memberId}, #{name}, NOW(), NOW())
+        INSERT INTO repository (memberId, name, aPrivate, url, regDate, updateDate)
+        VALUES (#{memberId}, #{name}, #{aPrivate}, #{url}, NOW(), NOW())
     </insert>
 
     <select id="getLastInsertId" parameterType="int">
         SELECT LAST_INSERT_ID()
+    </select>
+
+    <select id="getMemberIdByRepositoryId" parameterType="Long">
+        SELECT memberId
+        FROM repository
+        where id = #{repositoryId}
     </select>
 
 </mapper>

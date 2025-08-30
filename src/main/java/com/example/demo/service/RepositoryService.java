@@ -1,11 +1,13 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.RepositoryRepository;
+import com.example.demo.vo.Article;
 import com.example.demo.vo.Repository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class RepositoryService {
@@ -35,7 +37,12 @@ public class RepositoryService {
         return repositoryRepository.getLastInsertId();
     }
 
-    public void insertRepository(Long memberId, String name) {
-        repositoryRepository.insertRepository(memberId, name);
+    public void insertRepository(Long memberId, String name, boolean aPrivate, String url) {
+        repositoryRepository.insertRepository(memberId, name, aPrivate, url);
     }
+
+    public boolean isRepoOwner(Long memberId, Long repositoryId) {
+        return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
+    }
+
 }

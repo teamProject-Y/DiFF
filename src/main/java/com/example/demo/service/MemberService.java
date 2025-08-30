@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.OAuthAccountRepository;
-import com.example.demo.vo.Follow;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -52,11 +51,12 @@ public class MemberService {
         }
 
         email = email.trim();
-        System.out.println("1. processOAuthLogin email: " + email + ", nickName: " + nickName);
+        System.out.println("1. processOAuthLogin email: " + email + ", nickName: " + nickName + ", provider: " + provider);
         // 이미 연결된 계정인지 확인
         OAuthAccount account = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (account != null) {
-            return memberRepository.getById(account.getMemberId());
+            System.out.println("account null");
+            return memberRepository.getMemberById(account.getMemberId());
         }
 
         // 이메일로 기존 회원 확인
@@ -86,7 +86,7 @@ public class MemberService {
     public Member getByProviderAndOauthId(String provider, String oauthId) {
         OAuthAccount acc = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (acc == null) return null;
-        return memberRepository.getById(acc.getMemberId());
+        return memberRepository.getMemberById(acc.getMemberId());
     }
 
     public Integer isVerifiedUser(String email) {
@@ -136,4 +136,16 @@ public class MemberService {
         return memberRepository.modifyIntroduce(memberId, introduce);
     }
 
+    public void updateFcmToken(Long memberId, String token) {
+        memberRepository.updateFcmToken(memberId, token);
+    }
+
+    public Member getFcmTokenById(Long memberId) {
+        return memberRepository.getFcmTokenById(memberId);
+    }
+
+    public void saveFcmToken(Long memberId, String fcmToken) {
+        memberRepository.saveFcmToken(memberId, fcmToken);
+        System.out.println("✅ FCM 토큰 저장 완료 → memberId=" + memberId + ", token=" + fcmToken);
+    }
 }
