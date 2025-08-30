@@ -45,7 +45,4 @@ public class RepositoryService {
         return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
     }
 
-    public boolean isRepoOwner(Long memberId, Long repositoryId) {
-        return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
-    }
 }

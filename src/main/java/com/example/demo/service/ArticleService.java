@@ -3,8 +3,10 @@ package com.example.demo.service;
 import java.util.List;
 
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.MemberRepository;
 import com.example.demo.repository.ReactionRepository;
 import com.example.demo.vo.Article;
+import com.example.demo.vo.Member;
 import com.example.demo.vo.ResultData;
 import com.example.util.Ut;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +24,46 @@ public class ArticleService {
     @Autowired
     private DraftService draftService;
 
+    @Autowired
+    private FcmService fcmService;
 
-    public int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId, Long draftId) {
+    @Autowired
+    private MemberRepository memberRepository;
 
+    public int writeArticle(Long memberId,
+                            String title,
+                            String body,
+                            String checksum,
+                            Long repositoryId,
+                            Long draftId) {
+
+        // 1. 글 저장
         int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
 
+        // 2. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
+        }
+
+        // 3. 작성자 정보 가져오기
+        Member writer = memberRepository.getMemberById(memberId);
+
+        // 4. 팔로워 목록 조회
+        List<Member> followers = memberRepository.getFollowingList(writer.getId());
+
+        // 5. 팔로워들에게 푸시 알림 발송
+        for (Member follower : followers) {
+            if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
+                fcmService.sendMessage(
+                        follower.getFcmToken(),
+                        "새 글 알림",
+                        writer.getNickName() + "님이 새 글을 작성했습니다!",
+                        null
+                );
+                System.out.println("✅ 알림 전송 → " + follower.getNickName());
+            } else {
+                System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
+            }
         }
         return rows;
     }

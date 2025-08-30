@@ -124,6 +124,7 @@ public class UsrArticleController {
         return ResultData.from("S-1", "작성 성공", wr);
     }
 
+
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 

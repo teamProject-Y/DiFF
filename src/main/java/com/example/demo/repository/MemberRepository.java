@@ -56,4 +56,10 @@ public interface MemberRepository {
     int countByNickName(String nickName);
 
     int modifyIntroduce(Long memberId, String introduce);
+
+    void updateFcmToken(Long memberId, String token);
+
+    Member getFcmTokenById(Long memberId);
+
+    void saveFcmToken(Long memberId, String fcmToken);
 }
