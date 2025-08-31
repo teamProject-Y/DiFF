@@ -63,6 +63,8 @@ public class UsrRepositoryController {
         System.out.println("description: ");
         System.out.println("repository name: " + repo.getName());
 
+        System.out.println("🐳 insert repo" + repo);
+
         // 필수 값 검증
         if (repo.getName() == null || repo.getName().trim().isEmpty()) {
             return ResultData.from("F-2", "리포지토리 이름이 필요합니다.");
@@ -73,8 +75,14 @@ public class UsrRepositoryController {
             return ResultData.from("F-1", "이미 존재하는 리포지토리명입니다.");
         }
 
-
-        repositoryService.insertRepository(memberId, repo.getName(), repo.isAPrivate(), repo.getUrl());
+        repositoryService.insertRepository(
+                memberId,
+                repo.getName(),
+                repo.isAPrivate(),
+                repo.getUrl(),
+                repo.getDefaultBranch(),
+                repo.getOwner()
+        );
 
         int newRepoId = repositoryService.getLastInsertId();
 
