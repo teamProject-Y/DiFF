@@ -82,8 +82,8 @@ public class GithubController {
             r.setUrl((String) m.get("html_url"));
             r.setAPrivate(Boolean.TRUE.equals(m.get("private")));
             r.setDefaultBranch((String) m.get("default_branch"));
-            Map<?,?> owner = (Map<?,?>) m.get("owner");
-            if (owner != null) r.setOwner((String) owner.get("login"));
+            Object login = ((Map<?, ?>) m.get("owner")).get("login");
+            r.setOwner(login != null ? login.toString() : null);
             return r;
         }).toList();
 
