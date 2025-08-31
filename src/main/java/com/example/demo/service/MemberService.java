@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.OAuthAccountRepository;
-import com.example.demo.vo.Follow;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -137,4 +136,16 @@ public class MemberService {
         return memberRepository.modifyIntroduce(memberId, introduce);
     }
 
+    public void updateFcmToken(Long memberId, String token) {
+        memberRepository.updateFcmToken(memberId, token);
+    }
+
+    public Member getFcmTokenById(Long memberId) {
+        return memberRepository.getFcmTokenById(memberId);
+    }
+
+    public void saveFcmToken(Long memberId, String fcmToken) {
+        memberRepository.saveFcmToken(memberId, fcmToken);
+        System.out.println("✅ FCM 토큰 저장 완료 → memberId=" + memberId + ", token=" + fcmToken);
+    }
 }

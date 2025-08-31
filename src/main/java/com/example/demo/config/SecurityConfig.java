@@ -79,7 +79,10 @@ public class SecurityConfig {
                                         "/api/DiFF/member/check/**",
 
                                         // 글 관련 API
-                                        "/api/DiFF/article/**", "/api/DiFF/reply/list"
+                                        "/api/DiFF/article/**", "/api/DiFF/reply/list",
+
+                                        // 알림
+                                        "/api/DiFF/notify/**"
 
                                         // 글쓰기 (웹 & API 혼합)
 //                                        "/DiFF/article/**",

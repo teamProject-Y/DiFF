@@ -59,7 +59,6 @@
         WHERE id = #{loginedMemberId}
     </update>
 
-    <!-- 새 회원 저장 -->
     <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (nickName, email)
         VALUES (#{nickName}, #{email})
@@ -124,5 +123,20 @@
         WHERE id = #{memberId}
     </update>
 
+    <select id="getFcmTokenById" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT
+            id,
+            nickName,
+            email,
+            fcmToken
+        FROM member
+        WHERE id = #{memberId}
+    </select>
+
+    <update id="saveFcmToken">
+        UPDATE member
+        SET fcmToken = #{fcmToken}
+        WHERE id = #{memberId}
+    </update>
 
 </mapper>
