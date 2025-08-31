@@ -41,4 +41,7 @@ public class RepositoryService {
         repositoryRepository.insertRepository(memberId, name, aPrivate, url, defaultBranch, owner);
     }
 
+    public boolean isRepoOwner(Long memberId, Long repositoryId) {
+        return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
+    }
 }

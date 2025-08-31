@@ -5,48 +5,101 @@
 
 <mapper namespace="com.example.demo.repository.MemberRepository">
 
+    <!-- 회원가입 -->
     <insert id="join" parameterType="map">
         INSERT INTO `member`
         SET regDate = NOW(),
-        loginPw = #{loginPw},
-        nickName = #{nickName},
-        email = #{email}
+            loginPw = #{loginPw},
+            nickName = #{nickName},
+            email = #{email},
+            isVerified = false
     </insert>
 
-    <select id="getByOauthIdAndProvider" resultType="com.example.demo.vo.Member">
-        SELECT m.*
-        FROM oauthAccount oa
-        JOIN member m ON oa.memberId = m.id
-        WHERE oa.oauthId = #{oauthId}
-        AND oa.provider = #{provider}
-    </select>
-
-    <update id="uploadProfileImg">
-        UPDATE member
-        SET profileUrl = #{profileUrl}
-        WHERE id = #{memberId}
-    </update>
-
-    <select id="isExistsEmail" parameterType="String">
-        SELECT COUNT(*) FROM `member`
-        WHERE email = #{email}
-    </select>
-
-    <select id="getLastInsertId">
+    <select id="getLastInsertId" resultType="long">
         SELECT LAST_INSERT_ID()
     </select>
 
-    <select id="getMemberById" parameterType="java.lang.Long"
-            resultType="com.example.demo.vo.Member">
-        SELECT * FROM `member`
-        WHERE id = #{id}
+    <!-- 이메일 존재 여부 -->
+    <select id="isExistsEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM `member` WHERE email = #{email}
     </select>
 
-    <!-- 이메일로 회원 조회 -->
-    <select id="getMemberByEmail" resultType="com.example.demo.vo.Member">
+    <!-- 회원 조회 -->
+    <select id="getMemberById" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT * FROM `member` WHERE id = #{id}
+    </select>
+
+    <select id="getMemberByEmail" parameterType="string" resultType="com.example.demo.vo.Member">
         SELECT * FROM member WHERE email = #{email}
     </select>
 
+    <select id="getMemberByNickName" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT * FROM member WHERE nickName = #{nickName}
+    </select>
+
+    <!-- OAuth -->
+    <select id="getByOauthIdAndProvider" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM oauthAccount oa
+                 JOIN member m ON oa.memberId = m.id
+        WHERE oa.oauthId = #{oauthId}
+          AND oa.provider = #{provider}
+    </select>
+
+    <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (nickName, email, isVerified, regDate, updateDate)
+        VALUES (#{nickName}, #{email}, false, NOW(), NOW())
+    </insert>
+
+    <!-- 이메일 인증 토큰 업데이트 -->
+    <update id="updateEmailVerificationToken">
+        UPDATE member
+        SET emailVerificationToken = #{token},
+            emailVerificationExpiry = #{expiry}
+        WHERE id = #{memberId}
+    </update>
+
+    <!-- 토큰으로 회원 조회 -->
+    <select id="findByEmailVerificationToken" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT *
+        FROM member
+        WHERE emailVerificationToken = #{token}
+    </select>
+
+    <update id="verifyEmail" parameterType="long">
+        UPDATE member
+        SET isVerified = true,
+            emailVerificationToken = NULL,
+            emailVerificationExpiry = NULL,
+            updateDate = NOW()
+        WHERE id = #{memberId}
+    </update>
+
+
+    <!-- 비밀번호 재설정 토큰 업데이트 -->
+    <update id="updateResetToken">
+        UPDATE member
+        SET resetToken = #{token},
+            resetTokenExpiry = #{expiry}
+        WHERE id = #{memberId}
+    </update>
+
+    <!-- 토큰으로 회원 조회 (비밀번호 재설정) -->
+    <select id="findByResetToken" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT * FROM member WHERE resetToken = #{token}
+    </select>
+
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE member
+        SET loginPw = #{newPw},
+            resetToken = NULL,
+            resetTokenExpiry = NULL,
+            updateDate = NOW()
+        WHERE id = #{memberId}
+    </update>
+
+    <!-- 회원 수정 -->
     <update id="modifyMember" parameterType="map">
         UPDATE `member`
         <set>
@@ -59,43 +112,50 @@
         WHERE id = #{loginedMemberId}
     </update>
 
-    <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO member (nickName, email)
-        VALUES (#{nickName}, #{email})
-    </insert>
-
-    <select id="getById" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE id = #{id}
+    <!-- 닉네임 중복 검사 -->
+    <select id="countByNickName" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM member WHERE nickName = #{nickName}
     </select>
 
-    <select id="isVerifiedUser" parameterType="String" resultType="java.lang.Integer">
-        SELECT id
-        FROM `member`
-        WHERE email = #{email} LIMIT 1
-    </select>
+    <update id="modifyNickName">
+        UPDATE member
+        SET nickName = #{nickName}
+        WHERE id = #{memberId}
+    </update>
 
-    <select id="getFollowingList" parameterType="long" resultType="com.example.demo.vo.Member">
-        SELECT m.*
-        FROM follow f
-        Inner JOIN member m ON f.fromMemberId = m.id
-        WHERE f.toMemberId = #{memberId}
-        ORDER BY f.regDate DESC;
-    </select>
+    <update id="modifyIntroduce">
+        UPDATE member
+        SET introduce = #{introduce}
+        WHERE id = #{memberId}
+    </update>
 
-    <select id="getFollowerList" parameterType="long" resultType="com.example.demo.vo.Member">
-        SELECT m.*
-        FROM follow f
-        JOIN member m ON f.toMemberId = m.id
-        WHERE f.fromMemberId = #{memberId}
-        ORDER BY f.regDate DESC;
-    </select>
+    <!-- 프로필 이미지 업로드 -->
+    <update id="uploadProfileImg">
+        UPDATE member
+        SET profileUrl = #{profileUrl}
+        WHERE id = #{memberId}
+    </update>
 
-    <select id="getMemberByNickName" parameterType="String" resultType="com.example.demo.vo.Member">
-        SELECT *
+    <!-- FCM -->
+    <select id="getFcmTokenById" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT id, nickName, email, fcmToken
         FROM member
-        WHERE nickName = #{nickName}
+        WHERE id = #{memberId}
     </select>
 
+    <update id="saveFcmToken">
+        UPDATE member
+        SET fcmToken = #{fcmToken}
+        WHERE id = #{memberId}
+    </update>
+
+    <update id="updateFcmToken">
+        UPDATE member
+        SET fcmToken = #{token}
+        WHERE id = #{memberId}
+    </update>
+
+    <!-- 팔로우/언팔로우 -->
     <insert id="follow">
         INSERT INTO follow (toMemberId, fromMemberId, regDate, updateDate)
         VALUES (#{toMemberId}, #{fromMemberId}, NOW(), NOW())
@@ -107,36 +167,20 @@
           AND fromMemberId = #{fromMemberId}
     </delete>
 
-    <update id="modifyNickName">
-        UPDATE member
-        SET nickName = #{nickName}
-        WHERE id = #{memberId}
-    </update>
-
-    <select id="countByNickName" resultType="int">
-        SELECT COUNT(*) FROM member WHERE nickName = #{nickName}
+    <select id="getFollowingList" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM follow f
+                 INNER JOIN member m ON f.fromMemberId = m.id
+        WHERE f.toMemberId = #{memberId}
+        ORDER BY f.regDate DESC
     </select>
 
-    <update id="modifyIntroduce">
-        UPDATE member
-        SET introduce = #{introduce}
-        WHERE id = #{memberId}
-    </update>
-
-    <select id="getFcmTokenById" parameterType="long" resultType="com.example.demo.vo.Member">
-        SELECT
-            id,
-            nickName,
-            email,
-            fcmToken
-        FROM member
-        WHERE id = #{memberId}
+    <select id="getFollowerList" parameterType="long" resultType="com.example.demo.vo.Member">
+        SELECT m.*
+        FROM follow f
+                 JOIN member m ON f.toMemberId = m.id
+        WHERE f.fromMemberId = #{memberId}
+        ORDER BY f.regDate DESC
     </select>
-
-    <update id="saveFcmToken">
-        UPDATE member
-        SET fcmToken = #{fcmToken}
-        WHERE id = #{memberId}
-    </update>
 
 </mapper>

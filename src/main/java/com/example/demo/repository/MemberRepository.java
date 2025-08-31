@@ -62,4 +62,21 @@ public interface MemberRepository {
     Member getFcmTokenById(Long memberId);
 
     void saveFcmToken(Long memberId, String fcmToken);
+
+    void updateEmailVerificationToken(@Param("memberId") Long memberId,
+                                      @Param("token") String token,
+                                      @Param("expiry") String expiry);
+
+    Member findByEmailVerificationToken(@Param("token") String token);
+
+    void verifyEmail(@Param("memberId") Long memberId);
+
+    void updateResetToken(@Param("memberId") Long memberId,
+                          @Param("token") String token,
+                          @Param("expiry") String expiry);
+
+    Member findByResetToken(@Param("token") String token);
+
+    void updatePassword(@Param("memberId") Long memberId,
+                        @Param("loginPw") String loginPw);
 }
