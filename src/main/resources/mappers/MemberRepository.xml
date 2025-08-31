@@ -59,7 +59,6 @@
         WHERE id = #{loginedMemberId}
     </update>
 
-    <!-- 새 회원 저장 -->
     <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO member (nickName, email)
         VALUES (#{nickName}, #{email})
