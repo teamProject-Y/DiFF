@@ -171,28 +171,33 @@ public class MemberService {
 
     public void requestPasswordReset(String email) {
         Member member = memberRepository.getMemberByEmail(email);
-        if (member == null) {
-            throw new RuntimeException("없는 회원");
-        }
+        if (member == null) throw new RuntimeException("없는 회원");
 
         String token = UUID.randomUUID().toString();
-        memberRepository.updateResetToken(member.getId(), token, LocalDateTime.now().plusHours(1).toString());
+        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
 
-        String link = "http://localhost:8080/member/reset-password?token=" + token;
+        memberRepository.updateResetToken(member.getId(), token, String.valueOf(expiry));
+
+        String link = "http://localhost:3000/api/DiFF/member/resetPw?token=" + token; // 프론트 페이지
         mailService.sendMail(email, "비밀번호 재설정", "비밀번호를 바꾸려면 클릭: " + link);
     }
 
     public void updatePassword(String token, String newPw) {
         Member member = memberRepository.findByResetToken(token);
-        if (member == null) {
-            throw new RuntimeException("잘못된 토큰");
-        }
+        if (member == null) throw new RuntimeException("잘못된 토큰");
 
         if (member.getResetTokenExpiry() != null &&
-                LocalDateTime.parse(member.getResetTokenExpiry()).isBefore(LocalDateTime.now())) {
+                member.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("토큰 만료");
         }
 
-        memberRepository.updatePassword(member.getId(), passwordEncoder.encode(newPw));
+        memberRepository.updatePassword(
+                member.getId(),
+                passwordEncoder.encode(newPw)
+        );
+
+        memberRepository.clearResetToken(member.getId());
     }
+
+
 }

@@ -324,16 +324,13 @@ public class UsrMemberController {
         }
     }
 
-
-
-    // ✅ 비밀번호 찾기 요청
     @PostMapping("/findPw")
     public ResponseEntity<String> requestReset(@RequestParam String email) {
         memberService.requestPasswordReset(email);
         return ResponseEntity.ok("비밀번호 재설정 이메일을 발송했습니다.");
     }
 
-    // ✅ 비밀번호 재설정
+
     @PostMapping("/updatePassword")
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPw) {
         memberService.updatePassword(token, newPw);

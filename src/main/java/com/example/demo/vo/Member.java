@@ -32,5 +32,6 @@ public class Member {
     private String emailVerificationToken;
     private LocalDateTime emailVerificationExpiry;
     private String resetToken;
-    private String resetTokenExpiry;
+    private LocalDateTime resetTokenExpiry;
+
 }

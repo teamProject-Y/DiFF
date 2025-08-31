@@ -79,4 +79,6 @@ public interface MemberRepository {
 
     void updatePassword(@Param("memberId") Long memberId,
                         @Param("loginPw") String loginPw);
+
+    void clearResetToken(Long id);
 }

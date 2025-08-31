@@ -77,7 +77,8 @@ public class SecurityConfig {
                                         "/api/DiFF/auth/**", "/api/DiFF/auth/refresh",
                                         "/api/DiFF/member/login", "/api/DiFF/member/doJoin",
                                         "/api/DiFF/member/check/**",
-                                        "/api/DiFF/member/verify",
+                                        "/api/DiFF/member/verify",  "/api/DiFF/member/findPw",
+                                        "/api/DiFF/member/resetPw",
                                         // 글 관련 API
                                         "/api/DiFF/article/**", "/api/DiFF/reply/list",
 
