@@ -6,7 +6,8 @@
 <mapper namespace="com.example.demo.repository.ReplyRepository">
 
     <select id="getReplies" resultType="com.example.demo.vo.Reply">
-        SELECT R.*, M.nickName as extra__writer
+        SELECT R.*, M.nickName as extra__writer,
+               M.profileUrl as profileUrl
         FROM reply R
         JOIN `member` M
         ON R.memberId = M.id
