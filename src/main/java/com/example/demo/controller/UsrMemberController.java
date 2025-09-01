@@ -45,10 +45,13 @@ public class UsrMemberController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
     @Autowired
     private AuthService authService;
+
     @Autowired
     private RepositoryService repositoryService;
+
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -72,6 +75,7 @@ public class UsrMemberController {
         }
 
         System.out.println("member 닉네임.  "+ member.getNickName());
+        System.out.println("member github: " + member.getGithubUrl());
         List<Repository> repositories = repositoryService.getRepositoriesByMemberId(member.getId());
 
         Map<String, Object> result = new HashMap<>();
@@ -308,4 +312,35 @@ public class UsrMemberController {
         memberService.saveFcmToken(loginedMemberId, token);
         return ResponseEntity.ok("✅ fcmToken 저장 완료");
     }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verify(@RequestParam String token) {
+        System.out.println("📩 [이메일 인증 요청] token=" + token);
+
+        try {
+            memberService.verifyEmail(token);
+            System.out.println("✅ [이메일 인증 성공] token=" + token);
+            return ResponseEntity.ok("이메일 인증 완료!");
+        } catch (Exception e) {
+            System.out.println("❌ [이메일 인증 실패] token=" + token + ", 이유: " + e.getMessage());
+            return ResponseEntity.status(400).body("이메일 인증 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/findPw")
+    public ResponseEntity<String> requestReset(@RequestParam String email) {
+        memberService.requestPasswordReset(email);
+        return ResponseEntity.ok("비밀번호 재설정 이메일을 발송했습니다.");
+    }
+
+
+    @PostMapping("/updatePassword")
+    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPw) {
+        System.out.println("📩 [resetPassword 요청]");
+        System.out.println("👉 token=" + token);
+        System.out.println("👉 newPw=" + newPw);
+        memberService.updatePassword(token, newPw);
+        return ResponseEntity.ok("비밀번호 재설정 완료!");
+    }
+
 }
