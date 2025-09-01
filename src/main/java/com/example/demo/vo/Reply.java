@@ -21,6 +21,7 @@ public class Reply {
     private LocalDateTime updateDate;
 
     private String extra__writer;
+    private String profileUrl;
     private Long extra__ReactionPoint;
 
     private boolean userCanModify;

@@ -3,7 +3,6 @@ package com.example.demo.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.demo.config.JwtTokenProvider;
-import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.service.AuthService;
 import com.example.demo.service.RepositoryService;
 import com.example.demo.vo.*;
