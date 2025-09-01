@@ -195,4 +195,25 @@ public class UsrDraftController {
         return ResultData.from("S-1", "임시저장 조회 성공", draft);
     }
 
+    @PostMapping("/save")
+    public ResultData<Long> saveDraft(HttpServletRequest req, @RequestBody Draft draft) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("📥 [Controller] /draft/save 요청 도착");
+        System.out.println("📥 [Controller] 요청 데이터: id=" + draft.getId()
+                + ", title=" + draft.getTitle()
+                + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
+                + ", repositoryId=" + draft.getRepositoryId());
+
+        draft.setMemberId(memberId);
+
+        Long draftId = draftService.saveDraft(draft);
+
+        System.out.println("📤 [Controller] saveDraft 완료 → draftId=" + draftId);
+
+        return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
+    }
+
+
 }

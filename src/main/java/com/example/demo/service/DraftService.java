@@ -46,4 +46,19 @@ public class DraftService {
     public int deleteDraft(Long id, Long memberId) {
         return draftRepository.deleteDraft(id,memberId);
     }
+
+    public Long saveDraft(Draft draft) {
+        if (draft.getId() != null) {
+            System.out.println("🛠️ [Service] 기존 draft 업데이트 실행 (id=" + draft.getId() + ")");
+            draftRepository.updateDraft(draft);
+        } else {
+            System.out.println("🛠️ [Service] 새 draft 인서트 실행");
+            draftRepository.insertDraft(draft);
+            System.out.println("🛠️ [Service] insert 후 draft.id=" + draft.getId());
+        }
+
+        return draft.getId();
+    }
+
+
 }
