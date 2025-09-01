@@ -1,5 +1,6 @@
 package com.example.demo.vo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class ResultData<DT> {
 
     @Getter
+    @JsonProperty("resultCode")
     private String ResultCode;
     @Getter
     private String msg;
