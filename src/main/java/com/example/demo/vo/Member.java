@@ -27,4 +27,11 @@ public class Member {
     private Role role;
     private String introduce;
     private String fcmToken;
+
+    private Boolean isVerified;
+    private String emailVerificationToken;
+    private LocalDateTime emailVerificationExpiry;
+    private String resetToken;
+    private LocalDateTime resetTokenExpiry;
+
 }

@@ -1,61 +1,84 @@
 package com.example.demo.service;
 
+import com.example.demo.repository.MemberRepository;
 import com.example.demo.repository.OAuthAccountRepository;
+import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.vo.Member;
-
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
+    private final MailService mailService;
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final OAuthAccountRepository oAuthAccountRepository;
 
-    // 회원 조회
     public Member getMemberById(Long id) {
-
         return memberRepository.getMemberById(id);
     }
 
-    // 회원가입
     public Long join(String loginPw, String checkLoginPw, String nickName, String email) {
+        if (memberRepository.isExistsEmail(email) == 1) return -409L; // 중복 이메일
+        if (!loginPw.equals(checkLoginPw)) return -400L; // 비밀번호 불일치
 
-        if(memberRepository.isExistsEmail(email) == 1) return -409L; // 중복 이메일
-        if(!loginPw.equals(checkLoginPw)) return -400L; // 비밀번호
-
-        // 비밀번호 암호화 후 저장
+        // 비밀번호 암호화
         String encPw = passwordEncoder.encode(loginPw);
-        memberRepository.join(encPw, nickName, email);
 
-        return (long) memberRepository.getLastInsertId(); // 방금 가입된 멤버의 id 반환
+        // 회원 저장 (isVerified = false)
+        memberRepository.join(encPw, nickName, email);
+        Long memberId = (long) memberRepository.getLastInsertId();
+
+        // 이메일 인증 토큰 생성 & DB 업데이트
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiry = LocalDateTime.now().plusDays(1); // 24시간 유효
+        memberRepository.updateEmailVerificationToken(memberId, token, String.valueOf(expiry));
+
+        // 인증 메일 발송
+        String link = "http://localhost:8080/api/DiFF/member/verify?token=" + token;
+        mailService.sendMail(email, "이메일 인증",
+                nickName + "님, 아래 링크를 클릭하여 이메일 인증을 완료하세요:\n" + link);
+
+        return memberId;
+    }
+
+    public void verifyEmail(String token) {
+        System.out.println("📌 verifyEmail() 실행됨, token=" + token);
+
+        Member member = memberRepository.findByEmailVerificationToken(token);
+        if (member == null) {
+            throw new RuntimeException("잘못된 토큰입니다.");
+        }
+
+        if (member.getEmailVerificationExpiry() != null &&
+                member.getEmailVerificationExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("토큰이 만료되었습니다.");
+        }
+
+        memberRepository.verifyEmail(member.getId());
+        System.out.println("✅ 이메일 인증 완료 → memberId=" + member.getId());
     }
 
     public Member getMemberByEmail(String email) {
         return memberRepository.getMemberByEmail(email);
     }
 
-
-    // OAuth 로그인/연동 처리
     public Member processOAuthLogin(String provider, String oauthId, String email, String nickName) {
-        System.out.println("procOAuthlogin 진입");
         if (email == null || email.isBlank()) {
             throw new RuntimeException("OAuth 로그인 실패: 이메일이 존재하지 않음");
         }
 
         email = email.trim();
-        System.out.println("1. processOAuthLogin email: " + email + ", nickName: " + nickName + ", provider: " + provider);
-        // 이미 연결된 계정인지 확인
+        // 이미 연결된 계정 확인
         OAuthAccount account = oAuthAccountRepository.findByProviderAndOauthId(provider, oauthId);
         if (account != null) {
-            System.out.println("account null");
             return memberRepository.getMemberById(account.getMemberId());
         }
 
@@ -67,7 +90,6 @@ public class MemberService {
             member.setEmail(email);
             member.setNickName(nickName);
             memberRepository.saveMember(member);
-            System.out.println("memberService : " + member);
         }
 
         // oauth_account 등록
@@ -77,8 +99,6 @@ public class MemberService {
                 .oauthId(oauthId)
                 .build();
         oAuthAccountRepository.saveOAuthAccount(newAccount);
-
-        System.out.println("2. processOAuthLogin email: " + email + ", nickName: " + nickName);
 
         return member;
     }
@@ -91,7 +111,7 @@ public class MemberService {
 
     public Integer isVerifiedUser(String email) {
         Member member = memberRepository.getMemberByEmail(email);
-        if(member == null) return null;
+        if (member == null) return null;
         else return Math.toIntExact(member.getId());
     }
 
@@ -120,15 +140,13 @@ public class MemberService {
     }
 
     public List<Member> getFollowerList(Long memberId) {
-       return memberRepository.getFollowerList(memberId);
+        return memberRepository.getFollowerList(memberId);
     }
 
     public int modifyNickName(Long memberId, String nickName) {
-
         if (memberRepository.countByNickName(nickName) > 0) {
             return -1; // 중복
         }
-        // 2. 수정
         return memberRepository.modifyNickName(memberId, nickName);
     }
 
@@ -146,6 +164,51 @@ public class MemberService {
 
     public void saveFcmToken(Long memberId, String fcmToken) {
         memberRepository.saveFcmToken(memberId, fcmToken);
-        System.out.println("✅ FCM 토큰 저장 완료 → memberId=" + memberId + ", token=" + fcmToken);
     }
+
+    public void requestPasswordReset(String email) {
+        Member member = memberRepository.getMemberByEmail(email);
+        if (member == null) throw new RuntimeException("없는 회원");
+
+        if (member.getResetToken() != null &&
+                member.getResetTokenExpiry() != null &&
+                member.getResetTokenExpiry().isAfter(LocalDateTime.now())) {
+
+            System.out.println("♻ 기존 resetToken 재사용: " + member.getResetToken());
+
+        } else {
+            // 새 토큰 발급
+            String token = UUID.randomUUID().toString();
+            LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+
+            memberRepository.updateResetToken(member.getId(), token, String.valueOf(expiry));
+            member.setResetToken(token);
+            member.setResetTokenExpiry(expiry);
+
+            System.out.println("🆕 새 resetToken 발급: " + token);
+        }
+
+        String link = "http://localhost:3000/DiFF/member/resetPw?token=" + member.getResetToken();
+        mailService.sendMail(email, "비밀번호 재설정",
+                "비밀번호를 바꾸려면 클릭: " + link + "\n\n만료 시간: " + member.getResetTokenExpiry());
+    }
+
+    public void updatePassword(String token, String newPw) {
+        Member member = memberRepository.findByResetToken(token);
+        if (member == null) throw new RuntimeException("잘못된 토큰");
+
+        if (member.getResetTokenExpiry() != null &&
+                member.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("토큰 만료");
+        }
+
+        memberRepository.updatePassword(
+                member.getId(),
+                passwordEncoder.encode(newPw)
+        );
+
+        memberRepository.clearResetToken(member.getId());
+    }
+
+
 }
