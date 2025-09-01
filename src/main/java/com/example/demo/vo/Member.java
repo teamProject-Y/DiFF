@@ -27,6 +27,7 @@ public class Member {
     private Role role;
     private String introduce;
     private String fcmToken;
+    private String githubUrl;
 
     private Boolean isVerified;
     private String emailVerificationToken;
