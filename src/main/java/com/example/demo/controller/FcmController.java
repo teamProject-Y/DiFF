@@ -1,12 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.FcmService;
+import com.example.demo.vo.Rq;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -36,4 +35,7 @@ public class FcmController {
 
         return ResponseEntity.ok("알림 전송 완료");
     }
+
+
+
 }
