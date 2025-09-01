@@ -69,49 +69,66 @@ public class UsrAuthController {
         String email = member.getEmail();
         String loginPw = member.getLoginPw();
 
+        System.out.println("📌 로그인 시도: email=" + email + ", pw=" + loginPw);
+
         // 1. 유효성 체크
         if (Ut.isEmpty(email) || !email.contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-1","이메일을 바르게 입력해주세요"));
+            System.out.println("❌ 잘못된 이메일 입력: " + email);
+            return ResponseEntity.badRequest().body(ResultData.from("F-1", "이메일을 바르게 입력해주세요"));
         }
         if (Ut.isEmpty(loginPw)) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-2","비밀번호를 입력해주세요"));
+            System.out.println("❌ 비밀번호 없음 (email=" + email + ")");
+            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
         }
 
         // 2. 회원 조회
         Member found = memberService.getMemberByEmail(email);
         if (found == null) {
-            return ResponseEntity.status(401).body(ResultData.from("F-3","존재하지 않는 계정입니다."));
+            System.out.println("❌ 존재하지 않는 계정: " + email);
+            return ResponseEntity.status(401).body(ResultData.from("F-3", "존재하지 않는 계정입니다."));
+        }
+        System.out.println("✅ 회원 조회 성공: id=" + found.getId()
+                + ", nick=" + found.getNickName()
+                + ", isVerified=" + found.getIsVerified());
+
+        // 3. 이메일 인증 여부 확인
+        if (!Boolean.TRUE.equals(found.getIsVerified())) {
+            System.out.println("❌ 이메일 미인증 계정: id=" + found.getId() + ", email=" + found.getEmail());
+            return ResponseEntity.status(403).body(ResultData.from("F-5", "이메일 인증이 필요합니다."));
         }
 
-        // 3. 비밀번호 매칭
+        // 4. 비밀번호 매칭
         if (!passwordEncoder.matches(loginPw, found.getLoginPw())) {
-            return ResponseEntity.status(401).body(ResultData.from("F-4","비밀번호가 일치하지 않습니다."));
+            System.out.println("❌ 비밀번호 불일치: email=" + email);
+            return ResponseEntity.status(401).body(ResultData.from("F-4", "비밀번호가 일치하지 않습니다."));
         }
 
-        // 4. 토큰 발급
+        // 5. 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(found.getId(), found.getNickName(), found.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(found.getId(), found.getNickName(), found.getEmail());
+        System.out.println("🎟️ 토큰 발급 성공: id=" + found.getId()
+                + ", email=" + email
+                + ", accessToken=" + accessToken);
 
-        // 5. 응답
+        // 6. 응답
         return ResponseEntity.ok(
-                ResultData.from("S-1", found.getNickName()+"님 환영합니다.",
+                ResultData.from("S-1", found.getNickName() + "님 환영합니다.",
                         "accessToken", accessToken,
                         "refreshToken", refreshToken)
         );
-
     }
 
 
     @PostMapping("/join")
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
         if (Ut.isEmpty(member.getLoginPw())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-2","비밀번호를 작성하세요."));
+            return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 작성하세요."));
         }
         if (Ut.isEmpty(member.getNickName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-4","닉네임을 쓰시오"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 쓰시오"));
         }
         if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-6","이메일 정확히 쓰시오"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-6", "이메일 정확히 쓰시오"));
         }
 
         long id = memberService.join(
@@ -128,16 +145,12 @@ public class UsrAuthController {
             return ResponseEntity.badRequest().body(ResultData.from("F-400", "비밀번호가 일치하지 않습니다."));
         }
 
-        Member newMember = memberService.getMemberByEmail(member.getEmail());
-
-        String accessToken = jwtTokenProvider.generateAccessToken(newMember.getId(), newMember.getNickName(), newMember.getEmail());
-        String refreshToken = jwtTokenProvider.generateRefreshToken(newMember.getId(), newMember.getNickName(), newMember.getEmail());
-
+        // ✅ JWT 발급 제거 (자동 로그인 방지)
         return ResponseEntity.ok(ResultData.from("S-1",
-                newMember.getNickName() + " 님 회원가입을 축하합니다.",
-                "accessToken", accessToken,
-                "refreshToken", refreshToken));
+                member.getNickName() + " 님 회원가입이 완료되었습니다. 이메일 인증을 해주세요."));
     }
+
+
 
 
     @PostMapping("/refresh")

@@ -3,6 +3,7 @@ package com.example.demo.service;
 import java.util.List;
 
 import com.example.demo.repository.ArticleRepository;
+import com.example.demo.repository.HitsRepository;
 import com.example.demo.repository.MemberRepository;
 import com.example.demo.repository.ReactionRepository;
 import com.example.demo.vo.Article;
@@ -29,6 +30,9 @@ public class ArticleService {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private HitsRepository hitsRepository;
 
     public int writeArticle(Long memberId,
                             String title,
@@ -132,8 +136,17 @@ public class ArticleService {
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
         return articleRepository.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
     }
-    public int increaseHits(Long articleId) {
-        return articleRepository.increaseHits(articleId);
+
+    public boolean increaseHits(Long articleId, Long memberId) {
+
+        int exists = hitsRepository.exists(articleId, memberId);
+        if (exists > 0) {
+            return false;
+        }
+        hitsRepository.save(articleId, memberId);
+        articleRepository.increaseHits(articleId);
+
+        return true;
     }
 
     public List<Article> getRepositoryArticles(Long repositoryId) {

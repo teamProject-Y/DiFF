@@ -287,15 +287,16 @@ public class UsrArticleController {
 
     @PostMapping("/hits/{articleId}")
     @ResponseBody
-    public Map<String, Object> increaseHits(@PathVariable Long articleId) {
+    public Map<String, Object> increaseHits(HttpServletRequest req, @PathVariable Long articleId) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        int rows = articleService.increaseHits(articleId);
+        boolean success = articleService.increaseHits(articleId, memberId);
 
         return Map.of(
-                "resultCode", rows > 0 ? "S-1" : "F-1",
-                "msg", rows > 0 ? "조회수가 증가했습니다." : "조회 실패"
+                "resultCode", success ? "S-1" : "F-1",
+                "msg", success ? "조회수가 증가했습니다." : "이미 조회한 게시글입니다."
         );
     }
-
 
 }
