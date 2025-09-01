@@ -33,4 +33,6 @@ public interface ArticleRepository {
     int increaseHits(Long articleId);
 
     List<Article> getRepositoryArticles(Long repositoryId);
+
+    List<Article> searchArticles(String keyword);
 }

@@ -60,6 +60,15 @@ public class UsrArticleController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/search")
+    public ResultData<List<Article>> searchArticles(@RequestParam String keyword) {
+        System.out.println("📥 /article/search 요청 keyword=" + keyword);
+
+        List<Article> results = articleService.searchArticles(keyword);
+
+        return ResultData.from("S-1", "검색 결과", "articles", results);
+    }
+
     @GetMapping("/trending")
     public ResponseEntity<Map<String, Object>> getTrending(
             @RequestParam(defaultValue = "100") Integer count,
