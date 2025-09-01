@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.example.demo.repository.ArticleRepository;
@@ -151,5 +152,12 @@ public class ArticleService {
 
     public List<Article> getRepositoryArticles(Long repositoryId) {
         return articleRepository.getRepositoryArticles(repositoryId);
+    }
+
+    public List<Article> searchArticles(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return articleRepository.searchArticles("%" + keyword + "%");
     }
 }
