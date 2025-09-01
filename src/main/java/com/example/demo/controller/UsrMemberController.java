@@ -45,10 +45,13 @@ public class UsrMemberController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
     @Autowired
     private AuthService authService;
+
     @Autowired
     private RepositoryService repositoryService;
+
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -72,6 +75,7 @@ public class UsrMemberController {
         }
 
         System.out.println("member 닉네임.  "+ member.getNickName());
+        System.out.println("member github: " + member.getGithubUrl());
         List<Repository> repositories = repositoryService.getRepositoriesByMemberId(member.getId());
 
         Map<String, Object> result = new HashMap<>();
