@@ -49,7 +49,6 @@ public class MemberService {
         return memberId;
     }
 
-    // ✅ 이메일 인증 처리
     public void verifyEmail(String token) {
         System.out.println("📌 verifyEmail() 실행됨, token=" + token);
 
@@ -58,13 +57,11 @@ public class MemberService {
             throw new RuntimeException("잘못된 토큰입니다.");
         }
 
-        // ⚡ LocalDateTime이므로 바로 비교 가능
         if (member.getEmailVerificationExpiry() != null &&
                 member.getEmailVerificationExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("토큰이 만료되었습니다.");
         }
 
-        // ✅ DB 업데이트
         memberRepository.verifyEmail(member.getId());
         System.out.println("✅ 이메일 인증 완료 → memberId=" + member.getId());
     }
@@ -173,13 +170,27 @@ public class MemberService {
         Member member = memberRepository.getMemberByEmail(email);
         if (member == null) throw new RuntimeException("없는 회원");
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+        if (member.getResetToken() != null &&
+                member.getResetTokenExpiry() != null &&
+                member.getResetTokenExpiry().isAfter(LocalDateTime.now())) {
 
-        memberRepository.updateResetToken(member.getId(), token, String.valueOf(expiry));
+            System.out.println("♻ 기존 resetToken 재사용: " + member.getResetToken());
 
-        String link = "http://localhost:3000/api/DiFF/member/resetPw?token=" + token; // 프론트 페이지
-        mailService.sendMail(email, "비밀번호 재설정", "비밀번호를 바꾸려면 클릭: " + link);
+        } else {
+            // 새 토큰 발급
+            String token = UUID.randomUUID().toString();
+            LocalDateTime expiry = LocalDateTime.now().plusHours(1);
+
+            memberRepository.updateResetToken(member.getId(), token, String.valueOf(expiry));
+            member.setResetToken(token);
+            member.setResetTokenExpiry(expiry);
+
+            System.out.println("🆕 새 resetToken 발급: " + token);
+        }
+
+        String link = "http://localhost:3000/DiFF/member/resetPw?token=" + member.getResetToken();
+        mailService.sendMail(email, "비밀번호 재설정",
+                "비밀번호를 바꾸려면 클릭: " + link + "\n\n만료 시간: " + member.getResetTokenExpiry());
     }
 
     public void updatePassword(String token, String newPw) {

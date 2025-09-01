@@ -92,10 +92,17 @@
     <!-- 비밀번호 변경 -->
     <update id="updatePassword">
         UPDATE member
-        SET loginPw = #{newPw},
-            resetToken = NULL,
-            resetTokenExpiry = NULL,
-            updateDate = NOW()
+        SET loginPw = #{loginPw},   <!-- newPw 아님 -->
+        resetToken = NULL,
+        resetTokenExpiry = NULL,
+        updateDate = NOW()
+        WHERE id = #{memberId}
+    </update>
+
+    <update id="clearResetToken">
+        UPDATE member
+        SET resetToken = NULL,
+            resetTokenExpiry = NULL
         WHERE id = #{memberId}
     </update>
 

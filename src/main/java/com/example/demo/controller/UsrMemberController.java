@@ -315,7 +315,7 @@ public class UsrMemberController {
         System.out.println("📩 [이메일 인증 요청] token=" + token);
 
         try {
-            memberService.verifyEmail(token);  // 👉 여기서 DB update
+            memberService.verifyEmail(token);
             System.out.println("✅ [이메일 인증 성공] token=" + token);
             return ResponseEntity.ok("이메일 인증 완료!");
         } catch (Exception e) {
@@ -333,6 +333,9 @@ public class UsrMemberController {
 
     @PostMapping("/updatePassword")
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPw) {
+        System.out.println("📩 [resetPassword 요청]");
+        System.out.println("👉 token=" + token);
+        System.out.println("👉 newPw=" + newPw);
         memberService.updatePassword(token, newPw);
         return ResponseEntity.ok("비밀번호 재설정 완료!");
     }
