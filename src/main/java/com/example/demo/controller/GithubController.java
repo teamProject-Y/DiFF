@@ -4,6 +4,7 @@ import com.example.demo.service.OAuthAccountService;
 import com.example.demo.service.MemberService;
 import com.example.demo.vo.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,13 @@ import java.util.Map;
 @RequestMapping("/api/DiFF/github")
 public class GithubController {
 
-    private final WebClient github; // bean: baseUrl=https://api.github.com, ACCEPT 설정
+    @Autowired
+    private Rq rq;
+
+    private final WebClient github;
+
     private final MemberService memberService;
+
     private final OAuthAccountService oAuthAccountService;
 
     @GetMapping("/repos")
@@ -89,32 +95,35 @@ public class GithubController {
 
     @GetMapping("/commits")
     public ResultData<List<Commit>> getCommitList(
+            @RequestAttribute("rq") Rq rq,
             HttpServletRequest req,
             @RequestParam String owner,
             @RequestParam String repo,
             @RequestParam(required = false) String branch,
             @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "50") int perPage
+            @RequestParam(required = false, defaultValue = "100") int perPage
     ) {
-        Rq rq = (Rq) req.getAttribute("rq");
-        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
 
-        String token = oAuthAccountService.findGithubAccessTokenByMemberId(member.getId());
+        System.out.println("rq memberId = " + rq.getLoginedMemberId());
+
+        Rq raq = (Rq) req.getAttribute("rq");
+        System.out.println("raq memberId = " + raq.getLoginedMemberId());
+
+        String token = oAuthAccountService.findGithubAccessTokenByMemberId(rq.getLoginedMemberId());
+
         if (token == null || token.isBlank()) {
             return ResultData.from("F-1", "깃허브 연동(토큰) 없음");
         }
 
         try {
             List<Map<String, Object>> res = github.get()
-                    .uri(uriBuilder -> {
-                        var b = uriBuilder.path("/repos/{owner}/{repo}/commits")
-                                .queryParam("per_page", Math.min(Math.max(perPage, 1), 100))
-                                .queryParam("page", Math.max(page, 1))
-                                .build(owner, repo);
-                        return uriBuilder.path("")
-                                .queryParamIfPresent("sha", java.util.Optional.ofNullable(branch))
-                                .build(owner, repo); // owner/repo는 이미 위에서 바인딩됨
-                    })
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/repos/{owner}/{repo}/commits")
+                            .queryParam("per_page", 100)
+                            .queryParam("page", 1)
+                            .queryParamIfPresent("sha", java.util.Optional.ofNullable(branch))
+                            .build(owner, repo)
+                    )
                     .headers(h -> {
                         h.setBearerAuth(token);
                         h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
@@ -123,47 +132,46 @@ public class GithubController {
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                     .block();
-
             if (res == null) {
                 return ResultData.from("F-2", "깃허브 API 응답이 비었습니다.");
             }
 
-            // GitHub 응답 → 내부 VO 매핑
             List<Commit> commits = res.stream().map(m -> {
-                Commit c = new Commit();
-                c.setSha((String) m.get("sha"));
-                c.setHtmlUrl((String) m.get("html_url"));
+                Map<String, Object> commitObj  = (Map<String, Object>) m.get("commit");
+                Map<String, Object> authorObj  = commitObj != null ? (Map<String, Object>) commitObj.get("author") : null;
+                Map<String, Object> ghAuthor   = (Map<String, Object>) m.get("author"); // 깃허브 계정 객체(매칭되면 존재)
 
-                Map<String, Object> commitObj = (Map<String, Object>) m.get("commit");
-                if (commitObj != null) {
-                    c.setMessage((String) commitObj.getOrDefault("message", ""));
+                String ghLogin  = ghAuthor != null ? (String) ghAuthor.get("login") : null;
+                String ghAvatar = ghAuthor != null ? (String) ghAuthor.get("avatar_url") : null;
 
-                    Map<String, Object> authorObj = (Map<String, Object>) commitObj.get("author");
-                    if (authorObj != null) {
-                        Object name = authorObj.get("name");
-                        Object date = authorObj.get("date");
-                        if (name != null) c.setAuthorName(name.toString());
-                        if (date != null) c.setAuthoredAt(date.toString());
-                    }
-                }
+                // 우선순위: 깃허브 계정(login) > commit.author.name
+                String authorNameFromMeta = authorObj != null ? (String) authorObj.get("name") : null;
+                String finalAuthorName = (ghLogin != null && !ghLogin.isBlank())
+                        ? ghLogin
+                        : (authorNameFromMeta != null && !authorNameFromMeta.isBlank() ? authorNameFromMeta : "unknown");
 
-                // parents → 가장 가까운 부모 SHA (있으면)
+                String authoredAt = authorObj != null ? (String) authorObj.get("date") : null;
+
                 List<Map<String, Object>> parents = (List<Map<String, Object>>) m.get("parents");
-                if (parents != null && !parents.isEmpty()) {
-                    Object psha = parents.get(0).get("sha");
-                    if (psha != null) c.setParentSha(psha.toString());
-                }
+                String parentSha = (parents != null && !parents.isEmpty() && parents.get(0).get("sha") != null)
+                        ? parents.get(0).get("sha").toString()
+                        : null;
 
-                // author(깃허브 계정) 정보가 별도로 있을 수 있음
-                Map<String, Object> ghAuthor = (Map<String, Object>) m.get("author");
-                if (ghAuthor != null) {
-                    Object login = ghAuthor.get("login");
-                    if (login != null) c.setAuthorLogin(login.toString());
-                }
-                return c;
+                return Commit.builder()
+                        .sha((String) m.get("sha"))
+                        .htmlUrl((String) m.get("html_url"))
+                        .message(commitObj != null ? (String) commitObj.getOrDefault("message", "") : "")
+
+                        .AuthorLogin(ghLogin)
+                        .AuthorAvatarUrl(ghAvatar)
+                        .AuthorName(finalAuthorName)
+                        .AuthoredAt(authoredAt)
+
+                        .parentSha(parentSha)
+                        .build();
             }).toList();
 
-            return ResultData.from("S-1", "커밋 조회 성공", commits);
+            return ResultData.from("S-1", "커밋 조회 성공", "commits", commits);
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Unauthorized e) {
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
@@ -179,7 +187,7 @@ public class GithubController {
     }
 
     @GetMapping("/commits/{owner}/{repo}/{sha}")
-    public ResultData<Map<String, Object>> getCommitDetail(
+    public ResultData<Commit> getCommitDetail(
             HttpServletRequest req,
             @PathVariable String owner,
             @PathVariable String repo,
@@ -194,7 +202,7 @@ public class GithubController {
         }
 
         try {
-            Map<String, Object> commit = github.get()
+            Map<String, Object> raw = github.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/repos/{owner}/{repo}/commits/{sha}")
                             .build(owner, repo, sha))
@@ -207,13 +215,85 @@ public class GithubController {
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                     .block();
 
-            if (commit == null) {
+            if (raw == null) {
                 return ResultData.from("F-2", "깃허브 API 응답이 비었습니다.");
             }
 
-            // commit.get("files") 안에 filename, status, additions, deletions, patch 등이 포함됨
-            // patch는 unified diff(텍스트 파일)이고, 큰 바이너리 파일은 patch가 없을 수 있음
-            return ResultData.from("S-1", "커밋 상세 조회 성공", commit);
+            // ---------- 필요한 값만 슬림하게 추출 ----------
+            Map<String, Object> commitObj = (Map<String, Object>) raw.get("commit");
+            Map<String, Object> authorMeta = commitObj != null ? (Map<String, Object>) commitObj.get("author") : null; // name/date
+            Map<String, Object> ghAuthor   = (Map<String, Object>) raw.get("author"); // login/avatar_url (깃허브 계정)
+
+            String shaVal = (String) raw.get("sha");
+            String htmlUrl = (String) raw.get("html_url");
+            String message = commitObj != null ? (String) commitObj.get("message") : null;
+
+            String authorLogin = ghAuthor != null ? (String) ghAuthor.get("login") : null;
+            String authorAvatarUrl = ghAuthor != null ? (String) ghAuthor.get("avatar_url") : null;
+            String authorNameFromMeta = authorMeta != null ? (String) authorMeta.get("name") : null;
+            String authoredAt = authorMeta != null ? (String) authorMeta.get("date") : null;
+
+            // 작성자 표기: 깃허브 계정이 있으면 login 우선, 아니면 메타 name
+            String authorName = (authorLogin != null && !authorLogin.isBlank())
+                    ? authorLogin
+                    : (authorNameFromMeta != null && !authorNameFromMeta.isBlank() ? authorNameFromMeta : "unknown");
+
+            // 부모 커밋
+            String parentSha = null;
+            List<Map<String, Object>> parents = (List<Map<String, Object>>) raw.get("parents");
+            if (parents != null && !parents.isEmpty()) {
+                Object psha = parents.get(0).get("sha");
+                if (psha != null) parentSha = psha.toString();
+            }
+
+            // stats: additions/deletions/total 만
+            Map<String, Object> rawStats = (Map<String, Object>) raw.get("stats");
+            Map<String, Object> stats = null;
+            if (rawStats != null) {
+                stats = new java.util.LinkedHashMap<>();
+                if (rawStats.get("additions") != null) stats.put("additions", rawStats.get("additions"));
+                if (rawStats.get("deletions") != null) stats.put("deletions", rawStats.get("deletions"));
+                if (rawStats.get("total") != null)     stats.put("total",     rawStats.get("total"));
+            }
+
+            // files: filename/status/additions/deletions/patch 만
+            List<Map<String, Object>> rawFiles = (List<Map<String, Object>>) raw.get("files");
+            List<Map<String, Object>> files = null;
+            if (rawFiles != null) {
+                files = new java.util.ArrayList<>(rawFiles.size());
+                for (Map<String, Object> f : rawFiles) {
+                    java.util.Map<String, Object> slim = new java.util.LinkedHashMap<>();
+                    Object filename  = f.get("filename");
+                    Object status    = f.get("status");
+                    Object additions = f.get("additions");
+                    Object deletions = f.get("deletions");
+                    Object patch     = f.get("patch"); // 텍스트 파일만 존재, 바이너리는 null
+
+                    if (filename != null)  slim.put("filename",  filename);
+                    if (status != null)    slim.put("status",    status);
+                    if (additions != null) slim.put("additions", additions);
+                    if (deletions != null) slim.put("deletions", deletions);
+                    if (patch != null)     slim.put("patch",     patch);
+
+                    files.add(slim);
+                }
+            }
+
+            // Commit VO에만 담아서 반환 (불필요 필드는 완전 제거)
+            Commit detail = Commit.builder()
+                    .sha(shaVal)
+                    .message(message)
+                    .htmlUrl(htmlUrl)
+                    .parentSha(parentSha)
+                    .AuthorName(authorName)
+                    .AuthoredAt(authoredAt)
+                    .AuthorAvatarUrl(authorAvatarUrl)
+                    .AuthorLogin(authorLogin)
+                    .stats(stats)
+                    .files(files)
+                    .build();
+
+            return ResultData.from("S-1", "커밋 상세 조회 성공", detail);
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Unauthorized e) {
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
@@ -225,5 +305,4 @@ public class GithubController {
             return ResultData.from("F-2", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
-
 }

@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -19,5 +21,9 @@ public class Commit {
 
     private String AuthorName;
     private String AuthoredAt;
+    private String AuthorAvatarUrl;
     private String AuthorLogin;
+
+    private Map<String,Object> stats;
+    private List<Map<String,Object>> files;
 }
