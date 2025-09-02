@@ -25,19 +25,23 @@
         WHERE memberId = #{memberId} AND `name` = #{repoName}
     </select>
 
-    <insert id="insertDraft" parameterType="com.example.demo.vo.Draft"
-            useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO draft (memberId, repositoryId, title, body, checksum, regDate)
-        VALUES (#{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW())
+    <insert id="insertDraft" parameterType="com.example.demo.vo.Draft" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO draft (
+            memberId, repositoryId, checksum, title, body, regDate
+        ) VALUES (
+                     #{memberId}, #{repositoryId}, #{checksum}, #{title}, #{body}, NOW()
+                 )
     </insert>
 
-
+    <!-- Draft 수정 -->
     <update id="updateDraft" parameterType="com.example.demo.vo.Draft">
         UPDATE draft
-        SET title = #{title},
-            body = #{body},
-            checksum = #{checksum},
-            repositoryId = #{repositoryId}
+        SET
+        title = #{title},
+        body = #{body},
+        checksum = #{checksum},
+        repositoryId = #{repositoryId},
+        regDate = NOW()
         WHERE id = #{id}
     </update>
 

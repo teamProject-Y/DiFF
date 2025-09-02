@@ -143,7 +143,7 @@ public class SonarService {
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    public void analysisInsertDB(Long repositoryId, Long memberId, String projectKey) throws IOException, InterruptedException {
+    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId ,String projectKey) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
@@ -171,6 +171,7 @@ public class SonarService {
             Analysis analysis = Analysis.builder()
                     .repositoryId(repositoryId)
                     .memberId(memberId)
+                    .articleId(draftId)
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
                     .coverage(parseDouble(metricMap.get("coverage")))

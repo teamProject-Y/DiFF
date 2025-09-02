@@ -3,13 +3,12 @@ package com.example.demo.service;
 import java.util.Collections;
 import java.util.List;
 
-import com.example.demo.repository.ArticleRepository;
-import com.example.demo.repository.HitsRepository;
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.repository.ReactionRepository;
+import com.example.demo.repository.*;
+import com.example.demo.vo.Analysis;
 import com.example.demo.vo.Article;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.ResultData;
+import com.example.util.SonarGradeUtil;
 import com.example.util.Ut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +30,9 @@ public class ArticleService {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private AnalysisRepository analysisRepository;
 
     @Autowired
     private HitsRepository hitsRepository;
@@ -82,8 +84,35 @@ public class ArticleService {
     }
 
     public List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage) {
-        return articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
+
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
+
+        for (Article article : articles) {
+            System.out.println("📝 [getArticles] article id=" + article.getId() + ", title=" + article.getTitle());
+
+            Analysis analysis = analysisRepository.findByArticleId(article.getId());
+            System.out.println("🔍 [getArticles] analysis for articleId=" + article.getId() + " → " + (analysis != null ? "FOUND" : "null"));
+
+            if (analysis != null) {
+                System.out.println("   - coverage=" + analysis.getCoverage() + ", bugs=" + analysis.getBugs() + ", smells=" + analysis.getCodeSmells());
+
+                analysis.setGradeCoverage(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
+                analysis.setGradeReliability(SonarGradeUtil.gradeReliability(analysis.getBugs()));
+                analysis.setGradeMaintainability(SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells()));
+                analysis.setGradeDuplications(SonarGradeUtil.gradeDuplications(analysis.getDuplicatedLinesDensity()));
+                analysis.setGradeSecurity(SonarGradeUtil.gradeSecurity(analysis.getVulnerabilities()));
+
+                article.setAnalysis(analysis);
+                System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
+            }
+        }
+
+        return articles;
     }
+
+
 
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);

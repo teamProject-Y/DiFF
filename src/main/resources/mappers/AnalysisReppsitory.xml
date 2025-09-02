@@ -2,29 +2,34 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.example.demo.repository.AnalysisRepository">
 
+    <!-- Analysis 저장 -->
     <insert id="insert" parameterType="com.example.demo.vo.Analysis" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO analysis (
-            repositoryId, memberId, projectKey, projectName, coverage,
-            bugs, complexity, codeSmells, duplicatedLinesDensity,
-            vulnerabilities, analyzeDate
+            repositoryId, memberId, articleId, projectKey, projectName,
+            coverage, bugs, complexity, codeSmells, duplicatedLinesDensity,
+            vulnerabilities, analyzeDate, totalScore
         )
         VALUES (
-                   #{repositoryId}, #{memberId}, #{projectKey}, #{projectName}, #{coverage},
-                   #{bugs}, #{complexity}, #{codeSmells}, #{duplicatedLinesDensity},
-                   #{vulnerabilities}, NOW()
+                   #{repositoryId}, #{memberId}, #{articleId}, #{projectKey}, #{projectName},
+                   #{coverage}, #{bugs}, #{complexity}, #{codeSmells}, #{duplicatedLinesDensity},
+                   #{vulnerabilities}, NOW(), #{totalScore}
                )
     </insert>
 
+
+    <!-- AnalysisLanguage 저장 -->
     <insert id="insertLanguage" parameterType="com.example.demo.vo.AnalysisLanguage">
         INSERT INTO analysisLanguage (
             analyzeId, language, `lines`
         ) VALUES (
                      #{analyzeId}, #{language}, #{lines}
-                 );
+                 )
     </insert>
 
+    <!-- Repository별 평균 메트릭 조회 -->
     <select id="getAverageMetrics" parameterType="long" resultType="map">
         SELECT
             AVG(coverage) AS coverage,
@@ -36,6 +41,28 @@
             AVG(totalScore) AS totalScore
         FROM analysis
         WHERE repositoryId = #{repositoryId}
+    </select>
+
+    <!-- articleId로 분석 결과 조회 -->
+    <select id="findByArticleId" parameterType="long" resultType="com.example.demo.vo.Analysis">
+        SELECT
+            id,
+            repositoryId,
+            memberId,
+            articleId,
+            projectKey,
+            projectName,
+            coverage,
+            bugs,
+            complexity,
+            codeSmells,
+            duplicatedLinesDensity,
+            vulnerabilities,
+            analyzeDate,
+            totalScore
+        FROM analysis
+        WHERE articleId = #{articleId}
+            LIMIT 1
     </select>
 
 </mapper>

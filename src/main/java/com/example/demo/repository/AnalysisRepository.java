@@ -14,4 +14,6 @@ public interface AnalysisRepository {
     void insertLanguage(AnalysisLanguage lang);
 
     Map<String, Object> getAverageMetrics(Long repositoryId);
+
+    Analysis findByArticleId(Long id);
 }
