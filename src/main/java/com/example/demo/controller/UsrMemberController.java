@@ -85,17 +85,6 @@ public class UsrMemberController {
         return ResponseEntity.ok(result);
     }
 
-//    @RequestMapping("/modify")
-//    public String modify(Model model, HttpServletRequest req) {
-//
-//        Rq rq = (Rq) req.getAttribute("rq");
-//        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-//
-//        model.addAttribute("member", member);
-//
-//        return "/modify";
-//    }
-
     @RequestMapping("/checkPw")
     @ResponseBody
     public ResultData checkPw(HttpServletRequest req, String pw) {
@@ -214,8 +203,6 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "팔로워 목록 조회 성공", "followerList", followerList));
     }
 
-
-
     @PostMapping("/follow")
     public ResponseEntity<ResultData> follow(HttpServletRequest req,
                                              @RequestParam Long fromMemberId) {
@@ -265,7 +252,6 @@ public class UsrMemberController {
 
         return ResponseEntity.ok(ResultData.from("S-1", "언팔로우 성공"));
     }
-
 
     @PostMapping("/uploadProfileImg")
     @ResponseBody
@@ -332,7 +318,6 @@ public class UsrMemberController {
         memberService.requestPasswordReset(email);
         return ResponseEntity.ok("비밀번호 재설정 이메일을 발송했습니다.");
     }
-
 
     @PostMapping("/updatePassword")
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPw) {

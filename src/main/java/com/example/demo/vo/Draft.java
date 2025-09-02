@@ -16,4 +16,7 @@ public class Draft {
     private String title;
     private String body;
     private LocalDateTime regDate;
+
+    private String extra__writer;
+    private String extra__repositoryName;
 }

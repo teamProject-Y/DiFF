@@ -91,6 +91,9 @@ public class ArticleService {
   
     public Article getArticleById(Long id, Long loginedMemberId) {
         Article article = articleRepository.getArticleById(id);
+
+        System.out.println("getArticleById: " + article);
+
         updateForPrintData(loginedMemberId, article);
         return article;
     }
@@ -105,7 +108,6 @@ public class ArticleService {
         ResultData userCanDeleteRd = userCanDelete(loginedMemberId, article);
         article.setUserCanDelete(userCanDeleteRd.isSuccess());
         System.err.println("📌 userCanDeleteRd: " + userCanDeleteRd.isSuccess());
-
     }
 
     public ResultData userCanModify(Long loginedMemberId, Article article) {
