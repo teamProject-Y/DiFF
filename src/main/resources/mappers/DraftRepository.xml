@@ -42,12 +42,12 @@
     </update>
 
     <select id="getDraftsByMember" parameterType="long" resultType="com.example.demo.vo.Draft">
-        SELECT id, memberId, repositoryId, checksum, title, body, regDate, r.name as extra__repositoryName
+        SELECT d.*, r.name as extra__repositoryName
         FROM draft d
         JOIN repository r
         ON d.repositoryId = r.id
-        WHERE memberId = #{memberId}
-        ORDER BY regDate DESC
+        WHERE d.memberId = #{memberId}
+        ORDER BY d.regDate DESC
     </select>
 
     <delete id="deleteDraft" parameterType="map">
