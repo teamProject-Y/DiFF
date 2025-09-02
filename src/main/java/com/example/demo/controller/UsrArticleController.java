@@ -147,24 +147,25 @@ public class UsrArticleController {
         return ResultData.from("S-1", "작성 성공", wr);
     }
 
-
-
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 
         System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
-        System.out.println("detail 진입" + id);
+        System.out.println("detail 진입 id: " + id);
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
+        System.out.println("rq.loginedMemberId: " + rq.getLoginedMemberId());
 
         Article article = articleService.getArticleById(id, loginedMemberId);
+        System.out.println(article == null ? "null" : "article");
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
 
         System.out.println(article.getExtra__writer());
+        System.out.println("article: " + article);
 
         return ResultData.from("S-1", "게시글 조회 성공", article);
     }
@@ -250,8 +251,6 @@ public class UsrArticleController {
         result.put("totalCnt", totalCnt);
         result.put("totalPage", totalPage);
         result.put("page", page);
-
-        System.out.println("asas");
 
         return ResponseEntity.ok(result);
     }
