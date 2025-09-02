@@ -1,5 +1,7 @@
 package com.example.demo.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +11,7 @@ import lombok.NoArgsConstructor;
 public class ResultData<DT> {
 
     @Getter
+    @JsonProperty("resultCode")
     private String ResultCode;
     @Getter
     private String msg;
@@ -79,7 +82,7 @@ public class ResultData<DT> {
         return !isSuccess();
     }
 
-    // data1를 기본 데이터로 노출
+    @JsonIgnore
     public DT getData() {
         return data1;
     }

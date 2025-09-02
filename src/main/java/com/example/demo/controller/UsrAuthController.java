@@ -24,10 +24,15 @@ import java.util.Map;
 public class UsrAuthController {
 
     private final AuthService authService;
+
     private final OAuthAccountService oAuthAccountService;
+
     private final Rq rq;
+
     private final MemberService memberService;
+
     private final JwtTokenProvider jwtTokenProvider;
+
     private final PasswordEncoder passwordEncoder;
 
     /** 토큰갱신 API */
@@ -118,7 +123,6 @@ public class UsrAuthController {
         );
     }
 
-
     @PostMapping("/join")
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
         if (Ut.isEmpty(member.getLoginPw())) {
@@ -149,9 +153,6 @@ public class UsrAuthController {
         return ResponseEntity.ok(ResultData.from("S-1",
                 member.getNickName() + " 님 회원가입이 완료되었습니다. 이메일 인증을 해주세요."));
     }
-
-
-
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {

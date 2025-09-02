@@ -1,10 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.*;
-import com.example.demo.vo.Draft;
-import com.example.demo.vo.Member;
-import com.example.demo.vo.ResultData;
-import com.example.demo.vo.Rq;
+import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +34,8 @@ public class UsrDraftController {
     @Autowired
     private FcmService fcmService;
 
+    @Autowired
+    private NotificationService notificationService;
 
     @PostMapping("/verifyGitUser")
     @ResponseBody
@@ -120,16 +119,32 @@ public class UsrDraftController {
             draft = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
 
             Member member = memberService.getFcmTokenById(memberId);
-            if (member != null && member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
-                fcmService.sendMessage(
-                        member.getFcmToken(),
-                        "Draft 생성 완료 🎉",
-                        "당신의 커밋 diff가 초안으로 변환되었습니다!",
-                        null
-                );
-                System.out.println("✅ FCM 알림 전송 완료");
-            } else {
-                System.out.println("⚠️ fcmToken 없음 → 알림 생략");
+            String message = "당신의 커밋 diff가 초안으로 변환되었습니다!";
+
+            if (member != null) {
+                // 1. FCM 발송
+                if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                    fcmService.sendMessage(
+                            member.getFcmToken(),
+                            "Draft 생성 완료 🎉",
+                            message,
+                            null
+                    );
+                    System.out.println("✅ FCM 알림 전송 완료");
+                } else {
+                    System.out.println("⚠️ fcmToken 없음 → 알림 생략");
+                }
+
+                // 2. DB에 알림 저장 (빨간점 표시용)
+                Notification notification = Notification.builder()
+                        .memberId(member.getId())
+                        .type("DRAFT")
+                        .message(message)
+                        .isRead(false)  // 읽지 않았으므로 빨간 점 표시
+                        .build();
+
+                notificationService.saveNotification(notification);
+                System.out.println("✅ Draft 알림 DB 저장 완료 → 빨간점 표시 가능");
             }
 
         } catch (Exception e) {
@@ -138,6 +153,7 @@ public class UsrDraftController {
 
         return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
+
 
 
     @GetMapping("/drafts")
@@ -194,5 +210,26 @@ public class UsrDraftController {
         }
         return ResultData.from("S-1", "임시저장 조회 성공", draft);
     }
+
+    @PostMapping("/save")
+    public ResultData<Long> saveDraft(HttpServletRequest req, @RequestBody Draft draft) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("📥 [Controller] /draft/save 요청 도착");
+        System.out.println("📥 [Controller] 요청 데이터: id=" + draft.getId()
+                + ", title=" + draft.getTitle()
+                + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
+                + ", repositoryId=" + draft.getRepositoryId());
+
+        draft.setMemberId(memberId);
+
+        Long draftId = draftService.saveDraft(draft);
+
+        System.out.println("📤 [Controller] saveDraft 완료 → draftId=" + draftId);
+
+        return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
+    }
+
 
 }

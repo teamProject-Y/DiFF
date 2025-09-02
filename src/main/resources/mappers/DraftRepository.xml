@@ -26,24 +26,28 @@
     </select>
 
     <insert id="insertDraft" parameterType="com.example.demo.vo.Draft"
-            useGeneratedKeys="true"
-            keyProperty="id"
-            keyColumn="id">
-        INSERT INTO draft
-        SET
-            memberId = #{memberId},
-            repositoryId = #{repositoryId},
-            checksum = #{checksum},
-            title = #{title},
-            body = #{body},
-            regDate = #{regDate}
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO draft (memberId, repositoryId, title, body, checksum, regDate)
+        VALUES (#{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW())
     </insert>
 
+
+    <update id="updateDraft" parameterType="com.example.demo.vo.Draft">
+        UPDATE draft
+        SET title = #{title},
+            body = #{body},
+            checksum = #{checksum},
+            repositoryId = #{repositoryId}
+        WHERE id = #{id}
+    </update>
+
     <select id="getDraftsByMember" parameterType="long" resultType="com.example.demo.vo.Draft">
-        SELECT id, memberId, repositoryId, checksum, title, body, regDate
-        FROM draft
-        WHERE memberId = #{memberId}
-        ORDER BY regDate DESC
+        SELECT d.*, r.name as extra__repositoryName
+        FROM draft d
+        JOIN repository r
+        ON d.repositoryId = r.id
+        WHERE d.memberId = #{memberId}
+        ORDER BY d.regDate DESC
     </select>
 
     <delete id="deleteDraft" parameterType="map">

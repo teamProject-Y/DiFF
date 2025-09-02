@@ -85,17 +85,6 @@ public class UsrMemberController {
         return ResponseEntity.ok(result);
     }
 
-//    @RequestMapping("/modify")
-//    public String modify(Model model, HttpServletRequest req) {
-//
-//        Rq rq = (Rq) req.getAttribute("rq");
-//        Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
-//
-//        model.addAttribute("member", member);
-//
-//        return "/modify";
-//    }
-
     @RequestMapping("/checkPw")
     @ResponseBody
     public ResultData checkPw(HttpServletRequest req, String pw) {
@@ -214,8 +203,6 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "팔로워 목록 조회 성공", "followerList", followerList));
     }
 
-
-
     @PostMapping("/follow")
     public ResponseEntity<ResultData> follow(HttpServletRequest req,
                                              @RequestParam Long fromMemberId) {
@@ -265,7 +252,6 @@ public class UsrMemberController {
 
         return ResponseEntity.ok(ResultData.from("S-1", "언팔로우 성공"));
     }
-
 
     @PostMapping("/uploadProfileImg")
     @ResponseBody
@@ -333,7 +319,6 @@ public class UsrMemberController {
         return ResponseEntity.ok("비밀번호 재설정 이메일을 발송했습니다.");
     }
 
-
     @PostMapping("/updatePassword")
     public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPw) {
         System.out.println("📩 [resetPassword 요청]");
@@ -343,4 +328,15 @@ public class UsrMemberController {
         return ResponseEntity.ok("비밀번호 재설정 완료!");
     }
 
+    @GetMapping("/search")
+    public ResultData<List<Member>> searchMembers(@RequestParam String keyword) {
+        System.out.println("\n===== [GET] /api/DiFF/member/search =====");
+        System.out.println("👉 프론트에서 전달된 keyword = " + keyword);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResultData.from("F-1", "검색어가 비어있습니다.");
+        }
+
+        List<Member> members = memberService.searchMembers(keyword);
+        return ResultData.from("S-1", "검색 성공", "data1", members);
+    }
 }

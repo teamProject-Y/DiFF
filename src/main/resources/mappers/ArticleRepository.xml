@@ -148,4 +148,36 @@
         ORDER BY a.regDate DESC
     </select>
 
+    <select id="searchArticles" parameterType="string" resultType="com.example.demo.vo.Article">
+        SELECT a.*,
+        m.nickName AS extra__writer,
+        m.email,
+        COALESCE(r.likes, 0)    AS extra__sumReaction,
+        COALESCE(re.replies, 0) AS extra__sumReplies,
+        COALESCE(h.viewCount, 0) AS hits
+        FROM article a
+        INNER JOIN member m ON a.memberId = m.id
+        LEFT JOIN (
+        SELECT relId, COUNT(*) AS likes
+        FROM reaction
+        WHERE relType = 'article'
+        GROUP BY relId
+        ) r ON a.id = r.relId
+        LEFT JOIN (
+        SELECT articleId, COUNT(*) AS replies
+        FROM reply
+        GROUP BY articleId
+        ) re ON a.id = re.articleId
+        LEFT JOIN (
+        SELECT articleId, COUNT(*) AS viewCount
+        FROM hits
+        GROUP BY articleId
+        ) h ON a.id = h.articleId
+        WHERE a.title LIKE CONCAT('%', #{keyword}, '%')
+        OR a.body LIKE CONCAT('%', #{keyword}, '%')
+        OR m.nickName LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY a.regDate DESC
+    </select>
+
+
 </mapper>

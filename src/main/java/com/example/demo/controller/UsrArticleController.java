@@ -31,6 +31,9 @@ public class UsrArticleController {
     @Autowired
     private ReactionService reactionService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -58,6 +61,15 @@ public class UsrArticleController {
         result.put("page", page);
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/search")
+    public ResultData<List<Article>> searchArticles(@RequestParam String keyword) {
+        System.out.println("📥 /article/search 요청 keyword=" + keyword);
+
+        List<Article> results = articleService.searchArticles(keyword);
+
+        return ResultData.from("S-1", "검색 결과", "articles", results);
     }
 
     @GetMapping("/trending")
@@ -121,26 +133,39 @@ public class UsrArticleController {
                 draft.getDraftId()
         );
 
+        String message = "새 글이 작성되었습니다: " + draft.getTitle();
+        Notification notification = Notification.builder()
+                .memberId(loginedMemberId)
+                .type("ARTICLE")
+                .message(message)
+                .isRead(false)
+                .build();
+
+        notificationService.saveNotification(notification);
+        System.out.println("✅ Article 알림 DB 저장 완료 → 빨간점 표시 가능");
+
         return ResultData.from("S-1", "작성 성공", wr);
     }
-
 
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 
         System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
-        System.out.println("detail 진입" + id);
+        System.out.println("detail 진입 id: " + id);
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
+        System.out.println("rq.loginedMemberId: " + rq.getLoginedMemberId());
 
         Article article = articleService.getArticleById(id, loginedMemberId);
+        System.out.println(article == null ? "null" : "article");
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
 
         System.out.println(article.getExtra__writer());
+        System.out.println("article: " + article);
 
         return ResultData.from("S-1", "게시글 조회 성공", article);
     }
@@ -226,8 +251,6 @@ public class UsrArticleController {
         result.put("totalCnt", totalCnt);
         result.put("totalPage", totalPage);
         result.put("page", page);
-
-        System.out.println("asas");
 
         return ResponseEntity.ok(result);
     }
