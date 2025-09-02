@@ -211,4 +211,7 @@ public class MemberService {
     }
 
 
+    public List<Member> searchMembers(String keyword) {
+        return memberRepository.searchMembers("%" + keyword + "%");
+    }
 }
