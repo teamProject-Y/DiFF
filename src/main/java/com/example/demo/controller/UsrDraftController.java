@@ -114,7 +114,7 @@ public class UsrDraftController {
                     .build();
 
             Long draftId = draftService.saveDraft(draft);
-            System.out.println("✅ Draft 생성 완료 → draftId=" + draftId);
+            System.out.println("✅ mkDraft Draft 생성 완료 → draftId=" + draftId);
 
             return ResultData.from("S-1", "Draft 껍데기 생성 완료", draftId);
 
@@ -143,7 +143,7 @@ public class UsrDraftController {
             }
 
             // GPT 호출
-            String draftBody = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
+            String draftBody = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum, draftId);
 
             // Draft 업데이트
             Draft draft = Draft.builder()
@@ -236,7 +236,7 @@ public class UsrDraftController {
         // 1. 글 저장
         draft.setMemberId(memberId);
         Long draftId = draftService.saveDraft(draft);
-        System.out.println("📤 [Controller] saveDraft 완료 → draftId=" + draftId);
+        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
         // 2. projectKey 생성 규칙
         String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;

@@ -143,7 +143,7 @@ public class SonarService {
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId ,String projectKey) throws IOException, InterruptedException {
+    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId, String projectKey ) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
@@ -171,7 +171,7 @@ public class SonarService {
             Analysis analysis = Analysis.builder()
                     .repositoryId(repositoryId)
                     .memberId(memberId)
-                    .articleId(draftId)
+                    .articleId(draftId)  // ✅ draftId를 articleId로 세팅
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
                     .coverage(parseDouble(metricMap.get("coverage")))
@@ -181,6 +181,7 @@ public class SonarService {
                     .duplicatedLinesDensity(parseDouble(metricMap.get("duplicated_lines_density")))
                     .vulnerabilities(parseInt(metricMap.get("vulnerabilities")))
                     .build();
+
 
             analysisRepository.insert(analysis);
             Long analyzeId = analysis.getId();  // 방금 insert된 ID
