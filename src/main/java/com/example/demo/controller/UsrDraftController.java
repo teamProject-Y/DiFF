@@ -38,6 +38,8 @@ public class UsrDraftController {
     private NotificationService notificationService;
 
     @Autowired
+    private DiffService diffService;
+    @Autowired
     private SonarService sonarService;
 
     @PostMapping("/verifyGitUser")
@@ -51,10 +53,10 @@ public class UsrDraftController {
 
         System.out.println(verifiedMemberId);
 
-        if(verifiedMemberId != null) {
+        if (verifiedMemberId != null) {
             System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
             return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
-        }else {
+        } else {
             System.err.println("git email로 찾은 member 없음");
             return ResultData.from("F-1", "사용자 인증 실패");
         }
@@ -72,7 +74,7 @@ public class UsrDraftController {
         System.out.println(firstCommit);
 
         boolean existsRepoName = repositoryService.existsByMemberIdAndRepoName(memberId, repoName);
-        if(!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
+        if (!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
 
         repositoryService.makeRepository(memberId, repoName, firstCommit);
         int repoId = repositoryService.getLastInsertId();
@@ -88,16 +90,16 @@ public class UsrDraftController {
         String repoName = (String) param.get("repoName");
 
         boolean isUsableRepoName = draftService.existsByMemberIdAndRepoName(memberId, repoName);
-        if(isUsableRepoName){
+        if (isUsableRepoName) {
             return ResultData.from("S-1", "리포지토리 이름 중복 여부", "가능", isUsableRepoName);
-        }else {
+        } else {
             return ResultData.from("F-1", "리포지토리 이름 중복 여부", "불가능", isUsableRepoName);
         }
     }
 
     @PostMapping("/mkDraft")
     @ResponseBody
-    public ResultData<Long> mkDraft(@RequestBody Map<String, Object> param) {
+    public ResultData<Map<String, Object>> mkDraft(@RequestBody Map<String, Object> param) {
         System.out.println("🍔 mkDraft 메서드 진입");
         System.out.println("🍔 param: " + param);
 
@@ -105,18 +107,30 @@ public class UsrDraftController {
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
 
-            // 1. draft 생성 (diff는 없음)
+            // 1. Draft 생성
             Draft draft = Draft.builder()
                     .memberId(memberId)
                     .repositoryId(repositoryId)
                     .title("(자동 생성)")
-                    .body("") // 비워두기
+                    .body("")
                     .build();
 
             Long draftId = draftService.saveDraft(draft);
-            System.out.println("✅ mkDraft Draft 생성 완료 → draftId=" + draftId);
 
-            return ResultData.from("S-1", "Draft 껍데기 생성 완료", draftId);
+            // 2. Diff 생성 (Draft와 연결)
+            Diff diff = Diff.builder()
+                    .draftId(draftId)
+                    .checksum(null) // 아직 checksum 없음
+                    .build();
+            Long diffId = diffService.saveDiff(diff);
+
+            System.out.println("✅ mkDraft Draft 생성 완료 → draftId=" + draftId + ", diffId=" + diffId);
+
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("draftId", draftId);
+            resultData.put("diffId", diffId);
+
+            return ResultData.from("S-1", "Draft 껍데기 + Diff 생성 완료", resultData);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -135,15 +149,16 @@ public class UsrDraftController {
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
             Long draftId = ((Number) param.get("draftId")).longValue();
+            Long diffId = ((Number) param.get("diffId")).longValue(); // ✅ 추가
             String lastChecksum = (String) param.get("lastChecksum");
-            String diff = (String) param.get("diff");
+            String diffText = (String) param.get("diff");
 
-            if (diff == null || diff.trim().isEmpty()) {
+            if (diffText == null || diffText.trim().isEmpty()) {
                 return ResultData.from("F-1", "diff 내용이 비어있습니다.");
             }
 
             // GPT 호출
-            String draftBody = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum, draftId);
+            String draftBody = gptService.makeDraft(diffText, repositoryId, memberId, lastChecksum, draftId);
 
             // Draft 업데이트
             Draft draft = Draft.builder()
@@ -155,9 +170,17 @@ public class UsrDraftController {
                     .build();
             draftService.updateDraft(draft);
 
-            // 분석 실행
-            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, projectKey);
+            // Diff 업데이트 (checksum 반영)
+            Diff diffEntity = Diff.builder()
+                    .id(diffId)
+                    .draftId(draftId)
+                    .checksum(lastChecksum)
+                    .build();
+            diffService.updateDiff(diffEntity);
+
+            // 분석 실행 → diffId 기준
+            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_D-" + diffId + "_C-" + lastChecksum;
+            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, projectKey);
 
             return ResultData.from("S-1", "Draft 업데이트 및 분석 성공", draftBody);
 
@@ -178,7 +201,7 @@ public class UsrDraftController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("drafts", drafts);
-        System.out.println(""+result);
+        System.out.println("" + result);
         return ResponseEntity.ok(result);
     }
 
@@ -238,19 +261,23 @@ public class UsrDraftController {
         Long draftId = draftService.saveDraft(draft);
         System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
+        // ✅ DiffId는 Draft에 이미 세팅되어 있다고 가정
+        Long diffId = draft.getDiffId();
+
         // 2. projectKey 생성 규칙
         String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;
 
         try {
-            // 3. 분석 저장 (articleId = draftId)
+            // 3. 분석 저장
             sonarService.analysisInsertDB(
                     draft.getRepositoryId(), // ✅ repositoryId
                     memberId,                // ✅ memberId
                     draftId,                 // ✅ articleId = draftId
+                    diffId,                  // ✅ diffId 전달
                     projectKey               // ✅ projectKey
             );
 
-            System.out.println("✅ [Controller] analysisInsertDB 완료 → articleId=" + draftId);
+            System.out.println("✅ [Controller] analysisInsertDB 완료 → draftId=" + draftId + ", diffId=" + diffId);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("❌ [Controller] analysisInsertDB 실패: " + e.getMessage());
@@ -259,5 +286,4 @@ public class UsrDraftController {
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
-
 }

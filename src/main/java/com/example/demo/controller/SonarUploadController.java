@@ -49,6 +49,7 @@ public class SonarUploadController {
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
             Long draftId = ((Number) param.get("draftId")).longValue(); // ✅ 추가
+            Long diffId = ((Number) param.get("diffId")).longValue(); // ✅ 추가
             String lastChecksum = (String) param.get("lastChecksum");
 
             String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
@@ -65,7 +66,7 @@ public class SonarUploadController {
 
             // 3. 분석 실행
             sonarService.runSonarScanner(extractedPath, projectKey);
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, projectKey); // ✅ draftId 전달
+            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, projectKey); // ✅ draftId 전달
 
             // 4. 결과 조회
             String result = sonarService.getAnalysisResult(projectKey);

@@ -103,7 +103,7 @@ public class UsrArticleController {
         System.out.println("body.length   = " + (draft.getBody() != null ? draft.getBody().length() : null));
         System.out.println("checksum      = " + draft.getChecksum());
         System.out.println("repositoryId  = " + draft.getRepositoryId());
-        System.out.println("draftId       = " + draft.getDraftId());
+        System.out.println("diffId        = " + draft.getDiffId());
 
         if (draft.getRepositoryId() == null) {
             return ResultData.from("F-400", "repositoryId가 필요합니다.");
@@ -130,7 +130,8 @@ public class UsrArticleController {
                 draft.getBody(),
                 draft.getChecksum(),
                 draft.getRepositoryId(),
-                draft.getDraftId()
+                draft.getDraftId(),
+                draft.getDiffId()
         );
 
         String message = "새 글이 작성되었습니다: " + draft.getTitle();

@@ -27,13 +27,13 @@
     </select>
 
 
-    <insert id="writeArticle">
-        INSERT INTO article (
-            memberId, repositoryId, title, body, checksum, regDate, updateDate
-        ) VALUES (
-                     #{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, NOW(), NOW()
-                 )
+    <insert id="writeArticle" parameterType="com.example.demo.vo.Article">
+        INSERT INTO article
+        (memberId, repositoryId, title, body, checksum, diffId, regDate, updateDate)
+        VALUES
+            (#{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, #{diffId}, NOW(), NOW())
     </insert>
+
 
     <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT A.*, M.nickName AS extra__writer

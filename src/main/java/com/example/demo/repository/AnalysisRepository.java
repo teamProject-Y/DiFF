@@ -16,4 +16,6 @@ public interface AnalysisRepository {
     Map<String, Object> getAverageMetrics(Long repositoryId);
 
     Analysis findByArticleId(Long id);
+
+    Analysis findByDiffId(Long diffId);
 }

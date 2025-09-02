@@ -8,16 +8,38 @@
     <!-- Analysis 저장 -->
     <insert id="insert" parameterType="com.example.demo.vo.Analysis" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO analysis (
-            repositoryId, memberId, articleId, projectKey, projectName,
-            coverage, bugs, complexity, codeSmells, duplicatedLinesDensity,
-            vulnerabilities, analyzeDate, totalScore
+        repositoryId,
+        memberId,
+        articleId,
+        diffId, <!-- ✅ 추가 -->
+        projectKey,
+        projectName,
+        coverage,
+        bugs,
+        complexity,
+        codeSmells,
+        duplicatedLinesDensity,
+        vulnerabilities,
+        analyzeDate,
+        totalScore
+        ) VALUES (
+        #{repositoryId},
+        #{memberId},
+        #{articleId},
+        #{diffId},
+        #{projectKey},
+        #{projectName},
+        #{coverage},
+        #{bugs},
+        #{complexity},
+        #{codeSmells},
+        #{duplicatedLinesDensity},
+        #{vulnerabilities},
+        NOW(),
+        #{totalScore}
         )
-        VALUES (
-                   #{repositoryId}, #{memberId}, #{articleId}, #{projectKey}, #{projectName},
-                   #{coverage}, #{bugs}, #{complexity}, #{codeSmells}, #{duplicatedLinesDensity},
-                   #{vulnerabilities}, NOW(), #{totalScore}
-               )
     </insert>
+
 
 
     <!-- AnalysisLanguage 저장 -->
@@ -64,5 +86,28 @@
         WHERE articleId = #{articleId}
             LIMIT 1
     </select>
+
+    <select id="findByDiffId" parameterType="long" resultType="com.example.demo.vo.Analysis">
+        SELECT
+            id,
+            repositoryId,
+            memberId,
+            diffId,
+            projectKey,
+            projectName,
+            coverage,
+            bugs,
+            complexity,
+            codeSmells,
+            duplicatedLinesDensity,
+            vulnerabilities,
+            analyzeDate,
+            totalScore
+        FROM analysis
+        WHERE diffId = #{diffId}
+            LIMIT 1
+    </select>
+
+
 
 </mapper>

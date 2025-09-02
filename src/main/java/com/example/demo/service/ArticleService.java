@@ -42,11 +42,11 @@ public class ArticleService {
                             String body,
                             String checksum,
                             Long repositoryId,
-                            Long draftId) {
+                            Long draftId,
+                            Long diffId) {
 
         // 1. 글 저장
-        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
-
+        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
         // 2. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
@@ -92,8 +92,9 @@ public class ArticleService {
         for (Article article : articles) {
             System.out.println("📝 [getArticles] article id=" + article.getId() + ", title=" + article.getTitle());
 
-            Analysis analysis = analysisRepository.findByArticleId(article.getId());
-            System.out.println("🔍 [getArticles] analysis for articleId=" + article.getId() + " → " + (analysis != null ? "FOUND" : "null"));
+            // ✅ article.getDiffId() 기준으로 분석 찾기
+            Analysis analysis = analysisRepository.findByDiffId(article.getDiffId());
+            System.out.println("🔍 [getArticles] analysis for diffId=" + article.getDiffId() + " → " + (analysis != null ? "FOUND" : "null"));
 
             if (analysis != null) {
                 System.out.println("   - coverage=" + analysis.getCoverage() + ", bugs=" + analysis.getBugs() + ", smells=" + analysis.getCodeSmells());
@@ -111,7 +112,6 @@ public class ArticleService {
 
         return articles;
     }
-
 
 
     public List<Article> getTrendingArticles(Integer count, Integer days) {

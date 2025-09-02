@@ -2,6 +2,7 @@ package com.example.demo.repository;
 
 import com.example.demo.vo.Article;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -18,7 +19,14 @@ public interface ArticleRepository {
 
     List<Article> getTrendingArticles(Integer count, Integer days);
 
-    int writeArticle(Long memberId, String title, String body, String checksum, Long repositoryId);
+    int writeArticle(
+            @Param("memberId") Long memberId,
+            @Param("title") String title,
+            @Param("body") String body,
+            @Param("checksum") String checksum,
+            @Param("repositoryId") Long repositoryId,
+            @Param("diffId") Long diffId
+    );
 
     Article getArticleById(Long id);
 

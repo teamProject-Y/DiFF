@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class Article {
     private Long id;
     private Long memberId;
+    private Long diffId;
     private Long repositoryId;
     private String title;
     private String body;
