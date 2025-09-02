@@ -21,4 +21,6 @@ public interface DraftRepository {
     public int deleteDraft(Long id, Long memberId);
 
     public Draft getDraftById(Long id);
+
+    void updateDraft(Draft draft);
 }
