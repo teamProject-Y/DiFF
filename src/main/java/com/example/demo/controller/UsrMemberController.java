@@ -343,4 +343,15 @@ public class UsrMemberController {
         return ResponseEntity.ok("비밀번호 재설정 완료!");
     }
 
+    @GetMapping("/search")
+    public ResultData<List<Member>> searchMembers(@RequestParam String keyword) {
+        System.out.println("\n===== [GET] /api/DiFF/member/search =====");
+        System.out.println("👉 프론트에서 전달된 keyword = " + keyword);
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResultData.from("F-1", "검색어가 비어있습니다.");
+        }
+
+        List<Member> members = memberService.searchMembers(keyword);
+        return ResultData.from("S-1", "검색 성공", "data1", members);
+    }
 }

@@ -81,4 +81,6 @@ public interface MemberRepository {
                         @Param("loginPw") String loginPw);
 
     void clearResetToken(Long id);
+
+    List<Member> searchMembers(String s);
 }
