@@ -31,6 +31,9 @@ public class UsrArticleController {
     @Autowired
     private ReactionService reactionService;
 
+    @Autowired
+    private NotificationService notificationService;
+
     UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -130,8 +133,20 @@ public class UsrArticleController {
                 draft.getDraftId()
         );
 
+        String message = "새 글이 작성되었습니다: " + draft.getTitle();
+        Notification notification = Notification.builder()
+                .memberId(loginedMemberId)
+                .type("ARTICLE")
+                .message(message)
+                .isRead(false)
+                .build();
+
+        notificationService.saveNotification(notification);
+        System.out.println("✅ Article 알림 DB 저장 완료 → 빨간점 표시 가능");
+
         return ResultData.from("S-1", "작성 성공", wr);
     }
+
 
 
     @GetMapping("/detail")

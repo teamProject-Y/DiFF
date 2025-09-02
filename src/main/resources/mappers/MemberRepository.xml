@@ -190,4 +190,16 @@
         ORDER BY f.regDate DESC
     </select>
 
+    <select id="searchMembers" parameterType="string" resultType="com.example.demo.vo.Member">
+        SELECT id,
+        nickName,
+        email,
+        profileUrl
+        FROM member
+        WHERE nickName LIKE CONCAT('%', #{keyword}, '%')
+        OR email LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY regDate DESC
+    </select>
+
+
 </mapper>

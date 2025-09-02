@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.NotificationRepository">
+
+    <!-- 1. 전체 읽음 처리 -->
+    <update id="markAllAsRead" parameterType="long">
+        UPDATE notification
+        SET isRead = TRUE
+        WHERE memberId = #{memberId}
+          AND isRead = FALSE
+    </update>
+
+    <!-- 2. 읽지 않은 알림 개수 -->
+    <select id="hasUnread" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE memberId = #{memberId}
+          AND isRead = FALSE
+    </select>
+
+    <!-- 3. 알림 목록 가져오기 -->
+    <select id="getNotifications" parameterType="long" resultType="com.example.demo.vo.Notification">
+        SELECT id,
+               memberId,
+               type,
+               message,
+               isRead,
+               regDate
+        FROM notification
+        WHERE memberId = #{memberId}
+        ORDER BY regDate DESC
+    </select>
+
+    <!-- 4. 알림 저장 -->
+    <insert id="saveNotification" parameterType="com.example.demo.vo.Notification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification (memberId, type, message, isRead, regDate)
+        VALUES (#{memberId}, #{type}, #{message}, #{isRead}, NOW())
+    </insert>
+
+</mapper>

@@ -1,21 +1,38 @@
 package com.example.demo.service;
 
-import com.example.demo.vo.SseEmitters;
-import lombok.RequiredArgsConstructor;
+import com.example.demo.repository.NotificationRepository;
+import com.example.demo.vo.Member;
+import com.example.demo.vo.Notification;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class NotificationService {
 
-    private final SseEmitters sseEmitters;
-
-    // 배치 작업이나 파일 처리 끝나는 곳에서 호출
-    public void notifyWorkDone(Long userId, String message) {
-        Map<String, Object> data = Map.of("userId", userId, "msg", message);
-//        sseEmitters.noti("작업 완료", data);
+    @Autowired
+    private NotificationRepository notificationRepository;
+    /**
+     * 읽지 않은 알림이 있는지 확인 (빨간 점 표시 용)
+     */
+    public boolean hasUnread(Long memberId) {
+        return notificationRepository.hasUnread(memberId) > 0;
     }
 
+    /**
+     * 알림 전체 조회
+     */
+    public List<Notification> getNotifications(Long memberId) {
+        return notificationRepository.getNotifications(memberId);
+    }
+
+    public void markAllAsRead(Long memberId) {
+        notificationRepository.markAllAsRead(memberId);
+        System.out.println("✅ memberId=" + memberId + " 알림 전체 읽음 처리 완료");
+    }
+    public void saveNotification(Notification notification) {
+        notificationRepository.saveNotification(notification);
+        System.out.println("✅ 알림 저장 완료 → " + notification.getMessage());
+    }
 }
