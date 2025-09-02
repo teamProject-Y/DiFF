@@ -42,10 +42,10 @@
     </update>
 
     <select id="getDraftsByMember" parameterType="long" resultType="com.example.demo.vo.Draft">
-        SELECT id, memberId, repositoryId, checksum, title, body, regDate, m.nickName as extra__writer
+        SELECT id, memberId, repositoryId, checksum, title, body, regDate, r.name as extra__repositoryName
         FROM draft d
-        JOIN `member` m
-        ON d.memberId = m.id
+        JOIN repository r
+        ON d.repositoryId = r.id
         WHERE memberId = #{memberId}
         ORDER BY regDate DESC
     </select>
