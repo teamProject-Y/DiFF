@@ -20,4 +20,6 @@ public interface RepositoryRepository {
     int getLastInsertId();
 
     Long getMemberIdByRepositoryId(Long repositoryId);
+
+    Long getRepoCountsByMemberId(Long id);
 }

@@ -72,6 +72,7 @@ public class UsrMemberController {
             Rq rq = (Rq) req.getAttribute("rq");
             Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
             member = memberService.getMemberById(memberId);
+            member = memberService.updateMemberForPrint(member);
         }
 
         System.out.println("member 닉네임.  "+ member.getNickName());
