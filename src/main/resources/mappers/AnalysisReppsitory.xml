@@ -123,5 +123,11 @@
         WHERE checksum = #{checksum}
     </update>
 
+    <select id="getAnalysisHistory" resultType="com.example.demo.vo.Analysis">
+        SELECT *
+        FROM analysis
+        WHERE repositoryId = #{repoId}
+        ORDER BY analyzeDate ASC
+    </select>
 
 </mapper>
