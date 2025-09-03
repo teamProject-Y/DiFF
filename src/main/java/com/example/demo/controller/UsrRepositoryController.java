@@ -53,6 +53,12 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "내 리포지토리 목록", data);
     }
 
+    @GetMapping("/{repoId}/languages")
+    public ResultData<List<Map<String, Object>>> getLanguageDistribution(@PathVariable Long repoId) {
+        List<Map<String, Object>> langs = repositoryService.getLanguageDistributionByRepo(repoId);
+        return ResultData.from("S-1", "언어 분포 조회 성공", langs);
+    }
+
     @PostMapping("/createRepository")
     @ResponseBody
     public ResultData<Integer> createRepository(HttpServletRequest req , @RequestBody Repository repo) {
