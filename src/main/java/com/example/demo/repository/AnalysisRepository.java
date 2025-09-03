@@ -20,4 +20,6 @@ public interface AnalysisRepository {
     Analysis findByDiffId(Long diffId);
 
     Analysis findByChecksum(String checksum);
+
+    int updateRepositoryIdByChecksum(String checksum, Long repositoryId);
 }

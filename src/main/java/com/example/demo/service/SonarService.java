@@ -152,7 +152,7 @@ public class SonarService {
                                  Long memberId,
                                  Long draftId,
                                  Long diffId,
-                                 String checksum,   // ✅ 추가
+                                 String checksum,
                                  String projectKey ) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
@@ -183,7 +183,6 @@ public class SonarService {
                 return;
             }
 
-            // ✅ checksum DB 반영
             if (checksum == null) {
                 checksum = draft.getChecksum();
             }
@@ -195,7 +194,7 @@ public class SonarService {
                     .memberId(memberId)
                     .articleId(draftId)
                     .diffId(diffId)
-                    .checksum(checksum)   // ✅ 여기 저장
+                    .checksum(checksum)
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
                     .coverage(parseDouble(metricMap.get("coverage")))

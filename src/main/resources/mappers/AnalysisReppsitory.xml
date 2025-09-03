@@ -117,4 +117,11 @@
             LIMIT 1
     </select>
 
+    <update id="updateRepositoryIdByChecksum">
+        UPDATE analysis
+        SET repositoryId = #{repositoryId}
+        WHERE checksum = #{checksum}
+    </update>
+
+
 </mapper>

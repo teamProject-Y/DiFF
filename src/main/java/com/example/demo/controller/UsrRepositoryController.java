@@ -56,6 +56,7 @@ public class UsrRepositoryController {
     @GetMapping("/{repoId}/languages")
     public ResultData<List<Map<String, Object>>> getLanguageDistribution(@PathVariable Long repoId) {
         List<Map<String, Object>> langs = repositoryService.getLanguageDistributionByRepo(repoId);
+        System.out.println("repoId"+repoId+"언어분포" + langs);
         return ResultData.from("S-1", "언어 분포 조회 성공", langs);
     }
 

@@ -48,19 +48,25 @@ public class ArticleService {
 
         // 1. 글 저장
         int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
-        System.out.println("체크섬ㅁㅁ"+checksum);
-        // 2. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
+        System.out.println("체크섬 = " + checksum);
+
+        if (checksum != null && repositoryId != null) {
+            int updated = analysisRepository.updateRepositoryIdByChecksum(checksum, repositoryId);
+            System.out.println("✅ Analysis repositoryId 동기화됨 (rows=" + updated + ")");
+        }
+
+        // 3. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
         }
 
-        // 3. 작성자 정보 가져오기
+        // 4. 작성자 정보 가져오기
         Member writer = memberRepository.getMemberById(memberId);
 
-        // 4. 팔로워 목록 조회
+        // 5. 팔로워 목록 조회
         List<Member> followers = memberRepository.getFollowingList(writer.getId());
 
-        // 5. 팔로워들에게 푸시 알림 발송
+        // 6. 팔로워들에게 푸시 알림 발송
         for (Member follower : followers) {
             if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
                 fcmService.sendMessage(
@@ -76,6 +82,7 @@ public class ArticleService {
         }
         return rows;
     }
+
 
     public int getLastInsertId() {
         return articleRepository.getLastInsertId();

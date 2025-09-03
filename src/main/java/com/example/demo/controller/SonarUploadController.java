@@ -42,14 +42,13 @@ public class SonarUploadController {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> param = mapper.readValue(metaJson, Map.class);
 
-            // ✅ 여기서 바로 로그 찍기
             System.out.println("📦 uploadSource param = " + param);
 
 
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
-            Long draftId = ((Number) param.get("draftId")).longValue(); // ✅ 추가
-            Long diffId = ((Number) param.get("diffId")).longValue(); // ✅ 추가
+            Long draftId = ((Number) param.get("draftId")).longValue();
+            Long diffId = ((Number) param.get("diffId")).longValue();
             String lastChecksum = (String) param.get("lastChecksum");
 
             String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
@@ -83,8 +82,6 @@ public class SonarUploadController {
             return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
         }
     }
-
-
 
     private void grantProjectAdminPermission(String projectKey) {
         String sonarBaseUrl = "http://localhost:9000";
