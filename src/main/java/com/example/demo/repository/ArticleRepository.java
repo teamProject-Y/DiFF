@@ -45,8 +45,4 @@ public interface ArticleRepository {
 
     List<Article> searchArticles(String keyword);
 
-    Map<String, Object> getArticleWithAnalysis(@Param("articleId") Long articleId);
-
-    List<Map<String, Object>> getArticlesWithAnalysisByRepo(@Param("repositoryId") Long repositoryId);
-
 }

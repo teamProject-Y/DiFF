@@ -330,26 +330,4 @@ public class UsrArticleController {
                 "msg", success ? "조회수가 증가했습니다." : "이미 조회한 게시글입니다."
         );
     }
-
-    @GetMapping("/articleWithAnalysis")
-    @ResponseBody
-    public ResultData<Map<String, Object>> getArticleWithAnalysis(@RequestParam Long articleId) {
-        Map<String, Object> data = articleService.getArticleWithAnalysis(articleId);
-        System.out.println("articeWithAnalysis 진입 data: " + data);
-        if (data == null) {
-            return ResultData.from("F-1", "해당 게시글을 찾을 수 없습니다.");
-        }
-
-        return ResultData.from("S-1", "조회 성공", data);
-    }
-
-    @GetMapping("/repositoryWithAnalysis")
-    @ResponseBody
-    public ResultData<List<Map<String, Object>>> getArticlesWithAnalysisByRepo(@RequestParam Long repositoryId) {
-        System.out.println("repositoryWithAnalysis 진입");
-        List<Map<String, Object>> data = articleService.getArticlesWithAnalysisByRepo(repositoryId);
-
-        return ResultData.from("S-1", "조회 성공", data);
-    }
-
 }

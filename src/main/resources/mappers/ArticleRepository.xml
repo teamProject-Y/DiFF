@@ -195,43 +195,4 @@
         ORDER BY a.regDate DESC
     </select>
 
-    <select id="getArticleWithAnalysis" resultType="map">
-        SELECT
-            a.id            AS articleId,
-            a.title,
-            a.body,
-            a.checksum,
-            an.coverage,
-            an.bugs,
-            an.complexity,
-            an.codeSmells,
-            an.duplicatedLinesDensity,
-            an.vulnerabilities
-        FROM article a
-                 LEFT JOIN analysis an
-                           ON a.checksum = an.checksum
-        WHERE a.id = #{articleId}
-    </select>
-
-    <select id="getArticlesWithAnalysisByRepo" resultType="map">
-        SELECT
-            a.id            AS articleId,
-            a.title,
-            a.checksum,
-            a.memberId,
-            a.repositoryId,
-            a.regDate,
-            an.coverage,
-            an.bugs,
-            an.complexity,
-            an.codeSmells
-        FROM article a
-                 LEFT JOIN analysis an
-                           ON a.checksum = an.checksum
-        WHERE a.repositoryId = #{repositoryId}
-        ORDER BY a.regDate DESC
-    </select>
-
-
-
 </mapper>

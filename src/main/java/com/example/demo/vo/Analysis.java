@@ -30,10 +30,12 @@ public class Analysis {
     private LocalDateTime analyzeDate;
     private Double totalScore;
     private String checksum;
+
     private String gradeCoverage;
     private String gradeReliability;
     private String gradeMaintainability;
     private String gradeDuplications;
     private String gradeSecurity;
+    private String gradeComplexity;
 }
 

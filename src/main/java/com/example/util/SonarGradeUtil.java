@@ -41,4 +41,13 @@ public class SonarGradeUtil {
         else if (duplication <= 20) return "D";
         return "E";
     }
+
+    public static String gradeComplexity(int complexity) {
+        if (complexity <= 50) return "A";
+        else if (complexity <= 200) return "B";
+        else if (complexity <= 500) return "C";
+        else if (complexity <= 1000) return "D";
+        return "E";
+    }
+
 }

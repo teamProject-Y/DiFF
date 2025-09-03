@@ -110,6 +110,7 @@ public class ArticleService {
                 analysis.setGradeMaintainability(SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells()));
                 analysis.setGradeDuplications(SonarGradeUtil.gradeDuplications(analysis.getDuplicatedLinesDensity()));
                 analysis.setGradeSecurity(SonarGradeUtil.gradeSecurity(analysis.getVulnerabilities()));
+                analysis.setGradeComplexity(SonarGradeUtil.gradeComplexity(analysis.getComplexity()));
 
                 article.setAnalysis(analysis);
                 System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
@@ -199,11 +200,4 @@ public class ArticleService {
         return articleRepository.searchArticles("%" + keyword + "%");
     }
 
-    public Map<String, Object> getArticleWithAnalysis(Long articleId) {
-        return articleRepository.getArticleWithAnalysis(articleId);
-    }
-
-    public List<Map<String, Object>> getArticlesWithAnalysisByRepo(Long repositoryId) {
-        return articleRepository.getArticlesWithAnalysisByRepo(repositoryId);
-    }
 }
