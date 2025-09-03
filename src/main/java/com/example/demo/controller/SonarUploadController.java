@@ -65,7 +65,7 @@ public class SonarUploadController {
 
             // 3. 분석 실행
             sonarService.runSonarScanner(extractedPath, projectKey);
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey); // ✅ draftId 전달
+            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
 
             // 4. 결과 조회
             String result = sonarService.getAnalysisResult(projectKey);

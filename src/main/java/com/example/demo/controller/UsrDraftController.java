@@ -180,13 +180,9 @@ public class UsrDraftController {
                     .build();
             diffService.updateDiff(diffEntity);
 
-            // 4. 분석 실행 → diffId 기준
-            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_D-" + diffId + "_C-" + lastChecksum;
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
-
             // 5. 알림 처리
             Member member = memberService.getFcmTokenById(memberId);
-            String message = "당신의 커밋 diff가 초안으로 변환되었습니다!";
+            String message = "초안이 작성되었습니다";
 
             if (member != null) {
                 // 5-1. FCM 발송
@@ -207,7 +203,7 @@ public class UsrDraftController {
                         .memberId(member.getId())
                         .type("DRAFT")
                         .message(message)
-                        .isRead(false)  // 읽지 않았으므로 빨간 점 표시
+                        .isRead(false)
                         .build();
 
                 notificationService.saveNotification(notification);
