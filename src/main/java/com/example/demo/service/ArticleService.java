@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.example.demo.repository.*;
 import com.example.demo.vo.Analysis;
@@ -47,6 +48,7 @@ public class ArticleService {
 
         // 1. 글 저장
         int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
+        System.out.println("체크섬ㅁㅁ"+checksum);
         // 2. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
@@ -90,14 +92,18 @@ public class ArticleService {
         System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
 
         for (Article article : articles) {
-            System.out.println("📝 [getArticles] article id=" + article.getId() + ", title=" + article.getTitle());
+            System.out.println("📝 [getArticles] article id=" + article.getId()
+                    + ", title=" + article.getTitle()
+                    + ", checksum=" + article.getChecksum());
 
-            // ✅ article.getDiffId() 기준으로 분석 찾기
-            Analysis analysis = analysisRepository.findByDiffId(article.getDiffId());
-            System.out.println("🔍 [getArticles] analysis for diffId=" + article.getDiffId() + " → " + (analysis != null ? "FOUND" : "null"));
+            Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
+            System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
+                    + " → " + (analysis != null ? "FOUND" : "null"));
 
             if (analysis != null) {
-                System.out.println("   - coverage=" + analysis.getCoverage() + ", bugs=" + analysis.getBugs() + ", smells=" + analysis.getCodeSmells());
+                System.out.println("   - coverage=" + analysis.getCoverage()
+                        + ", bugs=" + analysis.getBugs()
+                        + ", smells=" + analysis.getCodeSmells());
 
                 analysis.setGradeCoverage(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
                 analysis.setGradeReliability(SonarGradeUtil.gradeReliability(analysis.getBugs()));
@@ -114,10 +120,11 @@ public class ArticleService {
     }
 
 
+
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);
     }
-  
+
     public Article getArticleById(Long id, Long loginedMemberId) {
         Article article = articleRepository.getArticleById(id);
 
@@ -190,5 +197,13 @@ public class ArticleService {
             return Collections.emptyList();
         }
         return articleRepository.searchArticles("%" + keyword + "%");
+    }
+
+    public Map<String, Object> getArticleWithAnalysis(Long articleId) {
+        return articleRepository.getArticleWithAnalysis(articleId);
+    }
+
+    public List<Map<String, Object>> getArticlesWithAnalysisByRepo(Long repositoryId) {
+        return articleRepository.getArticlesWithAnalysisByRepo(repositoryId);
     }
 }

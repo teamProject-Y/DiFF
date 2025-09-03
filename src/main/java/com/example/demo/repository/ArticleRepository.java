@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ArticleRepository {
@@ -43,4 +44,9 @@ public interface ArticleRepository {
     List<Article> getRepositoryArticles(Long repositoryId);
 
     List<Article> searchArticles(String keyword);
+
+    Map<String, Object> getArticleWithAnalysis(@Param("articleId") Long articleId);
+
+    List<Map<String, Object>> getArticlesWithAnalysisByRepo(@Param("repositoryId") Long repositoryId);
+
 }

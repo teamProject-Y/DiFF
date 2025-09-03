@@ -3,12 +3,12 @@ package com.example.demo.controller;
 import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +97,7 @@ public class UsrDraftController {
         }
     }
 
+
     @PostMapping("/mkDraft")
     @ResponseBody
     public ResultData<Map<String, Object>> mkDraft(@RequestBody Map<String, Object> param) {
@@ -106,6 +107,7 @@ public class UsrDraftController {
         try {
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+            String checksum = (String) param.get("checksum"); // ✅ 체크섬 받기
 
             // 1. Draft 생성
             Draft draft = Draft.builder()
@@ -113,14 +115,15 @@ public class UsrDraftController {
                     .repositoryId(repositoryId)
                     .title("(자동 생성)")
                     .body("")
+                    .checksum(checksum) // ✅ draft에도 넣음
                     .build();
 
             Long draftId = draftService.saveDraft(draft);
 
-            // 2. Diff 생성 (Draft와 연결)
+            // 2. Diff 생성
             Diff diff = Diff.builder()
                     .draftId(draftId)
-                    .checksum(null) // 아직 checksum 없음
+                    .checksum(checksum) // ✅ diff에도 넣음
                     .build();
             Long diffId = diffService.saveDiff(diff);
 
@@ -129,15 +132,15 @@ public class UsrDraftController {
             Map<String, Object> resultData = new HashMap<>();
             resultData.put("draftId", draftId);
             resultData.put("diffId", diffId);
+            resultData.put("checksum", checksum);
 
-            return ResultData.from("S-1", "Draft 껍데기 + Diff 생성 완료", resultData);
+            return ResultData.from("S-1", "Draft + Diff + checksum 저장 완료", resultData);
 
         } catch (Exception e) {
             e.printStackTrace();
             return ResultData.from("F-1", "Draft 생성 실패", null);
         }
     }
-
 
     @PostMapping("/receiveDiff")
     @ResponseBody
@@ -170,7 +173,6 @@ public class UsrDraftController {
                     .build();
             draftService.updateDraft(draft);
 
-            // 3. Diff 업데이트 (checksum 반영)
             Diff diffEntity = Diff.builder()
                     .id(diffId)
                     .draftId(draftId)
@@ -180,7 +182,7 @@ public class UsrDraftController {
 
             // 4. 분석 실행 → diffId 기준
             String projectKey = "M-" + memberId + "_R-" + repositoryId + "_D-" + diffId + "_C-" + lastChecksum;
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, projectKey);
+            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
 
             // 5. 알림 처리
             Member member = memberService.getFcmTokenById(memberId);
@@ -219,7 +221,6 @@ public class UsrDraftController {
             return ResultData.from("F-2", "Diff 처리 실패", null);
         }
     }
-
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
@@ -305,7 +306,8 @@ public class UsrDraftController {
                     draft.getRepositoryId(), // ✅ repositoryId
                     memberId,                // ✅ memberId
                     draftId,                 // ✅ articleId = draftId
-                    diffId,                  // ✅ diffId 전달
+                    diffId,
+                    draft.getChecksum(),
                     projectKey               // ✅ projectKey
             );
 

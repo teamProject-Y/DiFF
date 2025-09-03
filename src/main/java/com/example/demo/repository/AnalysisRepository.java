@@ -18,4 +18,6 @@ public interface AnalysisRepository {
     Analysis findByArticleId(Long id);
 
     Analysis findByDiffId(Long diffId);
+
+    Analysis findByChecksum(String checksum);
 }

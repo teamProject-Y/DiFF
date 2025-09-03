@@ -14,17 +14,33 @@
     </select>
 
     <select id="getArticles" resultType="com.example.demo.vo.Article">
-        SELECT A.*, M.nickName AS extra__writer
+        SELECT
+            A.*,
+            M.nickName AS extra__writer,
+            COALESCE(R.likes, 0) AS extra__sumReaction,
+            COALESCE(RE.replies, 0) AS extra__sumReplies
         FROM article A
-                 JOIN `member` M
+                 JOIN member M
                       ON A.memberId = M.id
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
+        ) R ON A.id = R.relId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
+        ) RE ON A.id = RE.articleId
         WHERE
-            repositoryId = #{repositoryId}
-          AND (#{keyword} IS NULL OR title LIKE CONCAT('%', #{keyword}, '%'))
-          AND (#{searchItem} = 0 OR memberId = #{searchItem})
-        ORDER BY id DESC
+            A.repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR A.title LIKE CONCAT('%', #{keyword}, '%'))
+          AND (#{searchItem} = 0 OR A.memberId = #{searchItem})
+        ORDER BY A.id DESC
             LIMIT #{limitFrom}, #{itemsInAPage}
     </select>
+
 
 
     <insert id="writeArticle" parameterType="com.example.demo.vo.Article">
@@ -178,6 +194,44 @@
         OR m.nickName LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY a.regDate DESC
     </select>
+
+    <select id="getArticleWithAnalysis" resultType="map">
+        SELECT
+            a.id            AS articleId,
+            a.title,
+            a.body,
+            a.checksum,
+            an.coverage,
+            an.bugs,
+            an.complexity,
+            an.codeSmells,
+            an.duplicatedLinesDensity,
+            an.vulnerabilities
+        FROM article a
+                 LEFT JOIN analysis an
+                           ON a.checksum = an.checksum
+        WHERE a.id = #{articleId}
+    </select>
+
+    <select id="getArticlesWithAnalysisByRepo" resultType="map">
+        SELECT
+            a.id            AS articleId,
+            a.title,
+            a.checksum,
+            a.memberId,
+            a.repositoryId,
+            a.regDate,
+            an.coverage,
+            an.bugs,
+            an.complexity,
+            an.codeSmells
+        FROM article a
+                 LEFT JOIN analysis an
+                           ON a.checksum = an.checksum
+        WHERE a.repositoryId = #{repositoryId}
+        ORDER BY a.regDate DESC
+    </select>
+
 
 
 </mapper>

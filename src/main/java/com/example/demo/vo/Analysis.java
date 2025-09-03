@@ -29,7 +29,7 @@ public class Analysis {
     private int vulnerabilities;
     private LocalDateTime analyzeDate;
     private Double totalScore;
-
+    private String checksum;
     private String gradeCoverage;
     private String gradeReliability;
     private String gradeMaintainability;

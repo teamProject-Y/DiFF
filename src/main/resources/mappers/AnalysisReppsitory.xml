@@ -21,7 +21,8 @@
         duplicatedLinesDensity,
         vulnerabilities,
         analyzeDate,
-        totalScore
+        totalScore,
+        checksum
         ) VALUES (
         #{repositoryId},
         #{memberId},
@@ -36,7 +37,8 @@
         #{duplicatedLinesDensity},
         #{vulnerabilities},
         NOW(),
-        #{totalScore}
+        #{totalScore},
+        #{checksum}
         )
     </insert>
 
@@ -108,6 +110,11 @@
             LIMIT 1
     </select>
 
-
+    <select id="findByChecksum" resultType="com.example.demo.vo.Analysis">
+        SELECT *
+        FROM analysis
+        WHERE checksum = #{checksum}
+            LIMIT 1
+    </select>
 
 </mapper>

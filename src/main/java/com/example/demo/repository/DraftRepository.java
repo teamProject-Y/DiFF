@@ -23,4 +23,5 @@ public interface DraftRepository {
     public Draft getDraftById(Long id);
 
     void updateDraft(Draft draft);
+
 }
