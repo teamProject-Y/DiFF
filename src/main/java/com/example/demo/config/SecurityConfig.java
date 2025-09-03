@@ -80,34 +80,20 @@ public class SecurityConfig {
                                         "/api/DiFF/member/findPw",
                                         "/api/DiFF/member/updatePassword",
                                         "/api/DiFF/member/verify",
+
                                         // 글 관련 API
                                         "/api/DiFF/article/**", "/api/DiFF/reply/list",
 
                                         // 알림
                                         "/api/DiFF/notify/**"
-
-                                        // 글쓰기 (웹 & API 혼합)
-//                                        "/DiFF/article/**",
-//                                        "/gpt/test,",
-//                                        "/usr/draft/mkDraft",
-//                                        "/api/DiFF/article/doWrite",
-
-                                        // (중복된 경로 포함)
-//                                        "/DiFF/member/doJoin",
-//                                        "/DiFF/member/login?error=true",
-//                                        "/api/DiFF/member/login",
-//                                        "/api/DiFF/member/doLogin"
                                 ).permitAll()
 
                                 // GET 요청만 허용
                                 .requestMatchers(HttpMethod.GET,
                                         "/api/DiFF/attachment/**",
                                         "/api/DiFF/reply/**",
-                                        "/api/DiFF/article/**"
-//                                        , "/api/DiFF/article/detail/**",
-//                                        "/api/DiFF/article/trending"
-//                                        , "/api/DiFF/article/drafts",
-//                                        "/api/DiFF/article/doWrite"
+                                        "/api/DiFF/article/**",
+                                        "/api/DiFF/github/**"
                                 ).permitAll()
 
                                 // 나머지 전부 인증

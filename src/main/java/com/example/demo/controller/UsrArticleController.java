@@ -103,7 +103,7 @@ public class UsrArticleController {
         System.out.println("body.length   = " + (draft.getBody() != null ? draft.getBody().length() : null));
         System.out.println("checksum      = " + draft.getChecksum());
         System.out.println("repositoryId  = " + draft.getRepositoryId());
-        System.out.println("diffId        = " + draft.getDiffId());
+        System.out.println("draftId       = " + draft.getDraftId());
 
         if (draft.getRepositoryId() == null) {
             return ResultData.from("F-400", "repositoryId가 필요합니다.");
@@ -154,18 +154,21 @@ public class UsrArticleController {
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 
         System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
-        System.out.println("detail 진입" + id);
+        System.out.println("detail 진입 id: " + id);
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
+        System.out.println("rq.loginedMemberId: " + rq.getLoginedMemberId());
 
         Article article = articleService.getArticleById(id, loginedMemberId);
+        System.out.println(article == null ? "null" : "article");
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
 
         System.out.println(article.getExtra__writer());
+        System.out.println("article: " + article);
 
         return ResultData.from("S-1", "게시글 조회 성공", article);
     }
