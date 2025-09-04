@@ -5,6 +5,7 @@ import com.example.demo.repository.DraftRepository;
 import com.example.demo.vo.Analysis;
 import com.example.demo.vo.AnalysisLanguage;
 import com.example.demo.vo.Draft;
+import com.example.util.Ut;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,12 +198,12 @@ public class SonarService {
                     .checksum(checksum)
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
-                    .coverage(parseDouble(metricMap.get("coverage")))
-                    .bugs(parseInt(metricMap.get("bugs")))
-                    .complexity(parseInt(metricMap.get("complexity")))
-                    .codeSmells(parseInt(metricMap.get("code_smells")))
-                    .duplicatedLinesDensity(parseDouble(metricMap.get("duplicated_lines_density")))
-                    .vulnerabilities(parseInt(metricMap.get("vulnerabilities")))
+                    .coverage(Ut.parseDoubleOrZero(metricMap.get("coverage")))
+                    .bugs(Ut.parseIntOrZero(metricMap.get("bugs")))
+                    .complexity(Ut.parseIntOrZero(metricMap.get("complexity")))
+                    .codeSmells(Ut.parseIntOrZero(metricMap.get("code_smells")))
+                    .duplicatedLinesDensity(Ut.parseDoubleOrZero(metricMap.get("duplicated_lines_density")))
+                    .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
                     .build();
 
             analysisRepository.insert(analysis);

@@ -8,11 +8,6 @@ import java.util.Map;
 
 public class Ut {
 
-    public static boolean isIncorrectParams(String params) {
-
-        return params == null || params.trim().length() == 0;
-    }
-
     public static boolean isEmpty(Object obj) {
 
         if(obj == null) return true;
@@ -27,83 +22,34 @@ public class Ut {
         return String.format(str, args);
     }
 
-    public static String jsReplace(String resultCode, String msg, String replaceUri) {
-        if (resultCode == null) resultCode = "";
-        if (msg == null) msg = "";
-        if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
-
-        if (!replaceUri.startsWith("/")) {
-            replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
-        }
-        replaceUri = replaceUri.replaceAll("/{2,}", "/");
-
-        System.out.println("🔁 Redirecting to: " + replaceUri);
-
-        String resultMsg = resultCode + " : " + msg;
-
-        return Ut.f("""
-	<script>
-		let resultMsg = '%s'.trim();
-		if(resultMsg.length > 0){
-			alert(resultMsg);
-		}
-		location.replace('%s');
-	</script>
-	""", resultMsg, replaceUri);
-    }
-
-
-    public static String jsReplace(String replaceUri) {
-
-        if (replaceUri == null || replaceUri.trim().isEmpty()) replaceUri = "/";
-
-        if (!replaceUri.startsWith("/")) {
-            replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "");
-        }
-        replaceUri = "/" + replaceUri.trim().replaceAll("^/+", "").replaceAll("/{2,}", "/");
-
-        System.out.println("Redirecting to: " + replaceUri); // 로그 확인
-
-        return Ut.f("""
-		<script>
-			location.replace('%s');
-		</script>
-		""", replaceUri);
-    }
-
-    public static String jsHistoryBack(String resultCode, String msg) {
-
-        String resultMsg = resultCode + " : " + msg;
-
-        return Ut.f("""
-				<script>
-					let resultMsg = '%s'.trim();
-
-					if(resultMsg.length > 0){
-						alert(resultMsg);
-					}
-
-					history.back();
-				</script>
-				""", resultMsg);
-    }
-    public static String sha256(String input) {
+    public static Integer parseIntOrZero(String s) {
+        if (s == null || s.isBlank()) return 0;
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(input.getBytes("UTF-8"));
-            StringBuffer hexString = new StringBuffer();
-
-            for (int i = 0; i < hash.length; i++) {
-                String hex = Integer.toHexString(0xff & hash[i]);
-                if (hex.length() == 1)
-                    hexString.append('0');
-                hexString.append(hex);
+            // 소수 들어오면 반올림
+            double d = Double.parseDouble(s.trim());
+            return (int) Math.round(d);
+        } catch (Exception ignore) {
+            // 숫자만 추출 후 시도
+            String digits = s.replaceAll("[^0-9.-]", "");
+            if (digits.isBlank()) return 0;
+            try {
+                double d = Double.parseDouble(digits);
+                return (int) Math.round(d);
+            } catch (Exception e) {
+                return 0;
             }
-
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
         }
     }
+
+    public static Double parseDoubleOrZero(String s) {
+        if (s == null || s.isBlank()) return 0.0;
+        try {
+            return Double.parseDouble(s.trim());
+        } catch (Exception ignore) {
+            String num = s.replaceAll("[^0-9.-]", "");
+            if (num.isBlank()) return 0.0;
+            try { return Double.parseDouble(num); } catch (Exception e) { return 0.0; }
+        }
+    }
+
 }
