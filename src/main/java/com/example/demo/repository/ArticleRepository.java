@@ -20,14 +20,7 @@ public interface ArticleRepository {
 
     List<Article> getTrendingArticles(Integer count, Integer days);
 
-    int writeArticle(
-            @Param("memberId") Long memberId,
-            @Param("title") String title,
-            @Param("body") String body,
-            @Param("checksum") String checksum,
-            @Param("repositoryId") Long repositoryId,
-            @Param("diffId") Long diffId
-    );
+    int writeArticle(Article article);
 
     Article getArticleById(Long id);
 

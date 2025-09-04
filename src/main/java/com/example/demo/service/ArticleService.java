@@ -38,18 +38,30 @@ public class ArticleService {
     @Autowired
     private HitsRepository hitsRepository;
 
-    public int writeArticle(Long memberId,
-                            String title,
-                            String body,
-                            String checksum,
-                            Long repositoryId,
-                            Long draftId,
-                            Long diffId) {
+    public Long writeArticle(Long memberId,
+                             String title,
+                             String body,
+                             String checksum,
+                             Long repositoryId,
+                             Long draftId,
+                             Long diffId) {
 
         // 1. 글 저장
-        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
-        System.out.println("체크섬 = " + checksum);
+        Article article = Article.builder()
+                .memberId(memberId)
+                .title(title)
+                .body(body)
+                .checksum(checksum)
+                .repositoryId(repositoryId)
+                .draftId(draftId)
+                .diffId(diffId)
+                .build();
 
+        articleRepository.writeArticle(article);
+        Long articleId = article.getId();
+        System.out.println("✅ 새 글 저장됨 → articleId=" + articleId + ", checksum=" + checksum);
+
+        // 2. Analysis repositoryId 동기화
         if (checksum != null && repositoryId != null) {
             int updated = analysisRepository.updateRepositoryIdByChecksum(checksum, repositoryId);
             System.out.println("✅ Analysis repositoryId 동기화됨 (rows=" + updated + ")");
@@ -80,8 +92,10 @@ public class ArticleService {
                 System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
             }
         }
-        return rows;
+
+        return articleId; // ✅ 방금 작성된 글의 id 반환
     }
+
 
 
     public int getLastInsertId() {

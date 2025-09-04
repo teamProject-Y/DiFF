@@ -43,7 +43,8 @@
 
 
 
-    <insert id="writeArticle" parameterType="com.example.demo.vo.Article">
+    <insert id="writeArticle" parameterType="com.example.demo.vo.Article"
+            useGeneratedKeys="true" keyProperty="id">
         INSERT INTO article
         (memberId, repositoryId, title, body, checksum, diffId, regDate, updateDate)
         VALUES
