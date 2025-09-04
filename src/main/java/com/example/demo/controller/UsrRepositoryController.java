@@ -61,6 +61,34 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "분석 이력 조회 성공", history);
     }
 
+    @PostMapping("/rename")
+    public ResultData<Repository> renameRepository(HttpServletRequest req, @RequestBody Repository repo) {
+
+        System.out.println("\n===== [POST] /api/DiFF/repository/rename/=====");
+        System.out.println("rename repoid: " +  repo.getId() + ", name: " + repo.getName());
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq.getLoginedMemberId();
+
+        if (loginedMemberId != repo.getMemberId()) {
+            System.out.println("loginedMemberId is not equal to repo.getMemberId()");
+            return ResultData.from("F-400", "권한 없음");
+        }
+
+        if(repositoryService.existsByMemberIdAndRepoName(loginedMemberId, repo.getName())) {
+            System.out.println("이미 존재하는 이름");
+            return ResultData.from("F-500", "이미 존재하는 이름입니다.");
+        }
+
+        int affectedRow = repositoryService.renameRepository(repo.getId(), repo.getName());
+
+        if(affectedRow == 0) {
+            System.out.println("왠지 실패");
+            return ResultData.from("F-1", "왠지 실패");
+        }
+
+        return ResultData.from("S-1", "success");
+    }
 
     @PostMapping("/createRepository")
     @ResponseBody
