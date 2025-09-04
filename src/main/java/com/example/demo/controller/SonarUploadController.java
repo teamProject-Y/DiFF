@@ -38,36 +38,42 @@ public class SonarUploadController {
             @RequestParam("file") MultipartFile zipFile,
             @RequestParam("meta") String metaJson) {
         try {
-            // 1. 사용자 및 커밋 기반 projectKey 생성
+            // 1. JSON → Map 변환
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> param = mapper.readValue(metaJson, Map.class);
 
+            System.out.println("📦 uploadSource param = " + param);
+
+
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+            Long draftId = ((Number) param.get("draftId")).longValue();
+            Long diffId = ((Number) param.get("diffId")).longValue();
             String lastChecksum = (String) param.get("lastChecksum");
-            String projectKey = "M-" + memberId + "_" + "R-" + repositoryId + "_" + "C-" + lastChecksum;
 
-            System.err.println("memberId:  " + memberId);
-            System.err.println("repositoryId:  " + repositoryId);
-            System.err.println("lastChecksum:  " + lastChecksum);
-            System.err.println("projectKey:  " + projectKey);
+            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
 
-            // 2. 압축 해제 및 sonar-project.properties 생성
+            System.err.println("memberId: " + memberId);
+            System.err.println("repositoryId: " + repositoryId);
+            System.err.println("draftId: " + draftId);
+            System.err.println("lastChecksum: " + lastChecksum);
+            System.err.println("projectKey: " + projectKey);
+
+            // 2. 압축 해제
             String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
             System.out.println("압축 해제 위치: " + extractedPath);
 
             // 3. 분석 실행
-            sonarService.runSonarScanner(extractedPath,projectKey);
-            sonarService.analysisInsertDB(repositoryId, memberId, projectKey);
+            sonarService.runSonarScanner(extractedPath, projectKey);
+            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
+
             // 4. 결과 조회
             String result = sonarService.getAnalysisResult(projectKey);
             System.out.println("분석 결과: " + result);
 
-            grantProjectAdminPermission(projectKey); // 자동으로 admin 권한 부여
+            grantProjectAdminPermission(projectKey);
             Thread.sleep(2000);
             sonarService.deleteProject(projectKey);
-            System.out.println("SonarQube 프로젝트 삭제 완료: " + projectKey);
-
 
             return ResponseEntity.ok(result);
 

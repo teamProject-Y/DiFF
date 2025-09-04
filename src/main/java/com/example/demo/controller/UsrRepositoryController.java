@@ -3,10 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.service.AnalysisService;
 import com.example.demo.service.ArticleService;
 import com.example.demo.service.RepositoryService;
-import com.example.demo.vo.Article;
-import com.example.demo.vo.Repository;
-import com.example.demo.vo.ResultData;
-import com.example.demo.vo.Rq;
+import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +19,6 @@ import java.util.Map;
 @RequestMapping("/api/DiFF/repository")
 @RequiredArgsConstructor
 public class UsrRepositoryController {
-
-    @Autowired
-    private Rq rq;
 
     @Autowired
     private  RepositoryService repositoryService;
@@ -52,6 +46,21 @@ public class UsrRepositoryController {
 
         return ResultData.from("S-1", "내 리포지토리 목록", data);
     }
+
+    @GetMapping("/{repoId}/languages")
+    public ResultData<List<Map<String, Object>>> getLanguageDistribution(@PathVariable Long repoId) {
+        List<Map<String, Object>> langs = repositoryService.getLanguageDistributionByRepo(repoId);
+        System.out.println("repoId"+repoId+"언어분포" + langs);
+        return ResultData.from("S-1", "언어 분포 조회 성공", langs);
+    }
+
+    @GetMapping("/{repoId}/history")
+    public ResultData<List<Analysis>> getAnalysisHistory(@PathVariable Long repoId) {
+        List<Analysis> history = analysisService.getAnalysisHistory(repoId);
+        System.out.println("repoId"+repoId+"분석이력" + history);
+        return ResultData.from("S-1", "분석 이력 조회 성공", history);
+    }
+
 
     @PostMapping("/createRepository")
     @ResponseBody

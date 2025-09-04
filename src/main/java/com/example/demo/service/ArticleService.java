@@ -2,14 +2,14 @@ package com.example.demo.service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-import com.example.demo.repository.ArticleRepository;
-import com.example.demo.repository.HitsRepository;
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.repository.ReactionRepository;
+import com.example.demo.repository.*;
+import com.example.demo.vo.Analysis;
 import com.example.demo.vo.Article;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.ResultData;
+import com.example.util.SonarGradeUtil;
 import com.example.util.Ut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +33,9 @@ public class ArticleService {
     private MemberRepository memberRepository;
 
     @Autowired
+    private AnalysisRepository analysisRepository;
+
+    @Autowired
     private HitsRepository hitsRepository;
 
     public int writeArticle(Long memberId,
@@ -40,23 +43,30 @@ public class ArticleService {
                             String body,
                             String checksum,
                             Long repositoryId,
-                            Long draftId) {
+                            Long draftId,
+                            Long diffId) {
 
         // 1. 글 저장
-        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId);
+        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
+        System.out.println("체크섬 = " + checksum);
 
-        // 2. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
+        if (checksum != null && repositoryId != null) {
+            int updated = analysisRepository.updateRepositoryIdByChecksum(checksum, repositoryId);
+            System.out.println("✅ Analysis repositoryId 동기화됨 (rows=" + updated + ")");
+        }
+
+        // 3. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
         }
 
-        // 3. 작성자 정보 가져오기
+        // 4. 작성자 정보 가져오기
         Member writer = memberRepository.getMemberById(memberId);
 
-        // 4. 팔로워 목록 조회
+        // 5. 팔로워 목록 조회
         List<Member> followers = memberRepository.getFollowingList(writer.getId());
 
-        // 5. 팔로워들에게 푸시 알림 발송
+        // 6. 팔로워들에게 푸시 알림 발송
         for (Member follower : followers) {
             if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
                 fcmService.sendMessage(
@@ -73,6 +83,7 @@ public class ArticleService {
         return rows;
     }
 
+
     public int getLastInsertId() {
         return articleRepository.getLastInsertId();
     }
@@ -82,13 +93,46 @@ public class ArticleService {
     }
 
     public List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage) {
-        return articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
+
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
+
+        for (Article article : articles) {
+            System.out.println("📝 [getArticles] article id=" + article.getId()
+                    + ", title=" + article.getTitle()
+                    + ", checksum=" + article.getChecksum());
+
+            Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
+            System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
+                    + " → " + (analysis != null ? "FOUND" : "null"));
+
+            if (analysis != null) {
+                System.out.println("   - coverage=" + analysis.getCoverage()
+                        + ", bugs=" + analysis.getBugs()
+                        + ", smells=" + analysis.getCodeSmells());
+
+                analysis.setGradeCoverage(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
+                analysis.setGradeReliability(SonarGradeUtil.gradeReliability(analysis.getBugs()));
+                analysis.setGradeMaintainability(SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells()));
+                analysis.setGradeDuplications(SonarGradeUtil.gradeDuplications(analysis.getDuplicatedLinesDensity()));
+                analysis.setGradeSecurity(SonarGradeUtil.gradeSecurity(analysis.getVulnerabilities()));
+                analysis.setGradeComplexity(SonarGradeUtil.gradeComplexity(analysis.getComplexity()));
+
+                article.setAnalysis(analysis);
+                System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
+            }
+        }
+
+        return articles;
     }
+
+
 
     public List<Article> getTrendingArticles(Integer count, Integer days) {
         return articleRepository.getTrendingArticles(count, days);
     }
-  
+
     public Article getArticleById(Long id, Long loginedMemberId) {
         Article article = articleRepository.getArticleById(id);
 
@@ -162,4 +206,5 @@ public class ArticleService {
         }
         return articleRepository.searchArticles("%" + keyword + "%");
     }
+
 }

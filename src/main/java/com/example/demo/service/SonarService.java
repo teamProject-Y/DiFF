@@ -1,8 +1,10 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.AnalysisRepository;
+import com.example.demo.repository.DraftRepository;
 import com.example.demo.vo.Analysis;
 import com.example.demo.vo.AnalysisLanguage;
+import com.example.demo.vo.Draft;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,9 @@ import java.util.zip.ZipFile;
 public class SonarService {
     @Autowired
     private AnalysisRepository analysisRepository;
+    @Autowired
+    private DraftRepository draftRepository;
+
     @Value("${sonarqube.host}")
     private String sonarHost;
 
@@ -143,12 +148,16 @@ public class SonarService {
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    public void analysisInsertDB(Long repositoryId, Long memberId, String projectKey) throws IOException, InterruptedException {
+    public void analysisInsertDB(Long repositoryId,
+                                 Long memberId,
+                                 Long draftId,
+                                 Long diffId,
+                                 String checksum,
+                                 String projectKey ) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
 
-            // ✅ JSON 유효성 검사
             if (resultJson == null || !resultJson.trim().startsWith("{")) {
                 System.out.println("❌ 분석 결과 JSON 아님! resultJson = " + resultJson);
                 return;
@@ -167,10 +176,25 @@ public class SonarService {
                 metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
             }
 
-            // 1. Analysis 저장 (언어 제외)
+            // Draft 조회 (안전 확인용)
+            Draft draft = draftRepository.getDraftById(draftId);
+            if (draft == null) {
+                System.out.println("❌ draftId=" + draftId + " 에 해당 Draft 없음!");
+                return;
+            }
+
+            if (checksum == null) {
+                checksum = draft.getChecksum();
+            }
+            System.out.println("🔑 draftId=" + draftId + " 의 checksum=" + checksum);
+
+            // Analysis 저장
             Analysis analysis = Analysis.builder()
                     .repositoryId(repositoryId)
                     .memberId(memberId)
+                    .articleId(draftId)
+                    .diffId(diffId)
+                    .checksum(checksum)
                     .projectKey(projectKeyFromJson)
                     .projectName(projectName)
                     .coverage(parseDouble(metricMap.get("coverage")))
@@ -182,11 +206,10 @@ public class SonarService {
                     .build();
 
             analysisRepository.insert(analysis);
-            Long analyzeId = analysis.getId();  // 방금 insert된 ID
-
+            Long analyzeId = analysis.getId();
             System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
 
-            // 2. 언어 분포 파싱해서 analysis_language에 저장
+            // 언어 분포 저장
             String langRaw = metricMap.get("ncloc_language_distribution");
             if (langRaw != null) {
                 List<AnalysisLanguage> languages = parseLanguageDistribution(langRaw, analyzeId);

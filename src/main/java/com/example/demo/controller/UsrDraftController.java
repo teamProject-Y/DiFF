@@ -3,12 +3,12 @@ package com.example.demo.controller;
 import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +36,11 @@ public class UsrDraftController {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private DiffService diffService;
+    @Autowired
+    private SonarService sonarService;
 
     @PostMapping("/verifyGitUser")
     @ResponseBody
@@ -92,37 +97,95 @@ public class UsrDraftController {
         }
     }
 
+
     @PostMapping("/mkDraft")
     @ResponseBody
-    public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
-        System.out.println("receiveDiff 메서드 진입");
-        System.out.println("🍔param: " + param);
+    public ResultData<Map<String, Object>> mkDraft(@RequestBody Map<String, Object> param) {
+        System.out.println("🍔 mkDraft 메서드 진입");
+        System.out.println("🍔 param: " + param);
 
-        Number memberIdNum = (Number) param.get("memberId");
-        Number repositoryIdNum = (Number) param.get("repositoryId");
-
-        Long memberId = memberIdNum.longValue();
-        Long repositoryId = repositoryIdNum.longValue();
-        String lastChecksum = (String) param.get("lastChecksum");
-        String diff = (String) param.get("diff");
-
-        System.out.println("memberId: " + memberId);
-        System.out.println("lastChecksum: " + lastChecksum);
-
-        if (diff == null || diff.trim().isEmpty()) {
-            System.err.println("diff 없음!!!!!!!!!!!!!!!!!!!!");
-            return ResultData.from("F-1", "diff 내용이 비어있습니다.");
-        }
-
-        String draft;
         try {
-            draft = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
+            Long memberId = ((Number) param.get("memberId")).longValue();
+            Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+            String checksum = (String) param.get("checksum"); // ✅ 체크섬 받기
 
+            // 1. Draft 생성
+            Draft draft = Draft.builder()
+                    .memberId(memberId)
+                    .repositoryId(repositoryId)
+                    .title("(자동 생성)")
+                    .body("")
+                    .checksum(checksum) // ✅ draft에도 넣음
+                    .build();
+
+            Long draftId = draftService.saveDraft(draft);
+
+            // 2. Diff 생성
+            Diff diff = Diff.builder()
+                    .draftId(draftId)
+                    .checksum(checksum) // ✅ diff에도 넣음
+                    .build();
+            Long diffId = diffService.saveDiff(diff);
+
+            System.out.println("✅ mkDraft Draft 생성 완료 → draftId=" + draftId + ", diffId=" + diffId);
+
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("draftId", draftId);
+            resultData.put("diffId", diffId);
+            resultData.put("checksum", checksum);
+
+            return ResultData.from("S-1", "Draft + Diff + checksum 저장 완료", resultData);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResultData.from("F-1", "Draft 생성 실패", null);
+        }
+    }
+
+    @PostMapping("/receiveDiff")
+    @ResponseBody
+    public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
+        System.out.println("📥 receiveDiff 진입");
+        System.out.println("📥 param: " + param);
+
+        try {
+            Long memberId = ((Number) param.get("memberId")).longValue();
+            Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+            Long draftId = ((Number) param.get("draftId")).longValue();
+            Long diffId = ((Number) param.get("diffId")).longValue();
+            String lastChecksum = (String) param.get("lastChecksum");
+            String diffText = (String) param.get("diff");
+
+            if (diffText == null || diffText.trim().isEmpty()) {
+                return ResultData.from("F-1", "diff 내용이 비어있습니다.");
+            }
+
+            // 1. GPT 호출 → Draft 본문 생성
+            String draftBody = gptService.makeDraft(diffText, repositoryId, memberId, lastChecksum, draftId);
+
+            // 2. Draft 업데이트
+            Draft draft = Draft.builder()
+                    .id(draftId)
+                    .memberId(memberId)
+                    .repositoryId(repositoryId)
+                    .body(draftBody)
+                    .checksum(lastChecksum)
+                    .build();
+            draftService.updateDraft(draft);
+
+            Diff diffEntity = Diff.builder()
+                    .id(diffId)
+                    .draftId(draftId)
+                    .checksum(lastChecksum)
+                    .build();
+            diffService.updateDiff(diffEntity);
+
+            // 5. 알림 처리
             Member member = memberService.getFcmTokenById(memberId);
-            String message = "당신의 커밋 diff가 초안으로 변환되었습니다!";
+            String message = "초안이 작성되었습니다";
 
             if (member != null) {
-                // 1. FCM 발송
+                // 5-1. FCM 발송
                 if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
                     fcmService.sendMessage(
                             member.getFcmToken(),
@@ -135,26 +198,25 @@ public class UsrDraftController {
                     System.out.println("⚠️ fcmToken 없음 → 알림 생략");
                 }
 
-                // 2. DB에 알림 저장 (빨간점 표시용)
+                // 5-2. DB 알림 저장
                 Notification notification = Notification.builder()
                         .memberId(member.getId())
                         .type("DRAFT")
                         .message(message)
-                        .isRead(false)  // 읽지 않았으므로 빨간 점 표시
+                        .isRead(false)
                         .build();
 
                 notificationService.saveNotification(notification);
                 System.out.println("✅ Draft 알림 DB 저장 완료 → 빨간점 표시 가능");
             }
 
+            return ResultData.from("S-1", "Draft 업데이트 및 분석 성공", draftBody);
+
         } catch (Exception e) {
-            return ResultData.from("F-2", "초안 생성에 실패했습니다.", "error", e.getMessage());
+            e.printStackTrace();
+            return ResultData.from("F-2", "Diff 처리 실패", null);
         }
-
-        return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
-
-
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
@@ -167,7 +229,7 @@ public class UsrDraftController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("drafts", drafts);
-        System.out.println(""+result);
+        System.out.println("" + result);
         return ResponseEntity.ok(result);
     }
 
@@ -222,11 +284,35 @@ public class UsrDraftController {
                 + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
                 + ", repositoryId=" + draft.getRepositoryId());
 
+        // 1. 글 저장
         draft.setMemberId(memberId);
 
         Long draftId = draftService.saveDraft(draft);
+        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
-        System.out.println("📤 [Controller] saveDraft 완료 → draftId=" + draftId);
+        // ✅ DiffId는 Draft에 이미 세팅되어 있다고 가정
+        Long diffId = draft.getDiffId();
+
+        // 2. projectKey 생성 규칙
+        String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;
+
+        try {
+            // 3. 분석 저장
+            sonarService.analysisInsertDB(
+                    draft.getRepositoryId(), // ✅ repositoryId
+                    memberId,                // ✅ memberId
+                    draftId,                 // ✅ articleId = draftId
+                    diffId,
+                    draft.getChecksum(),
+                    projectKey               // ✅ projectKey
+            );
+
+            System.out.println("✅ [Controller] analysisInsertDB 완료 → draftId=" + draftId + ", diffId=" + diffId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("❌ [Controller] analysisInsertDB 실패: " + e.getMessage());
+            // 👉 글 저장은 성공했으니 draftId는 그대로 반환
+        }
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
