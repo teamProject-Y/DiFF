@@ -108,6 +108,7 @@ public class UsrArticleController {
         System.out.println("repositoryId  = " + draft.getRepositoryId());
         System.out.println("draftId       = " + draft.getDraftId());
 
+        // ✅ 필수값 검증
         if (draft.getRepositoryId() == null) {
             return ResultData.from("F-400", "repositoryId가 필요합니다.");
         }
@@ -118,6 +119,7 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
+        // ✅ 권한 검증
         Repository repo = repositoryService.getRepositoryByIdAndMember(
                 draft.getRepositoryId(),
                 loginedMemberId
@@ -127,17 +129,28 @@ public class UsrArticleController {
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
+        // ✅ 체크섬 분기 처리
+        String checksum = null;
+        if (draft.getDraftId() != null) {
+            Draft savedDraft = draftService.getDraftById(draft.getDraftId());
+            if (savedDraft == null) {
+                return ResultData.from("F-404", "임시저장 글이 존재하지 않습니다.");
+            }
+            checksum = savedDraft.getChecksum(); // draft 기반 체크섬
+        }
+
+        // ✅ 글 작성
         int wr = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
-                draftService.getDraftById(draft.getDraftId()).getChecksum(), // ✅ draft 테이블에서 불러오기
+                checksum, // 직접 작성이면 null
                 draft.getRepositoryId(),
                 draft.getDraftId(),
                 draft.getDiffId()
         );
 
-
+        // ✅ 알림 저장
         String message = "새 글이 작성되었습니다: " + draft.getTitle();
         Notification notification = Notification.builder()
                 .memberId(loginedMemberId)
@@ -151,7 +164,6 @@ public class UsrArticleController {
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
-
 
 
     @GetMapping("/detail")
