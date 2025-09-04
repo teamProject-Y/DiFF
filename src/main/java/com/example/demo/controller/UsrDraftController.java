@@ -116,6 +116,7 @@ public class UsrDraftController {
                     .title("(자동 생성)")
                     .body("")
                     .checksum(checksum) // ✅ draft에도 넣음
+                    .isPublic(true)     // ✅ 기본값 = 공개
                     .build();
 
             Long draftId = draftService.saveDraft(draft);
@@ -141,6 +142,7 @@ public class UsrDraftController {
             return ResultData.from("F-1", "Draft 생성 실패", null);
         }
     }
+
 
     @PostMapping("/receiveDiff")
     @ResponseBody

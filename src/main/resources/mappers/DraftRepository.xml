@@ -41,7 +41,7 @@
         body = #{body},
         checksum = #{checksum},
         repositoryId = #{repositoryId},
-        isPublic = #{isPublic},
+        isPublic = COALESCE(#{isPublic}, 1),
         regDate = NOW()
         WHERE id = #{id}
     </update>
