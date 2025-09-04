@@ -127,17 +127,24 @@ public class UsrArticleController {
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
+        String checksum = null;
+        if (draft.getDraftId() != null) {
+            Draft savedDraft = draftService.getDraftById(draft.getDraftId());
+            if (savedDraft == null) {
+                return ResultData.from("F-404", "임시저장 글이 존재하지 않습니다.");
+            }
+            checksum = savedDraft.getChecksum();
+        }
+
         int wr = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
-                draftService.getDraftById(draft.getDraftId()).getChecksum(), // ✅ draft 테이블에서 불러오기
+                checksum,
                 draft.getRepositoryId(),
                 draft.getDraftId(),
                 draft.getDiffId()
         );
-
-
         String message = "새 글이 작성되었습니다: " + draft.getTitle();
         Notification notification = Notification.builder()
                 .memberId(loginedMemberId)
