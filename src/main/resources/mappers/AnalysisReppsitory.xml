@@ -11,7 +11,7 @@
         repositoryId,
         memberId,
         articleId,
-        diffId, <!-- ✅ 추가 -->
+        diffId,
         projectKey,
         projectName,
         coverage,
@@ -41,8 +41,6 @@
         #{checksum}
         )
     </insert>
-
-
 
     <!-- AnalysisLanguage 저장 -->
     <insert id="insertLanguage" parameterType="com.example.demo.vo.AnalysisLanguage">
@@ -124,10 +122,20 @@
     </update>
 
     <select id="getAnalysisHistory" resultType="com.example.demo.vo.Analysis">
-        SELECT *
+        SELECT
+            DATE(analyzeDate)             AS analyzeDate,
+            AVG(coverage)                 AS coverage,
+            AVG(bugs)                     AS bugs,
+            AVG(complexity)               AS complexity,
+            AVG(codeSmells)               AS codeSmells,
+            AVG(duplicatedLinesDensity)   AS duplicatedLinesDensity,
+            AVG(vulnerabilities)          AS vulnerabilities,
+            AVG(totalScore)               AS totalScore
         FROM analysis
         WHERE repositoryId = #{repoId}
+        GROUP BY DATE(analyzeDate)
         ORDER BY analyzeDate ASC
     </select>
+
 
 </mapper>
