@@ -33,4 +33,16 @@
         AND memberId = #{memberId}
     </select>
 
+    <select id="getLikeCountsByMemberId" parameterType="Long">
+        SELECT COUNT(*)
+        FROM reaction r
+        LEFT JOIN article a
+        ON r.relType = 'article'
+        AND r.relId = a.id
+        LEFT JOIN reply rp
+        ON r.relType = 'reply'
+        AND r.relId = rp.id
+        WHERE (a.memberId = #{memberId} OR rp.memberId = #{memberId})
+    </select>
+
 </mapper>

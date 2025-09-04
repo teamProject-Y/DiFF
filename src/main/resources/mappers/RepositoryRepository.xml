@@ -74,6 +74,12 @@
         where id = #{repositoryId}
     </select>
 
+    <select id="getRepoCountsByMemberId" parameterType="Long">
+        SELECT COUNT(*)
+        FROM repository
+        WHERE memberId = #{memberId}
+    </select>
+
     <select id="getLanguageDistributionByRepo" resultType="map">
         SELECT
         a.repositoryId,

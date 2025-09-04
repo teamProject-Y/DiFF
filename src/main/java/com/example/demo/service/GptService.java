@@ -75,7 +75,7 @@ public class GptService {
                     .body(content)
                     .build();
 
-            draftRepository.updateDraft(draft); // ✅ update 실행
+            draftRepository.updateDraft(draft);
             System.out.println("✅ 초안 업데이트 완료 - draftId=" + draftId);
 
             return content;

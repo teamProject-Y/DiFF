@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.repository.MemberRepository;
-import com.example.demo.repository.OAuthAccountRepository;
+import com.example.demo.repository.*;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.OAuthAccount;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +15,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MemberService {
 
-    private final MailService mailService;
     private final MemberRepository memberRepository;
+
+    private final RepositoryRepository repositoryRepository;
+
+    private final ArticleRepository articleRepository;
+
+    private final ReactionRepository reactionRepository;
+
+    private final MailService mailService;
+
     private final PasswordEncoder passwordEncoder;
+
     private final OAuthAccountRepository oAuthAccountRepository;
 
     public Member getMemberById(Long id) {
@@ -213,5 +221,16 @@ public class MemberService {
 
     public List<Member> searchMembers(String keyword) {
         return memberRepository.searchMembers("%" + keyword + "%");
+    }
+
+    public Member updateMemberForPrint(Member member) {
+
+        System.out.println("updateMemberForPrint 진입~~~~~~~~~~~~~~~~");
+
+        member.setExtra__likeCounts(reactionRepository.getLikeCountsByMemberId(member.getId()));
+        member.setExtra__repoCounts(repositoryRepository.getRepoCountsByMemberId(member.getId()));
+        member.setExtra__postCounts(articleRepository.getArticleCountsByMemberId(member.getId()));
+
+        return member;
     }
 }
