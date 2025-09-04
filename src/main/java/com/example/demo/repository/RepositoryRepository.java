@@ -4,6 +4,7 @@ import com.example.demo.vo.Repository;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface RepositoryRepository {
@@ -20,4 +21,8 @@ public interface RepositoryRepository {
     int getLastInsertId();
 
     Long getMemberIdByRepositoryId(Long repositoryId);
+
+    Long getRepoCountsByMemberId(Long id);
+
+    List<Map<String, Object>> getLanguageDistributionByRepo(Long repositoryId);
 }

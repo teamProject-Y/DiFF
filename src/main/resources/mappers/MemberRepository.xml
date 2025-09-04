@@ -26,7 +26,9 @@
 
     <!-- 회원 조회 -->
     <select id="getMemberById" parameterType="long" resultType="com.example.demo.vo.Member">
-        SELECT * FROM `member` WHERE id = #{id}
+        SELECT *
+        FROM `member`
+        WHERE id = #{id}
     </select>
 
     <select id="getMemberByEmail" parameterType="string" resultType="com.example.demo.vo.Member">
@@ -192,14 +194,13 @@
 
     <select id="searchMembers" parameterType="string" resultType="com.example.demo.vo.Member">
         SELECT id,
-        nickName,
-        email,
-        profileUrl
+               nickName,
+               email,
+               profileUrl
         FROM member
         WHERE nickName LIKE CONCAT('%', #{keyword}, '%')
-        OR email LIKE CONCAT('%', #{keyword}, '%')
+           OR email LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY regDate DESC
     </select>
-
 
 </mapper>

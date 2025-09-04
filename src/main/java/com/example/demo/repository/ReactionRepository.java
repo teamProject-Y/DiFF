@@ -13,4 +13,6 @@ public interface ReactionRepository {
     public long getCount(String relType, Long relId);
 
     public boolean isLiked(String relType, Long relId, Long memberId);
+
+    Long getLikeCountsByMemberId(Long id);
 }

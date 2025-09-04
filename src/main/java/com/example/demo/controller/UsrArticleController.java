@@ -26,6 +26,9 @@ public class UsrArticleController {
     private ArticleService articleService;
 
     @Autowired
+    private DraftService draftService;
+
+    @Autowired
     private RepositoryService repositoryService;
 
     @Autowired
@@ -124,15 +127,24 @@ public class UsrArticleController {
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
+        String checksum = null;
+        if (draft.getDraftId() != null) {
+            Draft savedDraft = draftService.getDraftById(draft.getDraftId());
+            if (savedDraft == null) {
+                return ResultData.from("F-404", "임시저장 글이 존재하지 않습니다.");
+            }
+            checksum = savedDraft.getChecksum();
+        }
+
         int wr = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
-                draft.getChecksum(),
+                checksum,
                 draft.getRepositoryId(),
-                draft.getDraftId()
+                draft.getDraftId(),
+                draft.getDiffId()
         );
-
         String message = "새 글이 작성되었습니다: " + draft.getTitle();
         Notification notification = Notification.builder()
                 .memberId(loginedMemberId)
@@ -321,5 +333,4 @@ public class UsrArticleController {
                 "msg", success ? "조회수가 증가했습니다." : "이미 조회한 게시글입니다."
         );
     }
-
 }

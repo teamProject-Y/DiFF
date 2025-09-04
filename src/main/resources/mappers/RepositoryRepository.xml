@@ -74,4 +74,29 @@
         where id = #{repositoryId}
     </select>
 
+    <select id="getRepoCountsByMemberId" parameterType="Long">
+        SELECT COUNT(*)
+        FROM repository
+        WHERE memberId = #{memberId}
+    </select>
+
+    <select id="getLanguageDistributionByRepo" resultType="map">
+        SELECT
+        a.repositoryId,
+        al.language,
+        SUM(al.lines) AS totalLines,
+        ROUND(
+        SUM(al.lines) * 100.0 /
+        SUM(SUM(al.lines)) OVER (PARTITION BY a.repositoryId),
+        2
+        ) AS percentage
+        FROM analysis a
+        JOIN analysisLanguage al ON a.id = al.analyzeId
+        WHERE a.repositoryId = #{repositoryId}
+        GROUP BY a.repositoryId, al.language
+        ORDER BY totalLines DESC
+    </select>
+
+
+
 </mapper>

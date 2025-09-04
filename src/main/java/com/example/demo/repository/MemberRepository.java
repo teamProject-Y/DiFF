@@ -49,7 +49,7 @@ public interface MemberRepository {
     void unfollow(@Param("toMemberId") Long toMemberId,
                   @Param("fromMemberId") Long fromMemberId);
 
-   public List<Member> getFollowerList(Long memberId);
+    public List<Member> getFollowerList(Long memberId);
 
     int modifyNickName(Long memberId,String nickName);
 
@@ -82,5 +82,5 @@ public interface MemberRepository {
 
     void clearResetToken(Long id);
 
-    List<Member> searchMembers(String s);
+    List<Member> searchMembers(String keyword);
 }

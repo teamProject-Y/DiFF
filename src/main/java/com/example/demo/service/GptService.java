@@ -18,7 +18,7 @@ public class GptService {
     private final WebClient openAiWebClient;
     private final DraftRepository draftRepository;
 
-    public String makeDraft(String diff, Long repositoryId, Long memberId, String checksum) {
+    public String makeDraft(String diff, Long repositoryId, Long memberId, String checksum, Long draftId) {
 
         if(!diff.isEmpty()) {
             System.out.println("🍔🍔2summarizeDiff 진입");
@@ -68,17 +68,15 @@ public class GptService {
 
             // DB 저장
             Draft draft = Draft.builder()
+                    .id(draftId) // 이미 생성된 draftId 사용
                     .memberId(memberId)
                     .repositoryId(repositoryId)
                     .checksum(checksum)
-                    .title(null)
                     .body(content)
-                    .regDate(LocalDateTime.now())
                     .build();
 
-            draftRepository.insertDraft(draft);
-            System.out.println(draft.getBody());
-            System.out.println("✅ 초안 저장 완료 - ID: " + draft.getId());
+            draftRepository.updateDraft(draft);
+            System.out.println("✅ 초안 업데이트 완료 - draftId=" + draftId);
 
             return content;
 
