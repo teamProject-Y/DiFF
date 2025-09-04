@@ -204,6 +204,7 @@ public class UsrDraftController {
                         .type("DRAFT")
                         .message(message)
                         .isRead(false)
+                        .relId(draftId)
                         .build();
 
                 notificationService.saveNotification(notification);

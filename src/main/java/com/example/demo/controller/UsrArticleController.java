@@ -155,7 +155,9 @@ public class UsrArticleController {
                 .type("ARTICLE")
                 .message(message)
                 .isRead(false)
+                .relId(articleId)
                 .build();
+
 
         notificationService.saveNotification(notification);
         System.out.println("✅ Article 알림 DB 저장 완료 → 빨간점 표시 가능");

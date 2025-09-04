@@ -93,7 +93,7 @@ public class ArticleService {
             }
         }
 
-        return articleId; // ✅ 방금 작성된 글의 id 반환
+        return articleId;
     }
 
 

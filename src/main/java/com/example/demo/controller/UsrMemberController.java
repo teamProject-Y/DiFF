@@ -224,16 +224,25 @@ public class UsrMemberController {
 
         memberService.follow(memberId, fromMemberId);
 
-        Member me = memberService.getMemberById(memberId);
-        Member target = memberService.getMemberById(fromMemberId);
+        Member me = memberService.getMemberById(memberId);       // 팔로우 건 사람
+        Member target = memberService.getMemberById(fromMemberId); // 팔로우 당한 사람
         String message = Ut.f("%s님이 회원님을 팔로우했습니다!", me.getNickName());
 
         Notification notification = Notification.builder()
-                .memberId(fromMemberId)
-                .type("Follow")
+                .memberId(fromMemberId)  // 알림 받는 사람
+                .type("FOLLOW")
                 .message(message)
                 .isRead(false)
+                .relId(me.getId())       // ✅ 팔로워 id 저장 (중요)
                 .build();
+
+        // 🐶 로그 찍기
+        System.out.println("\n===== 🐶🐶 [SAVE NOTIFICATION] =====");
+        System.out.println("알림 받는 사람 memberId = " + notification.getMemberId());
+        System.out.println("type                   = " + notification.getType());
+        System.out.println("message                = " + notification.getMessage());
+        System.out.println("relId (팔로워 id)      = " + notification.getRelId());
+        System.out.println("isRead                 = " + notification.isRead());
 
         notificationService.saveNotification(notification);
 

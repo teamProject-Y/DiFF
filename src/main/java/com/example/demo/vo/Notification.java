@@ -16,4 +16,7 @@ public class Notification {
     private String message;
     private boolean isRead;
     private String regDate;
+
+    private Long relId;
+    private String extra__nickName;
 }
