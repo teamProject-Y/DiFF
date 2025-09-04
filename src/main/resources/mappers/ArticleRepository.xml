@@ -195,4 +195,10 @@
         ORDER BY a.regDate DESC
     </select>
 
+    <select id="getArticleCountsByMemberId" parameterType="long">
+        SELECT COUNT(*)
+        FROM article
+        WHERE memberId = #{memberId}
+    </select>
+
 </mapper>

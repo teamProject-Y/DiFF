@@ -59,21 +59,6 @@ public class AuthService {
         return tokens;
     }
 
-
-//    /** 회원가입 */
-//    @Transactional
-//    public Long doJoin(Member member) {
-//        member.setRole(Role.ROLE_USER);
-//        member.setLoginPw(passwordEncoder.encode(member.getLoginPw()));
-//        memberRepository.doJoin(member.getLoginId(),
-//                member.getLoginPw(),
-//                member.getName(),
-//                member.getNickName(),
-//                member.getEmail());
-//
-//        return memberRepository.getLastInsertId();
-//    }
-
     /** Token 갱신 */
     @Transactional
     public String refreshToken(String refreshToken) {
