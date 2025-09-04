@@ -49,4 +49,8 @@ public class RepositoryService {
     public List<Map<String, Object>> getLanguageDistributionByRepo(Long repositoryId) {
         return repositoryRepository.getLanguageDistributionByRepo(repositoryId);
     }
+
+    public int renameRepository(Long id, String name) {
+        return repositoryRepository.renameRepository(id, name);
+    }
 }

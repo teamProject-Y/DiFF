@@ -182,7 +182,7 @@ public class UsrDraftController {
 
             // 5. 알림 처리
             Member member = memberService.getFcmTokenById(memberId);
-            String message = "초안이 작성되었습니다";
+            String message = "초안이 완성되었습니다";
 
             if (member != null) {
                 // 5-1. FCM 발송
