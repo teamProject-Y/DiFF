@@ -53,6 +53,7 @@ public class DraftService {
             draftRepository.updateDraft(draft);
         } else {
             System.out.println("🛠️ [Service] 새 draft 인서트 실행");
+            System.out.println("👉 draft.memberId = " + draft.getMemberId());
             draftRepository.insertDraft(draft);
             System.out.println("🛠️ [Service] insert 후 draft.id=" + draft.getId());
         }
@@ -60,5 +61,7 @@ public class DraftService {
         return draft.getId();
     }
 
-
+    public void updateDraft(Draft draft) {
+        draftRepository.updateDraft(draft);
+    }
 }

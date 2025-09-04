@@ -12,20 +12,30 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Analysis {
-
     private Long id;
     private Long repositoryId;
     private Long memberId;
+    private Long diffId;
+    private Long articleId;
 
     private String projectKey;
     private String projectName;
 
-    private Double coverage;                 // 커버리지
-    private int bugs;                    // 버그 수
-    private int complexity;              // 복잡도
-    private int codeSmells;              // 코드 스멜 수
-    private Double duplicatedLinesDensity;   // 중복 비율
-    private int vulnerabilities;         // 보안 취약점 수
-    private LocalDateTime analyzeDate;       // 분석 일자
+    private Double coverage;
+    private int bugs;
+    private int complexity;
+    private int codeSmells;
+    private Double duplicatedLinesDensity;
+    private int vulnerabilities;
+    private LocalDateTime analyzeDate;
     private Double totalScore;
+    private String checksum;
+
+    private String gradeCoverage;
+    private String gradeReliability;
+    private String gradeMaintainability;
+    private String gradeDuplications;
+    private String gradeSecurity;
+    private String gradeComplexity;
 }
+

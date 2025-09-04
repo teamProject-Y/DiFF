@@ -4,6 +4,7 @@ import com.example.demo.vo.Analysis;
 import com.example.demo.vo.AnalysisLanguage;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
 import java.util.Map;
 
 @Mapper
@@ -14,4 +15,14 @@ public interface AnalysisRepository {
     void insertLanguage(AnalysisLanguage lang);
 
     Map<String, Object> getAverageMetrics(Long repositoryId);
+
+    Analysis findByArticleId(Long id);
+
+    Analysis findByDiffId(Long diffId);
+
+    Analysis findByChecksum(String checksum);
+
+    int updateRepositoryIdByChecksum(String checksum, Long repositoryId);
+
+    List<Analysis> getAnalysisHistory(Long repoId);
 }
