@@ -284,11 +284,35 @@ public class UsrDraftController {
                 + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
                 + ", repositoryId=" + draft.getRepositoryId());
 
+        // 1. 글 저장
         draft.setMemberId(memberId);
 
         Long draftId = draftService.saveDraft(draft);
+        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
-        System.out.println("📤 [Controller] saveDraft 완료 → draftId=" + draftId);
+        // ✅ DiffId는 Draft에 이미 세팅되어 있다고 가정
+        Long diffId = draft.getDiffId();
+
+        // 2. projectKey 생성 규칙
+        String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;
+
+        try {
+            // 3. 분석 저장
+            sonarService.analysisInsertDB(
+                    draft.getRepositoryId(), // ✅ repositoryId
+                    memberId,                // ✅ memberId
+                    draftId,                 // ✅ articleId = draftId
+                    diffId,
+                    draft.getChecksum(),
+                    projectKey               // ✅ projectKey
+            );
+
+            System.out.println("✅ [Controller] analysisInsertDB 완료 → draftId=" + draftId + ", diffId=" + diffId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("❌ [Controller] analysisInsertDB 실패: " + e.getMessage());
+            // 👉 글 저장은 성공했으니 draftId는 그대로 반환
+        }
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
