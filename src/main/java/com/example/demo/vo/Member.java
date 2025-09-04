@@ -35,4 +35,7 @@ public class Member {
     private String resetToken;
     private LocalDateTime resetTokenExpiry;
 
+    private Long extra__likeCounts;
+    private Long extra__repoCounts;
+    private Long extra__postCounts;
 }

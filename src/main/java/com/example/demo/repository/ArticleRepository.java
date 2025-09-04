@@ -38,4 +38,5 @@ public interface ArticleRepository {
 
     List<Article> searchArticles(String keyword);
 
+    Long getArticleCountsByMemberId(Long id);
 }

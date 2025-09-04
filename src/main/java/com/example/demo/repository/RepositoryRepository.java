@@ -22,5 +22,7 @@ public interface RepositoryRepository {
 
     Long getMemberIdByRepositoryId(Long repositoryId);
 
+    Long getRepoCountsByMemberId(Long id);
+
     List<Map<String, Object>> getLanguageDistributionByRepo(Long repositoryId);
 }

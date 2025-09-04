@@ -26,7 +26,9 @@
 
     <!-- 회원 조회 -->
     <select id="getMemberById" parameterType="long" resultType="com.example.demo.vo.Member">
-        SELECT * FROM `member` WHERE id = #{id}
+        SELECT *
+        FROM `member`
+        WHERE id = #{id}
     </select>
 
     <select id="getMemberByEmail" parameterType="string" resultType="com.example.demo.vo.Member">
