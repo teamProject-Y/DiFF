@@ -317,5 +317,4 @@ public class UsrDraftController {
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
 
-
 }
