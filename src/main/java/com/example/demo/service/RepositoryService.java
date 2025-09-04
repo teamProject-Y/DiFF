@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -43,5 +44,9 @@ public class RepositoryService {
 
     public boolean isRepoOwner(Long memberId, Long repositoryId) {
         return Objects.equals(memberId, repositoryRepository.getMemberIdByRepositoryId(repositoryId));
+    }
+
+    public List<Map<String, Object>> getLanguageDistributionByRepo(Long repositoryId) {
+        return repositoryRepository.getLanguageDistributionByRepo(repositoryId);
     }
 }

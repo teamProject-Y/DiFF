@@ -3,8 +3,7 @@ package com.example.demo.controller;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.demo.config.JwtTokenProvider;
-import com.example.demo.service.AuthService;
-import com.example.demo.service.RepositoryService;
+import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import com.example.demo.interceptor.BeforeActionInterceptor;
-import com.example.demo.service.MemberService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import com.example.util.Ut;
@@ -52,6 +50,11 @@ public class UsrMemberController {
     @Autowired
     private RepositoryService repositoryService;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private FcmService fcmService;
     public UsrMemberController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -212,19 +215,41 @@ public class UsrMemberController {
 
         List<Member> followingList = memberService.getFollowingList(memberId);
 
-        boolean alreadyFollowing = false;
-        for (Member m : followingList) {
-            if (m.getId().equals(fromMemberId)) {
-                alreadyFollowing = true;
-                break;
-            }
-        }
+        boolean alreadyFollowing = followingList.stream()
+                .anyMatch(m -> m.getId().equals(fromMemberId));
 
         if (alreadyFollowing) {
             return ResponseEntity.ok(ResultData.from("F-1", "이미 팔로우 중입니다."));
         }
 
         memberService.follow(memberId, fromMemberId);
+
+        Member me = memberService.getMemberById(memberId);
+        Member target = memberService.getMemberById(fromMemberId);
+        String message = Ut.f("%s님이 회원님을 팔로우했습니다!", me.getNickName());
+
+        Notification notification = Notification.builder()
+                .memberId(fromMemberId)
+                .type("Follow")
+                .message(message)
+                .isRead(false)
+                .build();
+
+        notificationService.saveNotification(notification);
+
+        if (target.getFcmToken() != null && !target.getFcmToken().isEmpty()) {
+            try {
+                fcmService.sendMessage(
+                        target.getFcmToken(),
+                        "새 팔로워 알림",
+                        me.getNickName() + "님이 회원님을 팔로우했습니다!",
+                        null
+                );
+                System.out.println("✅ 팔로우 알림 전송 성공 → " + target.getNickName());
+            } catch (Exception e) {
+                System.out.println("⚠️ FCM 알림 전송 실패: " + e.getMessage());
+            }
+        }
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
     }

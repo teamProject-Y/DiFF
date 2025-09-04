@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class Article {
     private Long id;
     private Long memberId;
+    private Long diffId;
     private Long repositoryId;
     private String title;
     private String body;
@@ -31,4 +32,6 @@ public class Article {
     private boolean userCanModify;
     private boolean userCanDelete;
     private Long draftId;
+
+    private Analysis analysis;
 }

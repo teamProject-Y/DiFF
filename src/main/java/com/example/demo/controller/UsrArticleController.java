@@ -26,6 +26,9 @@ public class UsrArticleController {
     private ArticleService articleService;
 
     @Autowired
+    private DraftService draftService;
+
+    @Autowired
     private RepositoryService repositoryService;
 
     @Autowired
@@ -128,10 +131,12 @@ public class UsrArticleController {
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
-                draft.getChecksum(),
+                draftService.getDraftById(draft.getDraftId()).getChecksum(), // ✅ draft 테이블에서 불러오기
                 draft.getRepositoryId(),
-                draft.getDraftId()
+                draft.getDraftId(),
+                draft.getDiffId()
         );
+
 
         String message = "새 글이 작성되었습니다: " + draft.getTitle();
         Notification notification = Notification.builder()
@@ -321,5 +326,4 @@ public class UsrArticleController {
                 "msg", success ? "조회수가 증가했습니다." : "이미 조회한 게시글입니다."
         );
     }
-
 }

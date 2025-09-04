@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.DiffRepository">
+
+    <insert id="insertDiff" parameterType="com.example.demo.vo.Diff" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO diff (
+        draftId,
+        checksum,
+        regDate
+        ) VALUES (
+        #{draftId},
+        #{checksum},
+        NOW()
+        )
+    </insert>
+
+    <update id="updateDiff" parameterType="com.example.demo.vo.Diff">
+        UPDATE diff
+        SET
+        draftId = #{draftId},
+        checksum = #{checksum},
+        regDate = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
