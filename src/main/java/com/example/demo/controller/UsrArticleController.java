@@ -42,20 +42,22 @@ public class UsrArticleController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<Map<String, Object>> showList(
+    public ResponseEntity<Map<String, Object>> showList( HttpServletRequest req,
             @RequestParam(defaultValue = "repositoryId") Long repositoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
-
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq.getLoginedMemberId();
         System.out.println("list 진입");
 
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
-        int totalCnt = articleService.getArticlesCnt(repositoryId, keyword, searchItem);
+        int totalCnt = articleService.getArticlesCnt(repositoryId, keyword, searchItem, loginedMemberId);
         int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
-        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
+
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
@@ -67,30 +69,55 @@ public class UsrArticleController {
     }
 
     @GetMapping("/search")
-    public ResultData<List<Article>> searchArticles(@RequestParam String keyword) {
-        System.out.println("📥 /article/search 요청 keyword=" + keyword);
+    @ResponseBody
+    public ResultData<List<Article>> searchArticles(HttpServletRequest req,
+                                                    @RequestParam String keyword) {
+        System.out.println("\n===== 🔎 [GET] /api/DiFF/article/search =====");
+        System.out.println("📥 요청 keyword = " + keyword);
 
-        List<Article> results = articleService.searchArticles(keyword);
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq.getLoginedMemberId();
+
+        System.out.println("👤 요청자 memberId = " + loginedMemberId);
+
+        List<Article> results = articleService.searchArticles(keyword, loginedMemberId);
+
+        System.out.println("📊 검색 결과 수 = " + (results != null ? results.size() : 0));
+        if (results != null) {
+            for (Article a : results) {
+                System.out.println(" - id=" + a.getId()
+                        + ", title=" + a.getTitle()
+                        + ", isPublic=" + a.getIsPublic());
+            }
+        }
 
         return ResultData.from("S-1", "검색 결과", "articles", results);
     }
 
+
     @GetMapping("/trending")
-    public ResponseEntity<Map<String, Object>> getTrending(
-            @RequestParam(defaultValue = "100") Integer count,
-            @RequestParam(defaultValue = "30") Integer days) {
+    public ResponseEntity<Map<String, Object>> getTrending(HttpServletRequest req,
+                                                           @RequestParam(defaultValue = "100") Integer count,
+                                                           @RequestParam(defaultValue = "30") Integer days) {
         System.out.println("📥 /api/DiFF/article/trending 요청 도착");
 
         System.out.println("-> count: " + count);
         System.out.println("-> days: " + days);
 
-        List<Article> articles = articleService.getTrendingArticles(count, days);
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq != null ? rq.getLoginedMemberId() : null;
+        System.out.println("👤 loginedMemberId = " + loginedMemberId);
+
+        List<Article> articles = articleService.getTrendingArticles(count, days, loginedMemberId);
+
+        System.out.println("📊 trending 결과 수 = " + (articles != null ? articles.size() : 0));
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
 
         return ResponseEntity.ok(result);
     }
+
 
     @PostMapping("/doWrite")
     @ResponseBody
@@ -99,6 +126,10 @@ public class UsrArticleController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
         draft.setMemberId(loginedMemberId);
+
+        if (draft.getIsPublic() == null) {
+            draft.setIsPublic(true);
+        }
 
         System.out.println("\n===== 🐶🐶 [POST] /article/doWrite =====");
         System.out.println("memberId      = " + draft.getMemberId());
@@ -211,13 +242,21 @@ public class UsrArticleController {
         }
 
         article.setUpdateDate(LocalDateTime.now());
+        if (article.getIsPublic() == null) {
+            // null 방지
+            article.setIsPublic(oldArticle.getIsPublic());
+        }
+
         int affectedRow = articleService.modifyArticle(article);
+
 
         if (affectedRow == 0) {
             return ResultData.from("F-4", "수정 실패", 0);
         }
         return ResultData.from("S-1", "수정 성공", affectedRow);
     }
+
+
 
     @DeleteMapping("/{id}")
     public ResultData<Integer> deleteArticle(
@@ -252,15 +291,15 @@ public class UsrArticleController {
             @RequestParam(defaultValue = "0") int searchItem) {
 
         Rq rq = (Rq) req.getAttribute("rq");
-        Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
         System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/followingArticleList =====");
 
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
-        List<Article> followingArticles = articleService.getFollowingArticles(memberId, limitFrom, itemsInAPage);
+        List<Article> followingArticles = articleService.getFollowingArticles(limitFrom, itemsInAPage, loginedMemberId);
 
-        int totalCnt = articleService.getFollowingArticlesCnt(memberId, repositoryId, keyword, searchItem);
+        int totalCnt = articleService.getFollowingArticlesCnt(loginedMemberId, repositoryId, keyword, searchItem);
         int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
 
         Map<String, Object> result = new HashMap<>();

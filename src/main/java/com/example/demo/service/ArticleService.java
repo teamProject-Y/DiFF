@@ -128,20 +128,30 @@ public class ArticleService {
         return articleRepository.getLastInsertId();
     }
 
-    public int getArticlesCnt(Long repository, String keyword, int searchItem) {
-        return articleRepository.getArticlesCnt(repository, keyword, searchItem);
+    public int getArticlesCnt(Long repositoryId,
+                              String keyword,
+                              int searchItem,
+                              Long loginedMemberId) {
+        return articleRepository.getArticlesCnt(repositoryId, keyword, searchItem, loginedMemberId);
     }
 
-    public List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage) {
+
+    public List<Article> getArticles(Long repositoryId,
+                                     String keyword,
+                                     int searchItem,
+                                     int limitFrom,
+                                     int itemsInAPage,
+                                     Long loginedMemberId) {
         System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
 
-        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
         System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
 
         for (Article article : articles) {
             System.out.println("📝 [getArticles] article id=" + article.getId()
                     + ", title=" + article.getTitle()
-                    + ", checksum=" + article.getChecksum());
+                    + ", checksum=" + article.getChecksum()
+                    + ", isPublic=" + article.getIsPublic());
 
             Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
             System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
@@ -169,8 +179,8 @@ public class ArticleService {
 
 
 
-    public List<Article> getTrendingArticles(Integer count, Integer days) {
-        return articleRepository.getTrendingArticles(count, days);
+    public List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId) {
+        return articleRepository.getTrendingArticles(count, days, loginedMemberId);
     }
 
     public Article getArticleById(Long id, Long loginedMemberId) {
@@ -216,8 +226,8 @@ public class ArticleService {
         return articleRepository.deleteArticle(id, memberId);
     }
 
-    public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage) {
-        return articleRepository.getFollowingArticles(memberId, limitFrom, itemsInAPage);
+    public List<Article> getFollowingArticles(int limitFrom, int itemsInAPage, Long loginedMemberId) {
+        return articleRepository.getFollowingArticles(limitFrom, itemsInAPage, loginedMemberId);
     }
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
@@ -240,11 +250,11 @@ public class ArticleService {
         return articleRepository.getRepositoryArticles(repositoryId);
     }
 
-    public List<Article> searchArticles(String keyword) {
+    public List<Article> searchArticles(String keyword, Long loginedMemberId) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        return articleRepository.searchArticles("%" + keyword + "%");
+        return articleRepository.searchArticles("%" + keyword + "%", loginedMemberId);
     }
 
     public Long getWriterIdByArticleId(Long articleId) {

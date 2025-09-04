@@ -12,13 +12,13 @@ public interface ArticleRepository {
 
     int getLastInsertId();
 
-    int getArticlesCnt(Long repositoryId,String keyword, int searchItem);
+    int getArticlesCnt(Long repositoryId,String keyword, int searchItem, Long loginedMemberId);
 
-     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage);
+     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage, Long loginedMemberId);
 
     int getArticleCnt();
 
-    List<Article> getTrendingArticles(Integer count, Integer days);
+    List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId);
 
     int writeArticle(Article article);
 
@@ -28,7 +28,7 @@ public interface ArticleRepository {
 
     int deleteArticle(Long id, Long memberId);
 
-    List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage);
+    List<Article> getFollowingArticles(int limitFrom, int itemsInAPage, Long loginedMemberId);
 
     int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem);
 
@@ -36,7 +36,7 @@ public interface ArticleRepository {
 
     List<Article> getRepositoryArticles(Long repositoryId);
 
-    List<Article> searchArticles(String keyword);
+    List<Article> searchArticles(String keyword, Long loginedMemberId);
 
     Long getArticleCountsByMemberId(Long id);
 

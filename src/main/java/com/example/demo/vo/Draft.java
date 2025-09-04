@@ -17,7 +17,7 @@ public class Draft {
     private String title;
     private String body;
     private LocalDateTime regDate;
-
+    private Boolean isPublic;
     private String extra__writer;
     private String extra__repositoryName;
 }
