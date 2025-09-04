@@ -202,4 +202,11 @@
         WHERE memberId = #{memberId}
     </select>
 
+    <select id="getWriterIdByArticleId" parameterType="long" resultType="long">
+        SELECT memberId
+        FROM article
+        WHERE id = #{articleId}
+    </select>
+
+
 </mapper>

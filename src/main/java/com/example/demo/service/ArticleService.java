@@ -84,7 +84,7 @@ public class ArticleService {
                 fcmService.sendMessage(
                         follower.getFcmToken(),
                         "새 글 알림",
-                        writer.getNickName() + "님이 새 글을 작성했습니다!",
+                        writer.getNickName() + "has published a new post",
                         null
                 );
                 System.out.println("✅ 알림 전송 → " + follower.getNickName());
@@ -219,6 +219,10 @@ public class ArticleService {
             return Collections.emptyList();
         }
         return articleRepository.searchArticles("%" + keyword + "%");
+    }
+
+    public Long getWriterIdByArticleId(Long articleId) {
+        return articleRepository.getWriterIdByArticleId(articleId);
     }
 
 }

@@ -127,7 +127,7 @@ public class UsrArticleController {
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
-        // ✅ checksum 처리
+
         String checksum = null;
         if (draft.getDraftId() != null) {
             Draft savedDraft = draftService.getDraftById(draft.getDraftId());
@@ -137,19 +137,18 @@ public class UsrArticleController {
             checksum = savedDraft.getChecksum();
         }
 
-        // ✅ Article 저장 (DB에서 생성된 articleId 리턴)
+
         Long articleId = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
-                checksum,   // ✅ 새 글이면 null
+                checksum,
                 draft.getRepositoryId(),
                 draft.getDraftId(),
                 draft.getDiffId()
         );
 
-        // ✅ 알림 저장
-        String message = "새 글이 작성되었습니다: " + draft.getTitle();
+        String message = "has published a new post " + draft.getTitle();
         Notification notification = Notification.builder()
                 .memberId(loginedMemberId)
                 .type("ARTICLE")
@@ -162,7 +161,6 @@ public class UsrArticleController {
         notificationService.saveNotification(notification);
         System.out.println("✅ Article 알림 DB 저장 완료 → 빨간점 표시 가능");
 
-        // ✅ 여기서 articleId 반환
         return ResultData.from("S-1", "작성 성공", "articleId", articleId);
     }
 

@@ -35,4 +35,7 @@ public class NotificationService {
         notificationRepository.saveNotification(notification);
         System.out.println("✅ 알림 저장 완료 → " + notification.getMessage());
     }
+
+    public void saveNotification(Long articleOwnerId, Long loginedMemberId, String reply, Long articleId, String body) {
+    }
 }

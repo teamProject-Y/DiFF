@@ -34,8 +34,14 @@ public class MemberService {
     }
 
     public Long join(String loginPw, String checkLoginPw, String nickName, String email) {
-        if (memberRepository.isExistsEmail(email) == 1) return -409L; // 중복 이메일
-        if (!loginPw.equals(checkLoginPw)) return -400L; // 비밀번호 불일치
+        // ✅ 이메일 중복 체크
+        if (memberRepository.isExistsEmail(email) == 1) return -409L;
+
+        // ✅ 닉네임 중복 체크
+        if (memberRepository.isExistsNickName(nickName) == 1) return -410L;
+
+        // 비밀번호 불일치 체크
+        if (!loginPw.equals(checkLoginPw)) return -400L;
 
         // 비밀번호 암호화
         String encPw = passwordEncoder.encode(loginPw);
@@ -56,6 +62,7 @@ public class MemberService {
 
         return memberId;
     }
+
 
     public void verifyEmail(String token) {
         System.out.println("📌 verifyEmail() 실행됨, token=" + token);

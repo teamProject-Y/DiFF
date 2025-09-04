@@ -226,14 +226,14 @@ public class UsrMemberController {
 
         Member me = memberService.getMemberById(memberId);       // 팔로우 건 사람
         Member target = memberService.getMemberById(fromMemberId); // 팔로우 당한 사람
-        String message = Ut.f("%s님이 회원님을 팔로우했습니다!", me.getNickName());
+        String message = Ut.f("%s has started following you!", me.getNickName());
 
         Notification notification = Notification.builder()
                 .memberId(fromMemberId)  // 알림 받는 사람
                 .type("FOLLOW")
                 .message(message)
                 .isRead(false)
-                .relId(me.getId())       // ✅ 팔로워 id 저장 (중요)
+                .relId(me.getId())
                 .build();
 
         // 🐶 로그 찍기
@@ -251,7 +251,7 @@ public class UsrMemberController {
                 fcmService.sendMessage(
                         target.getFcmToken(),
                         "새 팔로워 알림",
-                        me.getNickName() + "님이 회원님을 팔로우했습니다!",
+                        me.getNickName() + "has started following you",
                         null
                 );
                 System.out.println("✅ 팔로우 알림 전송 성공 → " + target.getNickName());

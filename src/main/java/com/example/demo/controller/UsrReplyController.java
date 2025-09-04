@@ -28,6 +28,18 @@ public class UsrReplyController {
     @Autowired
     private ReactionService reactionService;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private ArticleService articleService;
+
+    @Autowired
+    private FcmService fcmService;
+
+    @Autowired
+    private MemberService memberService;
+
     public UsrReplyController(BeforeActionInterceptor beforeActionInterceptor) {
         this.beforeActionInterceptor = beforeActionInterceptor;
     }
@@ -39,13 +51,16 @@ public class UsrReplyController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        if(loginedMemberId == null) {
-            return ResultData.from("F-400", "로그인 후 사용가능합니다..");
+        if (loginedMemberId == null) {
+            return ResultData.from("F-400", "로그인 후 사용가능합니다.");
         }
 
         reply.setMemberId(loginedMemberId);
 
-        System.out.println("\n===== \uD83D\uDC36\uD83D\uDC36 [POST] /reply/doWrite =====");
+        System.out.println("\n===== 🐶🐶 [POST] /reply/doWrite =====");
+        System.out.println("로그인 회원 ID : " + loginedMemberId);
+        System.out.println("댓글 대상 글 ID : " + reply.getArticleId());
+        System.out.println("댓글 내용 : " + reply.getBody());
 
         if (reply.getArticleId() == null) {
             return ResultData.from("F-400", "articleId가 필요합니다.");
@@ -53,15 +68,53 @@ public class UsrReplyController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        // 작성
         int wr = replyService.doReplyWrtie(
                 reply.getArticleId(),
                 loginedMemberId,
                 reply.getBody()
         );
+        System.out.println("댓글 저장 완료 wr=" + wr);
+
+        Long articleWriter = articleService.getWriterIdByArticleId(reply.getArticleId());
+        System.out.println("글 작성자 ID : " + articleWriter);
+
+        if (!articleWriter.equals(loginedMemberId)) {
+            String title = "새 댓글 알림";
+            String body = rq.getLoginedMemberNickName() + "commented on your post.";
+
+            Notification notification = Notification.builder()
+                    .memberId(articleWriter)
+                    .type("REPLY")
+                    .relId(reply.getArticleId())
+                    .message(body)
+                    .isRead(false)
+                    .build();
+
+            notificationService.saveNotification(notification);
+            System.out.println("✅ 알림 저장 완료 → 대상:" + articleWriter + ", 메시지:" + body);
+
+            Member articleWriterMember = memberService.getMemberById(articleWriter);
+
+            if (articleWriterMember != null && articleWriterMember.getFcmToken() != null) {
+                String targetToken = articleWriterMember.getFcmToken();
+
+                Map<String, String> data = new HashMap<>();
+                data.put("articleId", String.valueOf(reply.getArticleId()));
+                data.put("type", "REPLY");
+
+                fcmService.sendMessage(targetToken, title, body, data);
+                System.out.println("📲 FCM 발송 완료 → 대상:" + articleWriter + ", token:" + targetToken);
+            } else {
+                System.out.println("⚠️ 글 작성자의 FCM 토큰이 없음 → 알림 발송 불가");
+            }
+        } else {
+            System.out.println("자기 자신의 글에 댓글 → 알림 스킵");
+        }
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
+
+
 
     @GetMapping("/list")
     @ResponseBody

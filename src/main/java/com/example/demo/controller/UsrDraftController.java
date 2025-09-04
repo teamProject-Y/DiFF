@@ -182,14 +182,14 @@ public class UsrDraftController {
 
             // 5. 알림 처리
             Member member = memberService.getFcmTokenById(memberId);
-            String message = "초안이 작성되었습니다";
+            String message = "Your draft has been created.";
 
             if (member != null) {
                 // 5-1. FCM 발송
                 if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
                     fcmService.sendMessage(
                             member.getFcmToken(),
-                            "Draft 생성 완료 🎉",
+                            "Your draft has been created.",
                             message,
                             null
                     );
