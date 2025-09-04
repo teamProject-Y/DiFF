@@ -25,6 +25,7 @@ public interface RepositoryRepository {
     Long getRepoCountsByMemberId(Long id);
 
     List<Map<String, Object>> getLanguageDistributionByRepo(Long repositoryId);
-
+  
     int renameRepository(Long id, String name);
+
 }
