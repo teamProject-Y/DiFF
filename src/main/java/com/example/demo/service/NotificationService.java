@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.repository.MemberRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.vo.Member;
 import com.example.demo.vo.Notification;
@@ -13,6 +14,9 @@ public class NotificationService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private MemberRepository memberRepository;
     /**
      * 읽지 않은 알림이 있는지 확인 (빨간 점 표시 용)
      */
@@ -36,6 +40,4 @@ public class NotificationService {
         System.out.println("✅ 알림 저장 완료 → " + notification.getMessage());
     }
 
-    public void saveNotification(Long articleOwnerId, Long loginedMemberId, String reply, Long articleId, String body) {
-    }
 }

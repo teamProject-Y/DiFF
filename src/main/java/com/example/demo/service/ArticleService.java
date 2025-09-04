@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.example.demo.repository.*;
-import com.example.demo.vo.Analysis;
-import com.example.demo.vo.Article;
-import com.example.demo.vo.Member;
-import com.example.demo.vo.ResultData;
+import com.example.demo.vo.*;
 import com.example.util.SonarGradeUtil;
 import com.example.util.Ut;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +32,8 @@ public class ArticleService {
     @Autowired
     private AnalysisRepository analysisRepository;
 
+    @Autowired
+    private NotificationService notificationService;
     @Autowired
     private HitsRepository hitsRepository;
 
@@ -78,23 +77,50 @@ public class ArticleService {
         // 5. 팔로워 목록 조회
         List<Member> followers = memberRepository.getFollowingList(writer.getId());
 
-        // 6. 팔로워들에게 푸시 알림 발송
+        // 6. 팔로워들에게 푸시 알림 + DB 알림 발송
         for (Member follower : followers) {
-            if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
-                fcmService.sendMessage(
-                        follower.getFcmToken(),
-                        "새 글 알림",
-                        writer.getNickName() + "has published a new post",
-                        null
-                );
-                System.out.println("✅ 알림 전송 → " + follower.getNickName());
+            System.out.println("👥 팔로워: " + follower.getNickName() +
+                    ", allowArticleNotification=" + follower.isAllowArticleNotification());
+
+            String msg = writer.getNickName() + " has published a new post";
+
+            //  DB Notification 저장
+            Notification notification = Notification.builder()
+                    .memberId(follower.getId())
+                    .type("ARTICLE")
+                    .message(msg)
+                    .isRead(false)
+                    .relId(articleId)
+                    .build();
+
+            notificationService.saveNotification(notification);
+            System.out.println("✅ DB 알림 저장 → " + follower.getNickName());
+
+            //  FCM 발송
+            if (follower.isAllowArticleNotification()) {
+                if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
+                    try {
+                        fcmService.sendMessage(
+                                follower.getFcmToken(),
+                                "New Post Alert",
+                                msg,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 → " + follower.getNickName());
+                    } catch (Exception e) {
+                        System.out.println("⚠️ FCM 발송 실패 → " + follower.getNickName() + " : " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
+                }
             } else {
-                System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
+                System.out.println("⚠️ 글 작성 알림 OFF → FCM 스킵 (DB 저장은 완료)");
             }
         }
 
         return articleId;
     }
+
 
 
 

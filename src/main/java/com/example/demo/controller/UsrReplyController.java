@@ -68,6 +68,7 @@ public class UsrReplyController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
+        // ✅ 댓글 저장
         int wr = replyService.doReplyWrtie(
                 reply.getArticleId(),
                 loginedMemberId,
@@ -75,37 +76,47 @@ public class UsrReplyController {
         );
         System.out.println("댓글 저장 완료 wr=" + wr);
 
+        // ✅ 글 작성자 조회
         Long articleWriter = articleService.getWriterIdByArticleId(reply.getArticleId());
         System.out.println("글 작성자 ID : " + articleWriter);
 
         if (!articleWriter.equals(loginedMemberId)) {
             String title = "새 댓글 알림";
-            String body = rq.getLoginedMemberNickName() + "commented on your post.";
+            String body = rq.getLoginedMemberNickName() + "님이 회원님의 글에 댓글을 달았습니다.";
 
-            Notification notification = Notification.builder()
-                    .memberId(articleWriter)
-                    .type("REPLY")
-                    .relId(reply.getArticleId())
-                    .message(body)
-                    .isRead(false)
-                    .build();
-
-            notificationService.saveNotification(notification);
-            System.out.println("✅ 알림 저장 완료 → 대상:" + articleWriter + ", 메시지:" + body);
-
+            // ✅ 글 작성자 Member 객체 가져오기
             Member articleWriterMember = memberService.getMemberById(articleWriter);
 
-            if (articleWriterMember != null && articleWriterMember.getFcmToken() != null) {
-                String targetToken = articleWriterMember.getFcmToken();
+            if (articleWriterMember != null) {
+                // 1) DB에 알림 저장 (항상)
+                Notification notification = Notification.builder()
+                        .memberId(articleWriter)         // 알림 대상 (글 작성자)
+                        .type("REPLY")                   // 알림 유형
+                        .relId(reply.getArticleId())     // 관련 글 ID
+                        .message(body)                   // 메시지
+                        .isRead(false)                   // 읽음 여부
+                        .build();
 
-                Map<String, String> data = new HashMap<>();
-                data.put("articleId", String.valueOf(reply.getArticleId()));
-                data.put("type", "REPLY");
+                notificationService.saveNotification(notification);
+                System.out.println("✅ 알림 저장 완료 → 대상:" + articleWriter + ", 메시지:" + body);
 
-                fcmService.sendMessage(targetToken, title, body, data);
-                System.out.println("📲 FCM 발송 완료 → 대상:" + articleWriter + ", token:" + targetToken);
-            } else {
-                System.out.println("⚠️ 글 작성자의 FCM 토큰이 없음 → 알림 발송 불가");
+                // 2) FCM 발송 (알림 ON일 때만)
+                if (articleWriterMember.isAllowReplyNotification()) {
+                    if (articleWriterMember.getFcmToken() != null && !articleWriterMember.getFcmToken().isEmpty()) {
+                        String targetToken = articleWriterMember.getFcmToken();
+
+                        Map<String, String> data = new HashMap<>();
+                        data.put("articleId", String.valueOf(reply.getArticleId()));
+                        data.put("type", "REPLY");
+
+                        fcmService.sendMessage(targetToken, title, body, data);
+                        System.out.println("📲 FCM 발송 완료 → 대상:" + articleWriter + ", token:" + targetToken);
+                    } else {
+                        System.out.println("⚠️ 글 작성자의 FCM 토큰이 없음 → FCM 발송 불가");
+                    }
+                } else {
+                    System.out.println("⚠️ 댓글 알림 OFF → FCM 스킵 (DB 저장은 완료)");
+                }
             }
         } else {
             System.out.println("자기 자신의 글에 댓글 → 알림 스킵");
@@ -113,6 +124,7 @@ public class UsrReplyController {
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
+
 
 
 

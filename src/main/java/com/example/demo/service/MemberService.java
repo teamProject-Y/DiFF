@@ -240,4 +240,9 @@ public class MemberService {
 
         return member;
     }
+
+    public void updateNotificationSetting(Long memberId, String type, boolean enabled) {
+        memberRepository.updateNotificationSetting(memberId, type, enabled);
+    }
+
 }

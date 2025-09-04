@@ -209,4 +209,25 @@
         WHERE nickName = #{nickName}
     </select>
 
+    <update id="updateNotificationSetting">
+        UPDATE member
+        <set>
+            <choose>
+                <when test="type == 'reply'">
+                    allowReplyNotification = #{enabled}
+                </when>
+                <when test="type == 'follow'">
+                    allowFollowNotification = #{enabled}
+                </when>
+                <when test="type == 'article'">
+                    allowArticleNotification = #{enabled}
+                </when>
+                <when test="type == 'draft'">
+                    allowDraftNotification = #{enabled}
+                </when>
+            </choose>
+        </set>
+        WHERE id = #{memberId}
+    </update>
+
 </mapper>

@@ -156,12 +156,21 @@ public class UsrDraftController {
             String lastChecksum = (String) param.get("lastChecksum");
             String diffText = (String) param.get("diff");
 
+            System.out.println("➡️ memberId     = " + memberId);
+            System.out.println("➡️ repositoryId = " + repositoryId);
+            System.out.println("➡️ draftId      = " + draftId);
+            System.out.println("➡️ diffId       = " + diffId);
+            System.out.println("➡️ lastChecksum = " + lastChecksum);
+
             if (diffText == null || diffText.trim().isEmpty()) {
+                System.out.println("⚠️ diffText 비어있음 → 실패 반환");
                 return ResultData.from("F-1", "diff 내용이 비어있습니다.");
             }
 
             // 1. GPT 호출 → Draft 본문 생성
+            System.out.println("🧠 GPT 호출 시작...");
             String draftBody = gptService.makeDraft(diffText, repositoryId, memberId, lastChecksum, draftId);
+            System.out.println("🧠 GPT 호출 완료. 생성된 draftBody 길이 = " + (draftBody != null ? draftBody.length() : 0));
 
             // 2. Draft 업데이트
             Draft draft = Draft.builder()
@@ -172,33 +181,25 @@ public class UsrDraftController {
                     .checksum(lastChecksum)
                     .build();
             draftService.updateDraft(draft);
+            System.out.println("✅ Draft 업데이트 완료");
 
+            // 3. Diff 업데이트
             Diff diffEntity = Diff.builder()
                     .id(diffId)
                     .draftId(draftId)
                     .checksum(lastChecksum)
                     .build();
             diffService.updateDiff(diffEntity);
+            System.out.println("✅ Diff 업데이트 완료");
 
-            // 5. 알림 처리
-            Member member = memberService.getFcmTokenById(memberId);
-            String message = "Your draft has been created.";
+            // 4. 알림 처리
+            Member member = memberService.getMemberById(memberId);
+            System.out.println("👤 대상 사용자 조회: " + (member != null ? member.getNickName() : "없음"));
 
             if (member != null) {
-                // 5-1. FCM 발송
-                if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
-                    fcmService.sendMessage(
-                            member.getFcmToken(),
-                            "Your draft has been created.",
-                            message,
-                            null
-                    );
-                    System.out.println("✅ FCM 알림 전송 완료");
-                } else {
-                    System.out.println("⚠️ fcmToken 없음 → 알림 생략");
-                }
+                String message = "Your draft has been created.";
 
-                // 5-2. DB 알림 저장
+                //  DB 알림 저장
                 Notification notification = Notification.builder()
                         .memberId(member.getId())
                         .type("DRAFT")
@@ -208,7 +209,25 @@ public class UsrDraftController {
                         .build();
 
                 notificationService.saveNotification(notification);
-                System.out.println("✅ Draft 알림 DB 저장 완료 → 빨간점 표시 가능");
+                System.out.println("✅ Draft 알림 DB 저장 완료 → relId=" + draftId);
+
+                //  FCM 발송
+                if (member.isAllowDraftNotification()) {
+                    if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                        System.out.println("📲 FCM 발송 시작 → token=" + member.getFcmToken());
+                        fcmService.sendMessage(
+                                member.getFcmToken(),
+                                "Your draft has been created.",
+                                message,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 완료");
+                    } else {
+                        System.out.println("⚠️ fcmToken 없음 → FCM 발송 스킵");
+                    }
+                } else {
+                    System.out.println("⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
+                }
             }
 
             return ResultData.from("S-1", "Draft 업데이트 및 분석 성공", draftBody);
@@ -218,6 +237,7 @@ public class UsrDraftController {
             return ResultData.from("F-2", "Diff 처리 실패", null);
         }
     }
+
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
