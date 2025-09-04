@@ -119,14 +119,14 @@ public class UsrDraftController {
             draft = gptService.makeDraft(diff, repositoryId, memberId, lastChecksum);
 
             Member member = memberService.getFcmTokenById(memberId);
-            String message = "당신의 커밋 diff가 초안으로 변환되었습니다!";
+            String message = "Your changes have been saved as a draft.";
 
             if (member != null) {
                 // 1. FCM 발송
                 if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
                     fcmService.sendMessage(
                             member.getFcmToken(),
-                            "Draft 생성 완료 🎉",
+                            "Draft created successfully",
                             message,
                             null
                     );
@@ -150,11 +150,8 @@ public class UsrDraftController {
         } catch (Exception e) {
             return ResultData.from("F-2", "초안 생성에 실패했습니다.", "error", e.getMessage());
         }
-
         return ResultData.from("S-1", "커밋 diff 수신 및 초안 생성에 성공했습니다.", "draft", draft);
     }
-
-
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {

@@ -265,6 +265,12 @@ public class UsrMemberController {
             Rq rq = (Rq) req.getAttribute("rq");
             Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
+            if (file == null || file.isEmpty()) {
+                memberService.uploadProfileImg(memberId, null);
+                System.out.println("프로필 이미지 제거");
+                return "이미지 제거 완료";
+            }
+
             System.out.println("프로필 이미지 업로드 성공: " + profileUrl);
 
             memberService.uploadProfileImg(memberId, profileUrl);
