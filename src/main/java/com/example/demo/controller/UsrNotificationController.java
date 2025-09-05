@@ -1,7 +1,9 @@
 package com.example.demo.controller;
 
+import com.example.demo.service.MemberService;
 import com.example.demo.service.NotificationService;
 import com.example.demo.vo.Notification;
+import com.example.demo.vo.ResultData;
 import com.example.demo.vo.Rq;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +17,8 @@ import java.util.List;
 public class UsrNotificationController {
 
     private final NotificationService notificationService;
+
+    private final MemberService memberService;
 
     @GetMapping("/unread")
     public boolean hasUnreadNotifications(HttpServletRequest req) {
@@ -36,4 +40,18 @@ public class UsrNotificationController {
         Long memberId = rq.getLoginedMemberId();
         notificationService.markAllAsRead(memberId);
     }
+
+    @PostMapping("/updateNotificationSetting")
+    @ResponseBody
+    public ResultData updateNotificationSetting(@RequestParam String type,
+                                                @RequestParam boolean enabled,
+                                                HttpServletRequest req) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        memberService.updateNotificationSetting(loginedMemberId, type, enabled);
+
+        return ResultData.from("S-1", "알림 설정이 변경되었습니다.");
+    }
+
 }

@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.example.demo.repository.*;
-import com.example.demo.vo.Analysis;
-import com.example.demo.vo.Article;
-import com.example.demo.vo.Member;
-import com.example.demo.vo.ResultData;
+import com.example.demo.vo.*;
 import com.example.util.SonarGradeUtil;
 import com.example.util.Ut;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,20 +33,34 @@ public class ArticleService {
     private AnalysisRepository analysisRepository;
 
     @Autowired
+    private NotificationService notificationService;
+    @Autowired
     private HitsRepository hitsRepository;
 
-    public int writeArticle(Long memberId,
-                            String title,
-                            String body,
-                            String checksum,
-                            Long repositoryId,
-                            Long draftId,
-                            Long diffId) {
+    public Long writeArticle(Long memberId,
+                             String title,
+                             String body,
+                             String checksum,
+                             Long repositoryId,
+                             Long draftId,
+                             Long diffId) {
 
         // 1. 글 저장
-        int rows = articleRepository.writeArticle(memberId, title, body, checksum, repositoryId, diffId);
-        System.out.println("체크섬 = " + checksum);
+        Article article = Article.builder()
+                .memberId(memberId)
+                .title(title)
+                .body(body)
+                .checksum(checksum)
+                .repositoryId(repositoryId)
+                .draftId(draftId)
+                .diffId(diffId)
+                .build();
 
+        articleRepository.writeArticle(article);
+        Long articleId = article.getId();
+        System.out.println("✅ 새 글 저장됨 → articleId=" + articleId + ", checksum=" + checksum);
+
+        // 2. Analysis repositoryId 동기화
         if (checksum != null && repositoryId != null) {
             int updated = analysisRepository.updateRepositoryIdByChecksum(checksum, repositoryId);
             System.out.println("✅ Analysis repositoryId 동기화됨 (rows=" + updated + ")");
@@ -66,42 +77,81 @@ public class ArticleService {
         // 5. 팔로워 목록 조회
         List<Member> followers = memberRepository.getFollowingList(writer.getId());
 
-        // 6. 팔로워들에게 푸시 알림 발송
+        // 6. 팔로워들에게 푸시 알림 + DB 알림 발송
         for (Member follower : followers) {
-            if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
-                fcmService.sendMessage(
-                        follower.getFcmToken(),
-                        "새 글 알림",
-                        writer.getNickName() + "님이 새 글을 작성했습니다!",
-                        null
-                );
-                System.out.println("✅ 알림 전송 → " + follower.getNickName());
+            System.out.println("👥 팔로워: " + follower.getNickName() +
+                    ", allowArticleNotification=" + follower.isAllowArticleNotification());
+
+            String msg = writer.getNickName() + " has published a new post";
+
+            //  DB Notification 저장
+            Notification notification = Notification.builder()
+                    .memberId(follower.getId())
+                    .type("ARTICLE")
+                    .message(msg)
+                    .isRead(false)
+                    .relId(articleId)
+                    .build();
+
+            notificationService.saveNotification(notification);
+            System.out.println("✅ DB 알림 저장 → " + follower.getNickName());
+
+            //  FCM 발송
+            if (follower.isAllowArticleNotification()) {
+                if (follower.getFcmToken() != null && !follower.getFcmToken().isEmpty()) {
+                    try {
+                        fcmService.sendMessage(
+                                follower.getFcmToken(),
+                                "New Post Alert",
+                                msg,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 → " + follower.getNickName());
+                    } catch (Exception e) {
+                        System.out.println("⚠️ FCM 발송 실패 → " + follower.getNickName() + " : " + e.getMessage());
+                    }
+                } else {
+                    System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
+                }
             } else {
-                System.out.println("⚠️ 알림 건너뜀 (토큰 없음) → " + follower.getNickName());
+                System.out.println("⚠️ 글 작성 알림 OFF → FCM 스킵 (DB 저장은 완료)");
             }
         }
-        return rows;
+
+        return articleId;
     }
+
+
 
 
     public int getLastInsertId() {
         return articleRepository.getLastInsertId();
     }
 
-    public int getArticlesCnt(Long repository, String keyword, int searchItem) {
-        return articleRepository.getArticlesCnt(repository, keyword, searchItem);
+    public int getArticlesCnt(Long repositoryId,
+                              String keyword,
+                              int searchItem,
+                              Long loginedMemberId) {
+        return articleRepository.getArticlesCnt(repositoryId, keyword, searchItem, loginedMemberId);
     }
 
-    public List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage) {
+
+    public List<Article> getArticles(Long repositoryId,
+                                     String keyword,
+                                     int searchItem,
+                                     int limitFrom,
+                                     int itemsInAPage,
+                                     Long loginedMemberId) {
         System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
 
-        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage);
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
         System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
 
         for (Article article : articles) {
             System.out.println("📝 [getArticles] article id=" + article.getId()
                     + ", title=" + article.getTitle()
-                    + ", checksum=" + article.getChecksum());
+                    + ", checksum=" + article.getChecksum()
+                    + ", isPublic=" + article.getIsPublic());
 
             Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
             System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
@@ -129,8 +179,8 @@ public class ArticleService {
 
 
 
-    public List<Article> getTrendingArticles(Integer count, Integer days) {
-        return articleRepository.getTrendingArticles(count, days);
+    public List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId) {
+        return articleRepository.getTrendingArticles(count, days, loginedMemberId);
     }
 
     public Article getArticleById(Long id, Long loginedMemberId) {
@@ -176,8 +226,8 @@ public class ArticleService {
         return articleRepository.deleteArticle(id, memberId);
     }
 
-    public List<Article> getFollowingArticles(Long memberId, int limitFrom, int itemsInAPage) {
-        return articleRepository.getFollowingArticles(memberId, limitFrom, itemsInAPage);
+    public List<Article> getFollowingArticles(int limitFrom, int itemsInAPage, Long loginedMemberId) {
+        return articleRepository.getFollowingArticles(limitFrom, itemsInAPage, loginedMemberId);
     }
 
     public int getFollowingArticlesCnt(Long memberId, Long repositoryId, String keyword, int searchItem) {
@@ -200,11 +250,15 @@ public class ArticleService {
         return articleRepository.getRepositoryArticles(repositoryId);
     }
 
-    public List<Article> searchArticles(String keyword) {
+    public List<Article> searchArticles(String keyword, Long loginedMemberId) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        return articleRepository.searchArticles("%" + keyword + "%");
+        return articleRepository.searchArticles("%" + keyword + "%", loginedMemberId);
+    }
+
+    public Long getWriterIdByArticleId(Long articleId) {
+        return articleRepository.getWriterIdByArticleId(articleId);
     }
 
 }

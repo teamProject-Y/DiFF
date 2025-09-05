@@ -128,11 +128,23 @@ public class UsrAuthController {
         if (Ut.isEmpty(member.getLoginPw())) {
             return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 작성하세요."));
         }
+
+        String password = member.getLoginPw();
+        String passwordPattern =
+                "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*(),.?\":{}|<>~+\\-])[A-Za-z\\d!@#$%^&*(),.?\":{}|<>~+\\-]{8,}$";
+
+        if (!password.matches(passwordPattern)) {
+            return ResponseEntity.badRequest().body(ResultData.from(
+                    "F-3",
+                    "Password must be at least 8 characters long and contain at least one English letter, one number, and one special character."
+            ));
+        }
+
         if (Ut.isEmpty(member.getNickName())) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-4", "닉네임을 쓰시오"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-4", "Please enter your nickname"));
         }
         if (Ut.isEmpty(member.getEmail()) || !member.getEmail().contains("@")) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-6", "이메일 정확히 쓰시오"));
+            return ResponseEntity.badRequest().body(ResultData.from("F-6", "Please check your email"));
         }
 
         long id = memberService.join(
@@ -142,16 +154,20 @@ public class UsrAuthController {
                 member.getEmail()
         );
 
-        if (id == -409) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-409", "이미 가입된 이메일입니다."));
+        if (id == -409L) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-409", "This email address is already registered."));
         }
-        if (id == -400) {
-            return ResponseEntity.badRequest().body(ResultData.from("F-400", "비밀번호가 일치하지 않습니다."));
+        if (id == -410L) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-410", "This email nickname is already registered."));
+        }
+        if (id == -400L) {
+            return ResponseEntity.badRequest().body(ResultData.from("F-400", "Password does not match."));
         }
 
-        // ✅ JWT 발급 제거 (자동 로그인 방지)
+
         return ResponseEntity.ok(ResultData.from("S-1",
-                member.getNickName() + " 님 회원가입이 완료되었습니다. 이메일 인증을 해주세요."));
+                member.getNickName() + " \n" +
+                        "Your registration has been completed. Please verify your email address."));
     }
 
     @PostMapping("/refresh")

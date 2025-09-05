@@ -23,21 +23,26 @@
 
     <!-- 3. 알림 목록 가져오기 -->
     <select id="getNotifications" parameterType="long" resultType="com.example.demo.vo.Notification">
-        SELECT id,
-               memberId,
-               type,
-               message,
-               isRead,
-               regDate
-        FROM notification
-        WHERE memberId = #{memberId}
-        ORDER BY regDate DESC
+        SELECT n.id,
+               n.memberId,
+               n.type,
+               n.message,
+               n.isRead,
+               n.regDate,
+               n.relId,
+               CASE WHEN n.type = 'FOLLOW' THEN m.nickName END AS extra__nickName
+        FROM notification n
+                 LEFT JOIN member m ON n.type = 'FOLLOW' AND n.relId = m.id
+        WHERE n.memberId = #{memberId}
+        ORDER BY n.regDate DESC
     </select>
 
+
     <!-- 4. 알림 저장 -->
-    <insert id="saveNotification" parameterType="com.example.demo.vo.Notification" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO notification (memberId, type, message, isRead, regDate)
-        VALUES (#{memberId}, #{type}, #{message}, #{isRead}, NOW())
+    <insert id="saveNotification" parameterType="com.example.demo.vo.Notification"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification (memberId, type, message, isRead, regDate, relId)
+        VALUES (#{memberId}, #{type}, #{message}, #{isRead}, NOW(), #{relId})
     </insert>
 
 </mapper>
