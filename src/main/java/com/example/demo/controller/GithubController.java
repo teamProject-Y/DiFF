@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -101,12 +105,14 @@ public class GithubController {
             @RequestParam String repoName,
             @RequestParam(required = false) String branch,
             @RequestParam(required = false, defaultValue = "1") int page,
-            @RequestParam(required = false, defaultValue = "100") int perPage
+            @RequestParam(required = false, defaultValue = "10") int perPage
     ) {
 
         System.out.println("rq memberId = " + rq.getLoginedMemberId());
         System.out.println("owner: "  + owner);
         System.out.println("repoName: " + repoName);
+        System.out.println("page: " + page);
+        System.out.println("perPage: " + perPage);
 
         Rq raq = (Rq) req.getAttribute("rq");
         System.out.println("raq memberId = " + raq.getLoginedMemberId());
@@ -121,8 +127,8 @@ public class GithubController {
             List<Map<String, Object>> res = github.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/repos/{owner}/{repo}/commits")
-                            .queryParam("per_page", 30)
-                            .queryParam("page", 1)
+                            .queryParam("per_page", perPage)
+                            .queryParam("page", page)
                             .queryParamIfPresent("sha", java.util.Optional.ofNullable(branch))
                             .build(owner, repoName)
                     )
@@ -146,7 +152,6 @@ public class GithubController {
                 String ghLogin  = ghAuthor != null ? (String) ghAuthor.get("login") : null;
                 String ghAvatar = ghAuthor != null ? (String) ghAuthor.get("avatar_url") : null;
 
-                // 우선순위: 깃허브 계정(login) > commit.author.name
                 String authorNameFromMeta = authorObj != null ? (String) authorObj.get("name") : null;
                 String finalAuthorName = (ghLogin != null && !ghLogin.isBlank())
                         ? ghLogin
