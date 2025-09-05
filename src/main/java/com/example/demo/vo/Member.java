@@ -38,4 +38,11 @@ public class Member {
     private Long extra__likeCounts;
     private Long extra__repoCounts;
     private Long extra__postCounts;
+
+
+    // 알림 설정
+    private boolean allowReplyNotification;
+    private boolean allowFollowNotification;
+    private boolean allowArticleNotification;
+    private boolean allowDraftNotification;
 }
