@@ -100,7 +100,7 @@ public class UsrRepositoryController {
         System.out.println("description: ");
         System.out.println("repository name: " + repo.getName());
 
-        System.out.println("🐳 insert repo" + repo);
+        System.out.println("🐳 insert repo " + repo);
 
         // 필수 값 검증
         if (repo.getName() == null || repo.getName().trim().isEmpty()) {
@@ -118,7 +118,9 @@ public class UsrRepositoryController {
                 repo.isAPrivate(),
                 repo.getUrl(),
                 repo.getDefaultBranch(),
-                repo.getOwner()
+                repo.getOwner(),
+                repo.getGithubName(),
+                repo.getGithubOwner()
         );
 
         int newRepoId = repositoryService.getLastInsertId();

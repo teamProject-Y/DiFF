@@ -72,8 +72,9 @@ public class GithubController {
         if (res == null) return ResultData.from("F-2", "깃허브 API 응답이 비었습니다.");
 
         if (!res.isEmpty()) {
+            System.out.println("name: " + res.get(0).get("name"));
             System.out.println("sample keys: " + res.get(0).keySet());
-            System.out.println("full_name: " + res.get(0).get("full_name"));
+            System.out.println("owner: " + res.get(0).get("owner"));
             System.out.println("html_url: " + res.get(0).get("html_url"));
         }
 
@@ -86,11 +87,16 @@ public class GithubController {
             }
 
             r.setName((String) m.get("name"));
+            r.setGithubName((String) m.get("name"));
             r.setUrl((String) m.get("html_url"));
             r.setAPrivate(Boolean.TRUE.equals(m.get("private")));
             r.setDefaultBranch((String) m.get("default_branch"));
+            r.setGithubOwner((String) ((Map<?, ?>) m.get("owner")).get("login"));
             Object login = ((Map<?, ?>) m.get("owner")).get("login");
             r.setOwner(login != null ? login.toString() : null);
+
+            System.out.println("githubOwner: " + r.getGithubOwner());
+            System.out.println("githubName: " + r.getGithubName());
             return r;
         }).toList();
 
@@ -185,7 +191,7 @@ public class GithubController {
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.NotFound e) {
             System.out.println("github error: " + e.getMessage());
-            return ResultData.from("F-404", "리포지토리를 찾을 수 없습니다. owner/repo를 확인하세요.");
+            return ResultData.from("F-404", "No search results found.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Forbidden e) {
             System.out.println("github error: " + e.getMessage());
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트리밋 초과.");
