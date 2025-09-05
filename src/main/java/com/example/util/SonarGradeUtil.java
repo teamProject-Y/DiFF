@@ -53,7 +53,7 @@ public class SonarGradeUtil {
         return "E";
     }
 
-    private static int gradeToScore(String grade) {
+    public static int gradeToScore(String grade) {
         return switch (grade) {
             case "A" -> 5;
             case "B" -> 4;
@@ -63,7 +63,7 @@ public class SonarGradeUtil {
         };
     }
 
-    private static String scoreToGrade(double avg) {
+    public static String scoreToGrade(double avg) {
         if (avg >= 4.5) return "A";
         else if (avg >= 3.5) return "B";
         else if (avg >= 2.5) return "C";

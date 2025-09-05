@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsPasswordService;
 import org.springframework.web.bind.annotation.*;
-
+import com.example.util.SonarGradeUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +60,20 @@ public class UsrRepositoryController {
         System.out.println("repoId"+repoId+"분석이력" + history);
         return ResultData.from("S-1", "분석 이력 조회 성공", history);
     }
+
+//    @GetMapping("/{repoId}/total")
+//    public ResultData<String> getTotalGrade(@PathVariable Long repoId) {
+//        String total = analysisService.calculateTotalGradeByHistory(repoId);
+//
+//        if (total == null) {
+//            return ResultData.from("F-1", "분석 데이터 없음", null);
+//        }
+//
+//        System.out.println("repoId=" + repoId + " totalGrade=" + total);
+//
+//        return ResultData.from("S-1", "토탈 등급 조회 성공", total);
+//    }
+
 
     @PostMapping("/rename")
     public ResultData<Repository> renameRepository(HttpServletRequest req, @RequestBody Repository repo) {

@@ -36,6 +36,8 @@ public class SonarService {
     private AnalysisRepository analysisRepository;
     @Autowired
     private DraftRepository draftRepository;
+    @Autowired
+    private AnalysisService analysisService;
 
     @Value("${sonarqube.host}")
     private String sonarHost;
@@ -209,6 +211,11 @@ public class SonarService {
             analysisRepository.insert(analysis);
             Long analyzeId = analysis.getId();
             System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
+
+            // ✅ totalScore 계산 및 update
+            analysis.setId(analyzeId);
+            analysisService.updateTotalScore(analysis);
+            System.out.println("✅ totalScore 업데이트 완료 - score: " + analysis.getTotalScore());
 
             // 언어 분포 저장
             String langRaw = metricMap.get("ncloc_language_distribution");
