@@ -83,4 +83,8 @@ public interface MemberRepository {
     void clearResetToken(Long id);
 
     List<Member> searchMembers(String keyword);
+
+    int isExistsNickName(String nickName);
+
+    void updateNotificationSetting(Long memberId, String type, boolean enabled);
 }
