@@ -50,6 +50,11 @@ public class DraftService {
     public Long saveDraft(Draft draft) {
         if (draft.getId() != null) {
             System.out.println("🛠️ [Service] 기존 draft 업데이트 실행 (id=" + draft.getId() + ")");
+            if (draft.getIsPublic() == null) {
+                draft.setIsPublic(true);
+            }
+            draftRepository.updateDraft(draft);
+
             draftRepository.updateDraft(draft);
         } else {
             System.out.println("🛠️ [Service] 새 draft 인서트 실행");

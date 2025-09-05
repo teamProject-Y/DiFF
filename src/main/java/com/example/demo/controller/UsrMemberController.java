@@ -226,33 +226,51 @@ public class UsrMemberController {
 
         Member me = memberService.getMemberById(memberId);
         Member target = memberService.getMemberById(fromMemberId);
-        String message = Ut.f("%s님이 회원님을 팔로우했습니다!", me.getNickName());
 
+        String message = Ut.f("%s has started following you!", me.getNickName());
+
+        //  DB 알림 저장은
         Notification notification = Notification.builder()
                 .memberId(fromMemberId)
-                .type("Follow")
+                .type("FOLLOW")
                 .message(message)
                 .isRead(false)
+                .relId(me.getId())
                 .build();
+
+        System.out.println("\n===== 🐶🐶 [SAVE NOTIFICATION] =====");
+        System.out.println("알림 받는 사람 memberId = " + notification.getMemberId());
+        System.out.println("type                   = " + notification.getType());
+        System.out.println("message                = " + notification.getMessage());
+        System.out.println("relId (팔로워 id)      = " + notification.getRelId());
+        System.out.println("isRead                 = " + notification.isRead());
 
         notificationService.saveNotification(notification);
 
-        if (target.getFcmToken() != null && !target.getFcmToken().isEmpty()) {
-            try {
-                fcmService.sendMessage(
-                        target.getFcmToken(),
-                        "새 팔로워 알림",
-                        me.getNickName() + "님이 회원님을 팔로우했습니다!",
-                        null
-                );
-                System.out.println("✅ 팔로우 알림 전송 성공 → " + target.getNickName());
-            } catch (Exception e) {
-                System.out.println("⚠️ FCM 알림 전송 실패: " + e.getMessage());
+        // FCM
+        if (target.isAllowFollowNotification()) {
+            if (target.getFcmToken() != null && !target.getFcmToken().isEmpty()) {
+                try {
+                    fcmService.sendMessage(
+                            target.getFcmToken(),
+                            "New Follower",
+                            me.getNickName() + " has started following you",
+                            null
+                    );
+                    System.out.println("✅ 팔로우 알림 전송 성공 → " + target.getNickName());
+                } catch (Exception e) {
+                    System.out.println("⚠️ FCM 알림 전송 실패: " + e.getMessage());
+                }
+            } else {
+                System.out.println("⚠️ FCM 토큰 없음 → 푸시 발송 불가");
             }
+        } else {
+            System.out.println("⚠️ 팔로우 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
         }
 
         return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
     }
+
 
     @DeleteMapping("/unfollow")
     public ResponseEntity<ResultData> unfollow(HttpServletRequest req,
