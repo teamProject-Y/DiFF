@@ -34,6 +34,10 @@ public class RepositoryService {
         return repositoryRepository.existsByMemberIdAndRepoName(memberId, name) > 0;
     }
 
+    public Long getRepoIdByMemberIdAndGithubRepoName(Long memberId, String githubName) {
+        return repositoryRepository.getRepoIdByMemberIdAndGithubRepoName(memberId, githubName);
+    }
+
     public int getLastInsertId() {
         return repositoryRepository.getLastInsertId();
     }

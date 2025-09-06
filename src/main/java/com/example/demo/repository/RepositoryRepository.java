@@ -28,4 +28,5 @@ public interface RepositoryRepository {
   
     int renameRepository(Long id, String name);
 
+    Long getRepoIdByMemberIdAndGithubRepoName(Long memberId, String githubName);
 }

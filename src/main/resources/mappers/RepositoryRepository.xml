@@ -103,4 +103,11 @@
         WHERE id = #{id}
     </update>
 
+    <select id="getRepoIdByMemberIdAndGithubRepoName">
+        SELECT id
+        FROM repository
+        WHERE memberId = #{memberId}
+        AND githubName = #{githubName}
+    </select>
+
 </mapper>

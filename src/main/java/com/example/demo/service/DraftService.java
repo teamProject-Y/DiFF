@@ -14,15 +14,8 @@ public class DraftService {
     @Autowired
     private DraftRepository draftRepository;
 
-    @Autowired
-    private RepositoryRepository repositoryRepository;
-
     public DraftService(DraftRepository draftRepository) {
         this.draftRepository = draftRepository;
-    }
-
-    public void makeRepository(int memberId, String repoName, String firstCommit) {
-        draftRepository.makeRepository(memberId, repoName, firstCommit);
     }
 
     public int getLastInsertId() {
