@@ -1,5 +1,8 @@
 package com.example.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SonarGradeUtil {
 
     public static String gradeSecurity(int vulnerabilities) {
@@ -48,6 +51,49 @@ public class SonarGradeUtil {
         else if (complexity <= 500) return "C";
         else if (complexity <= 1000) return "D";
         return "E";
+    }
+
+    public static int gradeToScore(String grade) {
+        return switch (grade) {
+            case "A" -> 5;
+            case "B" -> 4;
+            case "C" -> 3;
+            case "D" -> 2;
+            default -> 1; // E
+        };
+    }
+
+    public static String scoreToGrade(double avg) {
+        if (avg >= 4.5) return "A";
+        else if (avg >= 3.5) return "B";
+        else if (avg >= 2.5) return "C";
+        else if (avg >= 1.5) return "D";
+        return "E";
+    }
+
+    public static String totalGrade(
+            String security,
+            String reliability,
+            String maintainability,
+            String coverage,
+            String duplication,
+            String complexity
+    ) {
+        List<String> grades = new ArrayList<>();
+        grades.add(security);
+        grades.add(reliability);
+        grades.add(maintainability);
+        grades.add(coverage);
+        grades.add(duplication);
+        grades.add(complexity);
+
+        int sum = 0;
+        for (String g : grades) {
+            sum += gradeToScore(g);
+        }
+        double avg = (double) sum / grades.size();
+
+        return scoreToGrade(avg);
     }
 
 }

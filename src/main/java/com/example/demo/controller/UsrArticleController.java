@@ -379,4 +379,5 @@ public class UsrArticleController {
                 "msg", success ? "조회수가 증가했습니다." : "이미 조회한 게시글입니다."
         );
     }
+
 }

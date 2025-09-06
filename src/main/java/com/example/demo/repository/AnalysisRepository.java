@@ -25,4 +25,8 @@ public interface AnalysisRepository {
     int updateRepositoryIdByChecksum(String checksum, Long repositoryId);
 
     List<Analysis> getAnalysisHistory(Long repoId);
+
+    List<Analysis> findAllByRepoId(Long repoId);
+
+    void updateTotalScore(Analysis analysis);
 }
