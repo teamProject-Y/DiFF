@@ -56,7 +56,6 @@ public class AnalysisService {
                 .mapToInt(Analysis::getComplexity)
                 .average().orElse(0);
 
-        // 개별 지표 → 등급 변환
         String security = SonarGradeUtil.gradeSecurity((int) avgVulnerabilities);
         String reliability = SonarGradeUtil.gradeReliability((int) avgBugs);
         String maintainability = SonarGradeUtil.gradeMaintainability((int) avgCodeSmells);
@@ -64,25 +63,21 @@ public class AnalysisService {
         String duplication = SonarGradeUtil.gradeDuplications(avgDuplications);
         String complexity = SonarGradeUtil.gradeComplexity((int) avgComplexity);
 
-        // ✅ 토탈 등급 계산
         return SonarGradeUtil.totalGrade(security, reliability, maintainability, coverage, duplication, complexity);
     }
 
     public void updateTotalScore(Analysis analysis) {
-        String security = SonarGradeUtil.gradeSecurity(analysis.getVulnerabilities());
-        String reliability = SonarGradeUtil.gradeReliability(analysis.getBugs());
-        String maintainability = SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells());
-        String coverage = SonarGradeUtil.gradeCoverage(analysis.getCoverage());
-        String duplication = SonarGradeUtil.gradeDuplications(analysis.getDuplicatedLinesDensity());
-        String complexity = SonarGradeUtil.gradeComplexity(analysis.getComplexity());
+        int sec = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeSecurity(analysis.getVulnerabilities()));
+        int rel = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeReliability(analysis.getBugs()));
+        int main = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells()));
+        int cov = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
+        int dup = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeDuplications(analysis.getDuplicatedLinesDensity()));
+        int comp = SonarGradeUtil.gradeToScore(SonarGradeUtil.gradeComplexity(analysis.getComplexity()));
 
-        // 총합 등급
-        String totalGrade = SonarGradeUtil.totalGrade(security, reliability, maintainability, coverage, duplication, complexity);
+        double avgScore = (sec + rel + main + cov + dup + comp) / 6.0;
 
-        // 점수화
-        int totalScore = SonarGradeUtil.gradeToScore(totalGrade);
+        analysis.setTotalScore(avgScore);
 
-        analysis.setTotalScore((double) totalScore);
         analysisRepository.updateTotalScore(analysis);
     }
 
