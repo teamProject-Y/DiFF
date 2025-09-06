@@ -16,7 +16,7 @@ public interface RepositoryRepository {
 
     int existsByMemberIdAndRepoName(Long memberId, String name);
 
-    void insertRepository(Long memberId, String name, boolean aPrivate, String url, String defaultBranch, String owner);
+    void insertRepository(Long memberId, String name, boolean aPrivate, String url, String defaultBranch, String owner, String githubName, String githubOwner);
 
     int getLastInsertId();
 
@@ -28,4 +28,5 @@ public interface RepositoryRepository {
   
     int renameRepository(Long id, String name);
 
+    Long getRepoIdByMemberIdAndGithubRepoName(Long memberId, String githubName);
 }

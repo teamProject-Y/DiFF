@@ -60,8 +60,8 @@
     </select>
 
     <insert id="insertRepository">
-        INSERT INTO repository (memberId, name, aPrivate, url, defaultBranch, owner, regDate, updateDate)
-        VALUES (#{memberId}, #{name}, #{aPrivate}, #{url}, #{defaultBranch}, #{owner}, NOW(), NOW())
+        INSERT INTO repository (memberId, name, aPrivate, url, defaultBranch, owner, githubName, githubOwner, regDate, updateDate)
+        VALUES (#{memberId}, #{name}, #{aPrivate}, #{url}, #{defaultBranch}, #{owner}, #{githubName}, #{githubOwner}, NOW(), NOW())
     </insert>
 
     <select id="getLastInsertId" parameterType="int">
@@ -102,5 +102,12 @@
         SET name = #{name}
         WHERE id = #{id}
     </update>
+
+    <select id="getRepoIdByMemberIdAndGithubRepoName">
+        SELECT id
+        FROM repository
+        WHERE memberId = #{memberId}
+        AND githubName = #{githubName}
+    </select>
 
 </mapper>
