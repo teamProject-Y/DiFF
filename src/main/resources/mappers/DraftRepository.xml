@@ -29,9 +29,8 @@
         INSERT INTO draft
             (memberId, repositoryId, checksum, title, body, isPublic, regDate)
         VALUES
-            (#{memberId}, #{repositoryId}, #{checksum}, #{title}, #{body}, #{isPublic}, NOW())
+            (#{memberId}, #{repositoryId}, #{checksum}, #{title}, #{body}, true, NOW())
     </insert>
-
 
     <!-- Draft 수정 -->
     <update id="updateDraft" parameterType="com.example.demo.vo.Draft">
