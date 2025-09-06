@@ -137,5 +137,33 @@
         ORDER BY analyzeDate ASC
     </select>
 
+    <select id="findAllByRepoId" parameterType="long" resultType="com.example.demo.vo.Analysis">
+        SELECT
+            id,
+            repositoryId,
+            articleId,
+            memberId,
+            diffId,
+            projectKey,
+            projectName,
+            coverage,
+            bugs,
+            complexity,
+            codeSmells,
+            duplicatedLinesDensity,
+            vulnerabilities,
+            analyzeDate,
+            totalScore,
+            checksum
+        FROM analysis
+        WHERE repositoryId = #{repoId}
+        ORDER BY analyzeDate ASC
+    </select>
+
+    <update id="updateTotalScore">
+        UPDATE analysis
+        SET totalScore = #{totalScore}
+        WHERE id = #{id}
+    </update>
 
 </mapper>
