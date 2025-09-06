@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.repository.NotionReportRepository">
+
+    <insert id="saveReport" parameterType="com.example.demo.vo.NotionReport"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notionReport (articleId, title, nickName, email, body)
+        VALUES (#{articleId}, #{title}, #{nickName}, #{email}, #{body});
+    </insert>
+
+    <update id="updatePageId">
+        UPDATE notionReport
+        SET notionPageId = #{notionPageId}
+        WHERE id = #{id}
+    </update>
+
+
+</mapper>

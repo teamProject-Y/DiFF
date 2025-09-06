@@ -1,7 +1,7 @@
 package com.example.demo.service;
 
-import com.example.demo.repository.NotionInquiryRepository;
-import com.example.demo.vo.NotionInquiry;
+import com.example.demo.repository.NotionReportRepository;
+import com.example.demo.vo.NotionReport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,32 +12,35 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class NotionInquiryService {
+public class NotionReportService {
 
-    private final NotionInquiryRepository notionInquiryRepository;
+    private final NotionReportRepository notionReportRepository;
 
-    @Value("${notion.secret}")
+    @Value("${notion.report-secret}")
     private String notionSecret;
 
-    @Value("${notion.database-id}")
-    private String databaseId;
+    @Value("${notion.report-database-id}")
+    private String reportDatabaseId;
 
     @Transactional
-    public void saveAndCreateInquiry(NotionInquiry inquiry) {
+    public void saveAndCreateReport(NotionReport report) {
+        // 1. DB 저장
+        notionReportRepository.saveReport(report);
 
-        notionInquiryRepository.saveInquiry(inquiry);
+        // 2. Notion API 호출
+        String notionPageId = createReport(report);
 
-        String notionPageId = createInquiry(inquiry);
-
-        notionInquiryRepository.updatePageId(inquiry.getId(), notionPageId);
+        // 3. 생성된 pageId 업데이트
+        notionReportRepository.updatePageId(report.getId(), notionPageId);
     }
 
-    public String createInquiry(NotionInquiry inquiry) {
+    public String createReport(NotionReport report) {
         WebClient client = WebClient.builder()
                 .baseUrl("https://api.notion.com/v1")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + notionSecret)
@@ -46,24 +49,25 @@ public class NotionInquiryService {
                 .build();
 
         Map<String, Object> requestBody = Map.of(
-                "parent", Map.of("database_id", databaseId),
+                "parent", Map.of("database_id", reportDatabaseId),
                 "properties", Map.of(
-                        "id", Map.of("number", inquiry.getId()),
+                        "id", Map.of("number", report.getId()),
+                        "articleId", Map.of("number", report.getArticleId()),
                         "title", Map.of("title",
-                                List.of(Map.of("text", Map.of("content", inquiry.getTitle())))),
+                                List.of(Map.of("text", Map.of("content", report.getTitle())))),
                         "nickName", Map.of("rich_text",
-                                List.of(Map.of("text", Map.of("content", inquiry.getNickName())))),
-                        "email", Map.of("email", inquiry.getEmail()),
-                        "regDate", Map.of("date", Map.of("start", inquiry.getRegDate())),
+                                List.of(Map.of("text", Map.of("content", report.getNickName())))),
+                        "email", Map.of("email", report.getEmail()),
+                        "regDate", Map.of("date", Map.of("start", report.getRegDate())),
                         "body", Map.of("rich_text",
-                                List.of(Map.of("text", Map.of("content", inquiry.getBody()))))
+                                List.of(Map.of("text", Map.of("content", report.getBody()))))
                 )
         );
 
         // 🚨 요청 JSON 로그 출력
         try {
             String jsonLog = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(requestBody);
-            System.out.println("===== 📨 Notion API 요청 JSON (Inquiry) =====");
+            System.out.println("===== \uD83D\uDEA8 Notion API 요청 JSON (report) =====");
             System.out.println(jsonLog);
             System.out.println("==========================================");
         } catch (Exception e) {
