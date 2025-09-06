@@ -26,6 +26,9 @@ public class Repository {
 
     private String owner;
 
+    private String githubOwner;
+    private String githubName;
+
     public Repository(Long id, String fullName, boolean aPrivate, String defaultBranch, String htmlUrl) {
         this.id = id;
         this.name = fullName;

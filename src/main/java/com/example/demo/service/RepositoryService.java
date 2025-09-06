@@ -34,12 +34,17 @@ public class RepositoryService {
         return repositoryRepository.existsByMemberIdAndRepoName(memberId, name) > 0;
     }
 
+    public Long getRepoIdByMemberIdAndGithubRepoName(Long memberId, String githubName) {
+        return repositoryRepository.getRepoIdByMemberIdAndGithubRepoName(memberId, githubName);
+    }
+
     public int getLastInsertId() {
         return repositoryRepository.getLastInsertId();
     }
 
-    public void insertRepository(Long memberId, String name, boolean aPrivate, String url, String defaultBranch, String owner) {
-        repositoryRepository.insertRepository(memberId, name, aPrivate, url, defaultBranch, owner);
+    public void insertRepository(
+            Long memberId, String name, boolean aPrivate, String url, String defaultBranch, String owner, String githubName, String githubOwner) {
+        repositoryRepository.insertRepository(memberId, name, aPrivate, url, defaultBranch, owner, githubName, githubOwner);
     }
 
     public boolean isRepoOwner(Long memberId, Long repositoryId) {
