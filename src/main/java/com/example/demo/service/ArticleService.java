@@ -79,8 +79,6 @@ public class ArticleService {
 
         // 6. 팔로워들에게 푸시 알림 + DB 알림 발송
         for (Member follower : followers) {
-            System.out.println("👥 팔로워: " + follower.getNickName() +
-                    ", allowArticleNotification=" + follower.isAllowArticleNotification());
 
             String msg = writer.getNickName() + " has published a new post";
 
@@ -117,6 +115,7 @@ public class ArticleService {
                 System.out.println("⚠️ 글 작성 알림 OFF → FCM 스킵 (DB 저장은 완료)");
             }
         }
+
 
         return articleId;
     }

@@ -97,11 +97,12 @@
         ORDER BY totalLines DESC
     </select>
 
-    <update id="renameRepository">
+    <update id="renameRepository" parameterType="com.example.demo.vo.Repository">
         UPDATE repository
         SET name = #{name}
         WHERE id = #{id}
     </update>
+
 
     <select id="getRepoIdByMemberIdAndGithubRepoName">
         SELECT id
@@ -109,5 +110,17 @@
         WHERE memberId = #{memberId}
         AND githubName = #{githubName}
     </select>
+
+    <select id="getRepositoryById" resultType="com.example.demo.vo.Repository">
+        SELECT *
+        FROM repository
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteRepository">
+        DELETE FROM repository
+        WHERE id = #{id}
+          AND memberId = #{loginedMemberId}
+    </delete>
 
 </mapper>

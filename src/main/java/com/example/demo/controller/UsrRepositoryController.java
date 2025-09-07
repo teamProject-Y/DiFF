@@ -79,30 +79,41 @@ public class UsrRepositoryController {
     public ResultData<Repository> renameRepository(HttpServletRequest req, @RequestBody Repository repo) {
 
         System.out.println("\n===== [POST] /api/DiFF/repository/rename/=====");
-        System.out.println("rename repoid: " +  repo.getId() + ", name: " + repo.getName());
+        System.out.println("rename repoid: " + repo.getId() + ", new name: " + repo.getName());
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
 
-        if (loginedMemberId != repo.getMemberId()) {
-            System.out.println("loginedMemberId is not equal to repo.getMemberId()");
-            return ResultData.from("F-400", "권한 없음");
+        // ✅ DB에서 실제 리포 가져오기
+        Repository dbRepo = repositoryService.getRepositoryById(repo.getId());
+        if (dbRepo == null) {
+            return ResultData.from("F-404", "리포지토리가 존재하지 않습니다.");
         }
 
-        if(repositoryService.existsByMemberIdAndRepoName(loginedMemberId, repo.getName())) {
+        // ✅ 로그 찍기 (로그인한 ID vs 실제 owner ID)
+        System.out.printf("로그인 ID = %d, 리포 소유자 ID = %d%n", loginedMemberId, dbRepo.getMemberId());
+
+        if (!dbRepo.getMemberId().equals(loginedMemberId)) {
+            System.out.println("권한 없음 → 로그인 유저가 리포 주인이 아님");
+            return ResultData.from("F-403", "권한 없음");
+        }
+
+        // ✅ 중복 이름 체크
+        if (repositoryService.existsByMemberIdAndRepoName(loginedMemberId, repo.getName())) {
             System.out.println("이미 존재하는 이름");
             return ResultData.from("F-500", "이미 존재하는 이름입니다.");
         }
 
         int affectedRow = repositoryService.renameRepository(repo.getId(), repo.getName());
 
-        if(affectedRow == 0) {
-            System.out.println("왠지 실패");
-            return ResultData.from("F-1", "왠지 실패");
+        if (affectedRow == 0) {
+            System.out.println("업데이트 실패");
+            return ResultData.from("F-1", "업데이트 실패");
         }
 
-        return ResultData.from("S-1", "success");
+        return ResultData.from("S-1", "리포 이름 변경 성공");
     }
+
 
     @PostMapping("/createRepository")
     @ResponseBody
@@ -141,6 +152,35 @@ public class UsrRepositoryController {
 
         return ResultData.from("S-1", "리포지토리가 생성되었습니다.", newRepoId);
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResultData<Integer> deleteRepository(HttpServletRequest req, @PathVariable Long id) {
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
+
+        System.out.println("\n===== 🐳 [DELETE] /api/DiFF/repository/" + id + " =====");
+
+        // 1. 리포지토리 존재 여부 확인
+        Repository repo = repositoryService.getRepositoryById(id);
+        if (repo == null) {
+            return ResultData.from("F-404", "해당 리포지토리가 존재하지 않습니다.");
+        }
+
+        // 2. 권한 확인 (본인 리포지토리만 삭제 가능)
+        if (!repo.getMemberId().equals(loginedMemberId)) {
+            return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
+        }
+
+        // 3. 삭제 실행
+        int rows = repositoryService.deleteRepository(id, loginedMemberId);
+        if (rows == 0) {
+            return ResultData.from("F-500", "리포지토리 삭제 실패");
+        }
+
+        return ResultData.from("S-1", "The repository has been deleted", rows);
+    }
+
 
     @GetMapping("/average/{repositoryId}")
     public ResponseEntity<Map<String, Object>> getAverageMetrics(@PathVariable Long repositoryId) {
