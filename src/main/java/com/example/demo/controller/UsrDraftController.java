@@ -290,7 +290,7 @@ public class UsrDraftController {
             draft.setIsPublic(true);
         }
         Long draftId = draftService.saveDraft(draft);
-
+      
         System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
