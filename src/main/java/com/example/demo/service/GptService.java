@@ -23,33 +23,39 @@ public class GptService {
         if(!diff.isEmpty()) {
             System.out.println("🍔🍔2summarizeDiff 진입");
         }
-        String prompt = "다음 Git diff 내용을 한 줄로 요약해줘:\n\n" + diff;
+        String prompt = "Summarize the following Git diff content, one line per code block:\n\n" + diff;
 
         Map<String, Object> requestBody = Map.of(
                 "model", "gpt-4.1-mini",
                 "messages", List.of(
                         Map.of("role", "system", "content",
-                                "너는 내가 블로그 작성을 편하게 하기 위해, 코드 변경 사항을 분석하고 간결하게 요약해주는 도우미야.\n" +
-                                        /*"너는 지금부터 내가 보내는 diff를 계속 기억해야 해. 각 요청은 이전 요청과 연결된 연속적인 변경사항일 수 있어.\n" +*/
-                                        "요약 형식:\n" +
-                                        "1. **변경 요약**은 구조보다는 \"무엇이 달라졌는지\"에 초점을 맞춰, **명사형 문장**으로 정리하고, 각 항목은 **번호를 매긴다**.\n" +
-                                        "2. **변경된 메서드/함수/클래스 단위로 묶어서** 설명한다. 다른 코드 블럭 중 연결되는 내용은 하나의 제목으로 묶는다..\n" +
-                                        "3. 각 변경사항마다 **수정 후 핵심 코드 블럭**을 함께 출력하되, 너무 짧게 생략하지 말고 **변화를 유추할 수 있을 만큼만** 보여준다.\n" +
-                                        "4. **디버깅용 로그, 주석 제거, import 순서 변경 등 사소한 변화는 생략한다.**\n" +
+                                "You are an assistant that helps me write blog posts more easily by analyzing and summarizing code changes.\n" +
                                         "\n" +
-                                        "출력 예시:\n" +
+                                        "Output language: Korean (한국어로 출력할 것).\n" +
+                                        "\n" +
+                                        "Summary rules:\n" +
+                                        "1. The **summary** should focus on \"what has changed\" rather than structure, written as a **single noun phrase sentence**. Each item should be **numbered**.\n" +
+                                        "2. Group summaries by **changed method/function/class**. If multiple code blocks are connected, merge them under one title.\n" +
+                                        "3. For each change, provide the **core updated code block** right after the one-line summary. Do not shorten too much; show enough to infer the change. One-line summary **per code block**.\n" +
+                                        "4. Ignore trivial changes such as debug logs, comment removals, or import reordering.\n" +
+                                        "\n" +
+                                        "Output example:\n" +
                                         "1. 명확하게 요약한 제목\n" +
-                                        "\t[파일명 - 메서드명]\n" +
-                                        "\t```변경 후 코드```\n" +
+                                        "[FileName.java - methodName]\n" +
+                                        "```java\n" +
+                                        "updated code here\n" +
+                                        "```\n" +
                                         "\n" +
-                                        "2. 명확하게 요약한 제목"+
-                                        "\t[파일명 - 메서드명]\n" +
-                                        "\t```변경 후 코드```\n" ),
+                                        "2. 명확하게 요약한 제목\n" +
+                                        "[Repository.xml - queryName]\n" +
+                                        "```xml\n" +
+                                        "updated code here\n" +
+                                        "```\n"
+                        ),
                         Map.of("role", "user", "content", prompt)
                 ),
                 "temperature", 0.2
         );
-
         try {
             Map<String, Object> response = openAiWebClient.post()
                     .uri("/chat/completions")

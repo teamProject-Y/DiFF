@@ -58,4 +58,12 @@ public class RepositoryService {
     public int renameRepository(Long id, String name) {
         return repositoryRepository.renameRepository(id, name);
     }
+
+    public Repository getRepositoryById(Long id) {
+        return repositoryRepository.getRepositoryById(id);
+    }
+
+    public int deleteRepository(Long id, Long loginedMemberId) {
+        return repositoryRepository.deleteRepository(id, loginedMemberId);
+    }
 }

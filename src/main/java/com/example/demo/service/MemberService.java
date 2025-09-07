@@ -34,10 +34,10 @@ public class MemberService {
     }
 
     public Long join(String loginPw, String checkLoginPw, String nickName, String email) {
-        // ✅ 이메일 중복 체크
+        // 이메일 중복 체크
         if (memberRepository.isExistsEmail(email) == 1) return -409L;
 
-        // ✅ 닉네임 중복 체크
+        // 닉네임 중복 체크
         if (memberRepository.isExistsNickName(nickName) == 1) return -410L;
 
         // 비밀번호 불일치 체크
