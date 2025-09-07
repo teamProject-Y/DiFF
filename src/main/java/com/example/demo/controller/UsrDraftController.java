@@ -153,14 +153,23 @@ public class UsrDraftController {
             String lastChecksum = (String) param.get("lastChecksum");
             String diffText = (String) param.get("diff");
 
+            System.out.println("➡️ memberId     = " + memberId);
+            System.out.println("➡️ repositoryId = " + repositoryId);
+            System.out.println("➡️ draftId      = " + draftId);
+            System.out.println("➡️ diffId       = " + diffId);
+            System.out.println("➡️ lastChecksum = " + lastChecksum);
+
             if (diffText == null || diffText.trim().isEmpty()) {
+                System.out.println("⚠️ diffText 비어있음 → 실패 반환");
                 return ResultData.from("F-1", "diff 내용이 비어있습니다.");
             }
 
-            // GPT 호출 → Draft 본문 생성
+            // 1. GPT 호출 → Draft 본문 생성
+            System.out.println("🧠 GPT 호출 시작...");
             String draftBody = gptService.makeDraft(diffText, repositoryId, memberId, lastChecksum, draftId);
+            System.out.println("🧠 GPT 호출 완료. 생성된 draftBody 길이 = " + (draftBody != null ? draftBody.length() : 0));
 
-            // Draft 업데이트
+            // 2. Draft 업데이트
             Draft draft = Draft.builder()
                     .id(draftId)
                     .memberId(memberId)
@@ -170,6 +179,7 @@ public class UsrDraftController {
                     .build();
             draftService.updateDraft(draft);
 
+            // 3. Diff 업데이트
             Diff diffEntity = Diff.builder()
                     .id(diffId)
                     .draftId(draftId)
@@ -177,34 +187,41 @@ public class UsrDraftController {
                     .build();
             diffService.updateDiff(diffEntity);
 
-            // 알림 처리
-            Member member = memberService.getFcmTokenById(memberId);
-            String message = "A draft has been written";
+            // 4. 알림 처리
+            Member member = memberService.getMemberById(memberId);
+            System.out.println("👤 대상 사용자 조회: " + (member != null ? member.getNickName() : "없음"));
 
             if (member != null) {
-                // FCM 발송
-                if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
-                    fcmService.sendMessage(
-                            member.getFcmToken(),
-                            "Draft creation complete ",
-                            message,
-                            null
-                    );
-                    System.out.println("✅ FCM 알림 전송 완료");
-                } else {
-                    System.out.println("⚠️ fcmToken 없음 → 알림 생략");
-                }
+                String message = "Your draft has been created.";
 
-                // DB 알림 저장
+                //  DB 알림 저장
                 Notification notification = Notification.builder()
                         .memberId(member.getId())
                         .type("DRAFT")
                         .message(message)
                         .isRead(false)
+                        .relId(draftId)
                         .build();
 
                 notificationService.saveNotification(notification);
-                System.out.println("✅ Draft 알림 DB 저장 완료");
+
+                //  FCM 발송
+                if (member.isAllowDraftNotification()) {
+                    if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                        System.out.println("📲 FCM 발송 시작 → token=" + member.getFcmToken());
+                        fcmService.sendMessage(
+                                member.getFcmToken(),
+                                "Your draft has been created.",
+                                message,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 완료");
+                    } else {
+                        System.out.println("⚠️ fcmToken 없음 → FCM 발송 스킵");
+                    }
+                } else {
+                    System.out.println("⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
+                }
             }
 
             return ResultData.from("S-1", "Draft 업데이트 및 분석 성공", draftBody);
@@ -278,36 +295,20 @@ public class UsrDraftController {
         System.out.println("📥 [Controller] /draft/save 요청 도착");
         System.out.println("📥 [Controller] 요청 데이터: id=" + draft.getId()
                 + ", title=" + draft.getTitle()
-                + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
-                + ", repositoryId=" + draft.getRepositoryId());
+                + ", body=" + (draft.getBody() != null
+                ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..."
+                : "null")
+                + ", repositoryId=" + draft.getRepositoryId()
+                + ", isPublic=" + draft.getIsPublic());
 
-        // 1. 글 저장
         draft.setMemberId(memberId);
 
-        Long draftId = draftService.saveDraft(draft);
-        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
-
-        Long diffId = draft.getDiffId();
-
-        // 2. projectKey 생성 규칙
-        String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;
-
-        try {
-            // 3. 분석 저장
-            sonarService.analysisInsertDB(
-                    draft.getRepositoryId(),
-                    memberId,
-                    draftId,
-                    diffId,
-                    draft.getChecksum(),
-                    projectKey
-            );
-
-            System.out.println("✅ [Controller] analysisInsertDB 완료 → draftId=" + draftId + ", diffId=" + diffId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("❌ [Controller] analysisInsertDB 실패: " + e.getMessage());
+        if (draft.getIsPublic() == null) {
+            draft.setIsPublic(true);
         }
+        Long draftId = draftService.saveDraft(draft);
+      
+        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }

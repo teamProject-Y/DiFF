@@ -139,6 +139,7 @@ public class UsrArticleController {
         System.out.println("repositoryId  = " + draft.getRepositoryId());
         System.out.println("draftId       = " + draft.getDraftId());
 
+        // 유효성 검사
         if (draft.getRepositoryId() == null) {
             return ResultData.from("F-400", "repositoryId가 필요합니다.");
         }
@@ -149,6 +150,7 @@ public class UsrArticleController {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
+        // 리포 권한 확인
         Repository repo = repositoryService.getRepositoryByIdAndMember(
                 draft.getRepositoryId(),
                 loginedMemberId
@@ -157,7 +159,6 @@ public class UsrArticleController {
             System.out.println("[FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
-
 
         String checksum = null;
         if (draft.getDraftId() != null) {
@@ -168,7 +169,6 @@ public class UsrArticleController {
             checksum = savedDraft.getChecksum();
         }
 
-
         Long articleId = articleService.writeArticle(
                 loginedMemberId,
                 draft.getTitle(),
@@ -178,19 +178,6 @@ public class UsrArticleController {
                 draft.getDraftId(),
                 draft.getDiffId()
         );
-
-        String message = "has published a new post " + draft.getTitle();
-        Notification notification = Notification.builder()
-                .memberId(loginedMemberId)
-                .type("ARTICLE")
-                .message(message)
-                .isRead(false)
-                .relId(articleId)
-                .build();
-
-
-        notificationService.saveNotification(notification);
-        System.out.println("✅ Article 알림 DB 저장 완료 → 빨간점 표시 가능");
 
         return ResultData.from("S-1", "작성 성공", "articleId", articleId);
     }
