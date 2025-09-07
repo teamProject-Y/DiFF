@@ -331,7 +331,6 @@ public class GithubController {
                     try { Files.deleteIfExists(zipPath); } catch (Exception ignore) {}
                 }
             }
-            // ===================================================================
 
             // GPT 호출 → 초안 본문 생성 후 업데이트
             String draftBody = gptService.makeDraft(
@@ -538,7 +537,6 @@ public class GithubController {
         }
     }
 
-    // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함) ======
     // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함, 415 대응) ======
     private Path downloadZipballToTempFile(String owner, String repo, String ref, String token) throws Exception {
         Path tmp = Files.createTempFile("zipball-", ".zip");
