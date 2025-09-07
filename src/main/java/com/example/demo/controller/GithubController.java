@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -14,6 +15,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
+
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,8 +49,6 @@ public class GithubController {
     private final RepositoryService repositoryService;
 
     // util
-//    private static final int MAX_PATCH_CHARS = 200_000;
-
     private static final String[] ALLOWED_EXTENSIONS = {
             ".mjs", ".jsx", ".java", ".ts", ".tsx", ".jsp", ".js",
             ".py", ".c", ".cs", ".cpp", ".php", ".go", ".rs",
@@ -215,19 +226,19 @@ public class GithubController {
             return ResultData.from("S-1", "커밋 조회 성공", "commits", commits);
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Unauthorized e) {
-            System.out.println("github error: " + e.getMessage());
+            System.out.println("github error 401: " + e.getMessage());
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.NotFound e) {
-            System.out.println("github error: " + e.getMessage());
+            System.out.println("github error 404: " + e.getMessage());
             return ResultData.from("F-404", "No search results found.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Forbidden e) {
-            System.out.println("github error: " + e.getMessage());
+            System.out.println("github error 403: " + e.getMessage());
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트리밋 초과.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.out.println("github error: " + e.getMessage());
+            System.out.println("github error 2: " + e.getMessage());
             return ResultData.from("F-2", "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
         } catch (Exception e) {
-            System.out.println("github error: " + e.getMessage());
+            System.out.println("github error 2-2: " + e.getMessage());
             return ResultData.from("F-2", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
@@ -294,11 +305,33 @@ public class GithubController {
 
             // Draft 생성
             Draft draft = new Draft();
-             draft.setRepositoryId(repoId);
+            draft.setRepositoryId(repoId);
             draft.setMemberId(member.getId());
             draft.setBody("");
             draft.setRegDate(LocalDateTime.now());
             draftService.saveDraft(draft);
+
+            // ===== ZIP 스트리밍 다운로드 → /upload 전송 (메모리 제한 이슈 방지) =====
+            Path zipPath = null;
+            try {
+                zipPath = downloadZipballToTempFile(owner, repoName, sha, token);
+
+                Map<String, Object> meta = new LinkedHashMap<>();
+                meta.put("memberId", member.getId());
+                meta.put("repositoryId", repoId);
+                meta.put("draftId", draft.getId());
+                meta.put("diffId", 0L);        // SonarUploadController가 Long으로 파싱하므로 안전값
+                meta.put("lastChecksum", sha);  // 필요 시 실제 체크섬으로 대체
+
+                postZipFileToUpload(zipPath, meta);
+            } catch (Exception zerr) {
+                System.out.println("zip 업로드 경고: " + zerr.getMessage());
+            } finally {
+                if (zipPath != null) {
+                    try { Files.deleteIfExists(zipPath); } catch (Exception ignore) {}
+                }
+            }
+            // ===================================================================
 
             // GPT 호출 → 초안 본문 생성 후 업데이트
             String draftBody = gptService.makeDraft(
@@ -504,4 +537,95 @@ public class GithubController {
             return null;
         }
     }
+
+    // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함) ======
+    // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함, 415 대응) ======
+    private Path downloadZipballToTempFile(String owner, String repo, String ref, String token) throws Exception {
+        Path tmp = Files.createTempFile("zipball-", ".zip");
+
+        Mono<Path> m = github.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/repos/{owner}/{repo}/zipball/{ref}")
+                        .build(owner, repo, ref))
+                .headers(h -> {
+                    h.setBearerAuth(token);
+                    h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
+                    h.set("X-GitHub-Api-Version", "2022-11-28");
+                    // 1차 호출은 JSON 리다이렉트만 받는다
+                    h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
+                })
+                .exchangeToMono(r -> {
+                    if (r.statusCode().is3xxRedirection()) {
+                        String loc = r.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION);
+                        if (loc == null) return r.createException().flatMap(Mono::error);
+
+                        // 2차: 실제 ZIP 다운로드 (codeload) - octet-stream으로 스트리밍 저장
+                        return WebClient.builder()
+                                .defaultHeader(HttpHeaders.USER_AGENT, "DiFF-App/1.0")
+                                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token) // private repo 대비
+                                .build()
+                                .get()
+                                .uri(loc)
+                                .accept(MediaType.APPLICATION_OCTET_STREAM)
+                                .retrieve()
+                                .bodyToFlux(DataBuffer.class)
+                                .transform(dbFlux -> DataBufferUtils.write(dbFlux, tmp,
+                                        StandardOpenOption.TRUNCATE_EXISTING))
+                                .then(Mono.just(tmp));
+                    } else if (r.statusCode().is2xxSuccessful()) {
+                        // 드물게 본문을 직접 줄 수도 있음 → 그대로 스트리밍
+                        Flux<DataBuffer> body = r.bodyToFlux(DataBuffer.class);
+                        return DataBufferUtils.write(body, tmp, StandardOpenOption.TRUNCATE_EXISTING)
+                                .then(Mono.just(tmp));
+                    } else {
+                        return r.createException().flatMap(Mono::error);
+                    }
+                })
+                // 415 Unsupported Media Type이면 codeload 직접 호출로 폴백
+                .onErrorResume(
+                        org.springframework.web.reactive.function.client.WebClientResponseException.UnsupportedMediaType.class,
+                        e -> {
+                            String codeload = String.format(
+                                    "https://codeload.github.com/%s/%s/legacy.zip/%s", owner, repo, ref);
+                            return WebClient.builder()
+                                    .defaultHeader(HttpHeaders.USER_AGENT, "DiFF-App/1.0")
+                                    .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                                    .build()
+                                    .get()
+                                    .uri(codeload)
+                                    .accept(MediaType.APPLICATION_OCTET_STREAM)
+                                    .retrieve()
+                                    .bodyToFlux(DataBuffer.class)
+                                    .transform(dbFlux -> DataBufferUtils.write(dbFlux, tmp,
+                                            StandardOpenOption.TRUNCATE_EXISTING))
+                                    .then(Mono.just(tmp));
+                        }
+                );
+
+        Path saved = m.block();
+        if (saved == null || Files.size(saved) == 0) {
+            Files.deleteIfExists(tmp);
+            throw new IllegalStateException("zipball 다운로드 실패 또는 빈 파일");
+        }
+        return saved;
+    }
+
+    // ====== /upload 로 파일 멀티파트 전송 ======
+    private void postZipFileToUpload(Path zipPath, Map<String, Object> meta) throws Exception {
+        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+        parts.add("file", new FileSystemResource(zipPath));
+        parts.add("meta", new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(meta));
+
+        String resp = WebClient.create("http://localhost:8080")
+                .post()
+                .uri("/upload")
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .bodyValue(parts)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        System.out.println("upload response: " + resp);
+    }
+
 }
