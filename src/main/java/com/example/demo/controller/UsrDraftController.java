@@ -278,36 +278,20 @@ public class UsrDraftController {
         System.out.println("📥 [Controller] /draft/save 요청 도착");
         System.out.println("📥 [Controller] 요청 데이터: id=" + draft.getId()
                 + ", title=" + draft.getTitle()
-                + ", body=" + (draft.getBody() != null ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..." : "null")
-                + ", repositoryId=" + draft.getRepositoryId());
+                + ", body=" + (draft.getBody() != null
+                ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..."
+                : "null")
+                + ", repositoryId=" + draft.getRepositoryId()
+                + ", isPublic=" + draft.getIsPublic());
 
-        // 1. 글 저장
         draft.setMemberId(memberId);
 
-        Long draftId = draftService.saveDraft(draft);
-        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
-
-        Long diffId = draft.getDiffId();
-
-        // 2. projectKey 생성 규칙
-        String projectKey = "M-" + memberId + "_R-" + draft.getRepositoryId() + "_A-" + draftId;
-
-        try {
-            // 3. 분석 저장
-            sonarService.analysisInsertDB(
-                    draft.getRepositoryId(),
-                    memberId,
-                    draftId,
-                    diffId,
-                    draft.getChecksum(),
-                    projectKey
-            );
-
-            System.out.println("✅ [Controller] analysisInsertDB 완료 → draftId=" + draftId + ", diffId=" + diffId);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("❌ [Controller] analysisInsertDB 실패: " + e.getMessage());
+        if (draft.getIsPublic() == null) {
+            draft.setIsPublic(true);
         }
+        Long draftId = draftService.saveDraft(draft);
+      
+        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
