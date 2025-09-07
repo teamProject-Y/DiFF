@@ -48,6 +48,10 @@ public class GithubController {
 
     private final RepositoryService repositoryService;
 
+    private final NotificationService notificationService;
+
+    private final FcmService fcmService;
+
     // util
     private static final String[] ALLOWED_EXTENSIONS = {
             ".mjs", ".jsx", ".java", ".ts", ".tsx", ".jsp", ".js",
@@ -339,6 +343,39 @@ public class GithubController {
                     Objects.toString(raw.get("sha"), sha), draft.getId());
             draft.setBody(draftBody);
             draftService.saveDraft(draft);
+
+            if (member != null) {
+                String message = "Your draft has been created.";
+
+                //  DB 알림 저장
+                Notification notification = Notification.builder()
+                        .memberId(member.getId())
+                        .type("DRAFT")
+                        .message(message)
+                        .isRead(false)
+                        .relId(draft.getId())
+                        .build();
+
+                notificationService.saveNotification(notification);
+
+                //  FCM 발송
+                if (member.isAllowDraftNotification()) {
+                    if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                        System.out.println("📲 FCM 발송 시작 → token=" + member.getFcmToken());
+                        fcmService.sendMessage(
+                                member.getFcmToken(),
+                                "Your draft has been created.",
+                                message,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 완료");
+                    } else {
+                        System.out.println("⚠️ fcmToken 없음 → FCM 발송 스킵");
+                    }
+                } else {
+                    System.out.println("⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
+                }
+            }
 
             // 성공 응답: draftId
             Map<String,Object> res = Map.of("draftId", draft.getId());
