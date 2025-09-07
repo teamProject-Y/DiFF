@@ -36,7 +36,7 @@ public class GithubController {
     private final RepositoryService repositoryService;
 
     // util
-    private static final int MAX_PATCH_CHARS = 200_000;
+//    private static final int MAX_PATCH_CHARS = 200_000;
 
     private static final String[] ALLOWED_EXTENSIONS = {
             ".mjs", ".jsx", ".java", ".ts", ".tsx", ".jsp", ".js",
@@ -57,15 +57,6 @@ public class GithubController {
         }
         return false;
     }
-
-//    private String sampleIfTooLarge(String patch) {
-//        if (patch == null || patch.length() <= MAX_PATCH_CHARS) return patch;
-//        int head = Math.min(MAX_PATCH_CHARS / 2, 80_000);
-//        int tail = MAX_PATCH_CHARS - head;
-//        String prefix = patch.substring(0, head);
-//        String suffix = patch.substring(patch.length() - tail);
-//        return prefix + "\n...\n/* patch truncated for size */\n...\n" + suffix;
-//    }
 
     @GetMapping("/repos")
     public ResultData<List<Repository>> listRepos(HttpServletRequest req) {
