@@ -427,7 +427,7 @@ public class GithubController {
                         h.setBearerAuth(token);
                         h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
                         h.set("X-GitHub-Api-Version", "2022-11-28");
-                        // h.set(HttpHeaders.ACCEPT, "application/vnd.github+json"); // (선택) 권장
+                        h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
                     })
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
@@ -450,7 +450,7 @@ public class GithubController {
             data.put("canPush", canPush);
             data.put("visibility", isPrivate ? "private" : "public");
             data.put("id", authed.get("id"));
-            data.put("htmlUrl", authed.get("html_url"));
+//            data.put("htmlUrl", authed.get("html_url"));
             data.put("defaultBranch", authed.get("default_branch"));
 
             if (!canPush) {
@@ -486,7 +486,6 @@ public class GithubController {
                         .block();
 
                 if (unauth != null) {
-                    // 공개 리포는 존재하지만, 현재 토큰 소유자는 접근/푸시 권한이 없음 → 정책상 실패
                     data.put("exists", true);
                     data.put("accessibleWithToken", false);
                     data.put("visibility", "public");

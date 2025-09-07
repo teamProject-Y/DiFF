@@ -28,6 +28,8 @@ public interface RepositoryRepository {
   
     int renameRepository(Long id, String name);
 
+    int connectRepository(Long id, String url, String githubOwner, String githubName, String defaultBranch);
+
     Long getRepoIdByMemberIdAndGithubRepoName(Long memberId, String githubName);
 
     Repository getRepositoryById(Long id);
