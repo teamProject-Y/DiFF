@@ -59,6 +59,10 @@ public class RepositoryService {
         return repositoryRepository.renameRepository(id, name);
     }
 
+    public int connectRepository(Long id, String url, String githubOwner, String githubName, String defaultBranch) {
+        return repositoryRepository.connectRepository(id, url, githubOwner, githubName, defaultBranch);
+    }
+
     public Repository getRepositoryById(Long id) {
         return repositoryRepository.getRepositoryById(id);
     }
