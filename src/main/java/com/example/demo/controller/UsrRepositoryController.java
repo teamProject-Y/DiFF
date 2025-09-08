@@ -8,9 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.ReactiveUserDetailsPasswordService;
 import org.springframework.web.bind.annotation.*;
-import com.example.util.SonarGradeUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,20 +59,6 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "분석 이력 조회 성공", history);
     }
 
-//    @GetMapping("/{repoId}/total")
-//    public ResultData<String> getTotalGrade(@PathVariable Long repoId) {
-//        String total = analysisService.calculateTotalGradeByHistory(repoId);
-//
-//        if (total == null) {
-//            return ResultData.from("F-1", "분석 데이터 없음", null);
-//        }
-//
-//        System.out.println("repoId=" + repoId + " totalGrade=" + total);
-//
-//        return ResultData.from("S-1", "토탈 등급 조회 성공", total);
-//    }
-
-
     @PostMapping("/rename")
     public ResultData<Repository> renameRepository(HttpServletRequest req, @RequestBody Repository repo) {
 
@@ -84,13 +68,13 @@ public class UsrRepositoryController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
 
-        // ✅ DB에서 실제 리포 가져오기
+        // DB에서 실제 리포 가져오기
         Repository dbRepo = repositoryService.getRepositoryById(repo.getId());
         if (dbRepo == null) {
             return ResultData.from("F-404", "리포지토리가 존재하지 않습니다.");
         }
 
-        // ✅ 로그 찍기 (로그인한 ID vs 실제 owner ID)
+        // 로그 찍기 (로그인한 ID vs 실제 owner ID)
         System.out.printf("로그인 ID = %d, 리포 소유자 ID = %d%n", loginedMemberId, dbRepo.getMemberId());
 
         if (!dbRepo.getMemberId().equals(loginedMemberId)) {
@@ -98,7 +82,7 @@ public class UsrRepositoryController {
             return ResultData.from("F-403", "권한 없음");
         }
 
-        // ✅ 중복 이름 체크
+        // 중복 이름 체크
         if (repositoryService.existsByMemberIdAndRepoName(loginedMemberId, repo.getName())) {
             System.out.println("이미 존재하는 이름");
             return ResultData.from("F-500", "이미 존재하는 이름입니다.");
@@ -114,6 +98,45 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "리포 이름 변경 성공");
     }
 
+    @PostMapping("/connect")
+    public ResultData<Repository> connectRepository(HttpServletRequest req,
+                                                    Long repoId,
+                                                    String url,
+                                                    String owner,
+                                                    String name,
+                                                    String defaultBranch) {
+
+        System.out.println("\n===== [POST] /api/DiFF/repository/connect/=====");
+        System.out.println("connect url: " + url);
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq.getLoginedMemberId();
+
+        System.out.println("☘️☘️ repoId: "+ repoId);
+        // DB에서 실제 리포 가져오기
+        Repository dbRepo = repositoryService.getRepositoryById(repoId);
+        System.out.println("☘️☘️️ dbRepo: " + dbRepo);
+        if (dbRepo == null) {
+            return ResultData.from("F-404", "리포지토리가 존재하지 않습니다.");
+        }
+
+        // 로그 찍기 (로그인한 ID vs 실제 owner ID)
+        System.out.printf("로그인 ID = %d, 리포 소유자 ID = %d%n", loginedMemberId, dbRepo.getMemberId());
+
+        if (!dbRepo.getMemberId().equals(loginedMemberId)) {
+            System.out.println("권한 없음 → 로그인 유저가 리포 주인이 아님");
+            return ResultData.from("F-403", "권한 없음");
+        }
+
+        int affectedRow = repositoryService.connectRepository(repoId, url, owner, name, defaultBranch);
+
+        if (affectedRow == 0) {
+            System.out.println("업데이트 실패");
+            return ResultData.from("F-1", "업데이트 실패");
+        }
+
+        return ResultData.from("S-1", "리포 연결 성공");
+    }
 
     @PostMapping("/createRepository")
     @ResponseBody

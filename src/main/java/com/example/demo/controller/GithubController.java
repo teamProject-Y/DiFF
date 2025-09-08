@@ -48,6 +48,10 @@ public class GithubController {
 
     private final RepositoryService repositoryService;
 
+    private final NotificationService notificationService;
+
+    private final FcmService fcmService;
+
     // util
     private static final String[] ALLOWED_EXTENSIONS = {
             ".mjs", ".jsx", ".java", ".ts", ".tsx", ".jsp", ".js",
@@ -236,10 +240,10 @@ public class GithubController {
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트리밋 초과.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
             System.out.println("github error 2: " + e.getMessage());
-            return ResultData.from("F-2", "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
+            return ResultData.from("F-2", "깃허브 API 오류: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("github error 2-2: " + e.getMessage());
-            return ResultData.from("F-2", "깃허브 API 호출 실패: " + e.getMessage());
+            return ResultData.from("F-3", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
 
@@ -331,7 +335,6 @@ public class GithubController {
                     try { Files.deleteIfExists(zipPath); } catch (Exception ignore) {}
                 }
             }
-            // ===================================================================
 
             // GPT 호출 → 초안 본문 생성 후 업데이트
             String draftBody = gptService.makeDraft(
@@ -339,6 +342,39 @@ public class GithubController {
                     Objects.toString(raw.get("sha"), sha), draft.getId());
             draft.setBody(draftBody);
             draftService.saveDraft(draft);
+
+            if (member != null) {
+                String message = "Your draft has been created.";
+
+                //  DB 알림 저장
+                Notification notification = Notification.builder()
+                        .memberId(member.getId())
+                        .type("DRAFT")
+                        .message(message)
+                        .isRead(false)
+                        .relId(draft.getId())
+                        .build();
+
+                notificationService.saveNotification(notification);
+
+                //  FCM 발송
+                if (member.isAllowDraftNotification()) {
+                    if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
+                        System.out.println("📲 FCM 발송 시작 → token=" + member.getFcmToken());
+                        fcmService.sendMessage(
+                                member.getFcmToken(),
+                                "Your draft has been created.",
+                                message,
+                                null
+                        );
+                        System.out.println("✅ FCM 알림 전송 완료");
+                    } else {
+                        System.out.println("⚠️ fcmToken 없음 → FCM 발송 스킵");
+                    }
+                } else {
+                    System.out.println("⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
+                }
+            }
 
             // 성공 응답: draftId
             Map<String,Object> res = Map.of("draftId", draft.getId());
@@ -391,7 +427,7 @@ public class GithubController {
                         h.setBearerAuth(token);
                         h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
                         h.set("X-GitHub-Api-Version", "2022-11-28");
-                        // h.set(HttpHeaders.ACCEPT, "application/vnd.github+json"); // (선택) 권장
+                        h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
                     })
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
@@ -414,7 +450,7 @@ public class GithubController {
             data.put("canPush", canPush);
             data.put("visibility", isPrivate ? "private" : "public");
             data.put("id", authed.get("id"));
-            data.put("htmlUrl", authed.get("html_url"));
+//            data.put("htmlUrl", authed.get("html_url"));
             data.put("defaultBranch", authed.get("default_branch"));
 
             if (!canPush) {
@@ -450,7 +486,6 @@ public class GithubController {
                         .block();
 
                 if (unauth != null) {
-                    // 공개 리포는 존재하지만, 현재 토큰 소유자는 접근/푸시 권한이 없음 → 정책상 실패
                     data.put("exists", true);
                     data.put("accessibleWithToken", false);
                     data.put("visibility", "public");
@@ -539,7 +574,6 @@ public class GithubController {
     }
 
     // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함) ======
-    // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함, 415 대응) ======
     private Path downloadZipballToTempFile(String owner, String repo, String ref, String token) throws Exception {
         Path tmp = Files.createTempFile("zipball-", ".zip");
 
