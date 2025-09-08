@@ -240,10 +240,10 @@ public class GithubController {
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트리밋 초과.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
             System.out.println("github error 2: " + e.getMessage());
-            return ResultData.from("F-2", "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
+            return ResultData.from("F-2", "깃허브 API 오류: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("github error 2-2: " + e.getMessage());
-            return ResultData.from("F-2", "깃허브 API 호출 실패: " + e.getMessage());
+            return ResultData.from("F-3", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
 
