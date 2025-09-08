@@ -103,6 +103,15 @@
         WHERE id = #{id}
     </update>
 
+    <update id="connectRepository">
+        UPDATE repository
+        SET
+            url = #{url},
+            githubOwner = #{githubOwner},
+            githubName = #{githubName},
+            defaultBranch = #{defaultBranch}
+        WHERE id = #{id}
+    </update>
 
     <select id="getRepoIdByMemberIdAndGithubRepoName">
         SELECT id
