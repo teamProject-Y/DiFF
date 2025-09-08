@@ -48,7 +48,7 @@ public class DraftService {
             }
             draftRepository.updateDraft(draft);
 
-            draftRepository.updateDraft(draft);
+//            draftRepository.updateDraft(draft);
         } else {
             System.out.println("🛠️ [Service] 새 draft 인서트 실행");
             System.out.println("👉 draft.memberId = " + draft.getMemberId());

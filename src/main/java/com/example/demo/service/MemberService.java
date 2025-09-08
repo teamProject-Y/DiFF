@@ -232,8 +232,6 @@ public class MemberService {
 
     public Member updateMemberForPrint(Member member) {
 
-        System.out.println("updateMemberForPrint 진입~~~~~~~~~~~~~~~~");
-
         member.setExtra__likeCounts(reactionRepository.getLikeCountsByMemberId(member.getId()));
         member.setExtra__repoCounts(repositoryRepository.getRepoCountsByMemberId(member.getId()));
         member.setExtra__postCounts(articleRepository.getArticleCountsByMemberId(member.getId()));
