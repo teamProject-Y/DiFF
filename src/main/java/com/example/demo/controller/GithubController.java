@@ -155,7 +155,7 @@ public class GithubController {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int perPage
     ) {
-
+        System.out.println("✅========= getCommitList ==========");
         System.out.println("rq memberId = " + rq.getLoginedMemberId());
         System.out.println("owner: " + owner);
         System.out.println("repoName: " + repoName);
@@ -254,7 +254,7 @@ public class GithubController {
             @PathVariable String repoName,
             @PathVariable String sha
     ) {
-        System.out.println("========= mkDraftByCommit (create draft blocking) ==========");
+        System.out.println("✅========= mkDraftByCommit (create draft blocking) ==========");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
@@ -397,7 +397,7 @@ public class GithubController {
             @RequestParam("url") String url
     ) {
 
-        System.out.println("======== validate 진입 ========");
+        System.out.println("✅======== validate 진입 ========");
         // 1) URL에서 owner/repo 추출
         String[] or = parseOwnerRepoFromUrl(url);
         if (or == null) {
@@ -575,6 +575,7 @@ public class GithubController {
 
     // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함) ======
     private Path downloadZipballToTempFile(String owner, String repo, String ref, String token) throws Exception {
+        System.out.println(" ✅다운로드: " + String.format("/repos/%s/%s/zipball/%s", owner, repo, ref));
         Path tmp = Files.createTempFile("zipball-", ".zip");
 
         Mono<Path> m = github.get()
@@ -646,6 +647,7 @@ public class GithubController {
 
     // ====== /upload 로 파일 멀티파트 전송 ======
     private void postZipFileToUpload(Path zipPath, Map<String, Object> meta) throws Exception {
+        System.out.println("✅zipPath: " + zipPath);
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("file", new FileSystemResource(zipPath));
         parts.add("meta", new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(meta));

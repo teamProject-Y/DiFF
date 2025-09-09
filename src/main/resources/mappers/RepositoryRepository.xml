@@ -118,6 +118,7 @@
         FROM repository
         WHERE memberId = #{memberId}
         AND githubName = #{githubName}
+        limit 1
     </select>
 
     <select id="getRepositoryById" resultType="com.example.demo.vo.Repository">
