@@ -29,4 +29,6 @@ public interface AnalysisRepository {
     List<Analysis> findAllByRepoId(Long repoId);
 
     void updateTotalScore(Analysis analysis);
+
+    List<Analysis> getAnalysisRecent(Long repoId);
 }
