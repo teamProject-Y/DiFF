@@ -5,6 +5,7 @@ import com.example.demo.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -589,7 +590,7 @@ public class GithubController {
                             // 토큰 생략(=비인증 요청)
                             h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
                             h.set("X-GitHub-Api-Version", "2022-11-28");
-                             h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
+                            h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
                         })
                         .retrieve()
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})

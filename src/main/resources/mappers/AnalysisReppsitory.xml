@@ -134,7 +134,8 @@
         FROM analysis
         WHERE repositoryId = #{repoId}
         GROUP BY DATE(analyzeDate)
-        ORDER BY analyzeDate ASC
+        ORDER BY analyzeDate DESC
+            LIMIT 14
     </select>
 
     <select id="findAllByRepoId" parameterType="long" resultType="com.example.demo.vo.Analysis">
