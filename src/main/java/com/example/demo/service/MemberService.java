@@ -243,4 +243,7 @@ public class MemberService {
         memberRepository.updateNotificationSetting(memberId, type, enabled);
     }
 
+    public int deleteAccount(Long id) {
+        return memberRepository.deleteAccount(id);
+    }
 }
