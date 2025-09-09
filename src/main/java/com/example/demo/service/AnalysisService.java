@@ -81,4 +81,7 @@ public class AnalysisService {
         analysisRepository.updateTotalScore(analysis);
     }
 
+    public List<Analysis> getAnalysisRecent(Long repoId) {
+        return analysisRepository.getAnalysisRecent(repoId);
+    }
 }

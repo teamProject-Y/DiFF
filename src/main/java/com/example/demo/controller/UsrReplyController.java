@@ -76,25 +76,25 @@ public class UsrReplyController {
         );
         System.out.println("댓글 저장 완료 wr=" + wr);
 
-        // ✅ 글 작성자 조회
+        // 글 작성자 조회
         Long articleWriter = articleService.getWriterIdByArticleId(reply.getArticleId());
         System.out.println("글 작성자 ID : " + articleWriter);
 
         if (!articleWriter.equals(loginedMemberId)) {
             String title = "새 댓글 알림";
-            String body = rq.getLoginedMemberNickName() + "님이 회원님의 글에 댓글을 달았습니다.";
+            String body = rq.getLoginedMemberNickName() + " wrote a new comment on your article.";
 
-            // ✅ 글 작성자 Member 객체 가져오기
+            // 글 작성자 Member 객체 가져오기
             Member articleWriterMember = memberService.getMemberById(articleWriter);
 
             if (articleWriterMember != null) {
                 // 1) DB에 알림 저장 (항상)
                 Notification notification = Notification.builder()
-                        .memberId(articleWriter)         // 알림 대상 (글 작성자)
-                        .type("REPLY")                   // 알림 유형
-                        .relId(reply.getArticleId())     // 관련 글 ID
-                        .message(body)                   // 메시지
-                        .isRead(false)                   // 읽음 여부
+                        .memberId(articleWriter)
+                        .type("REPLY")
+                        .relId(reply.getArticleId())
+                        .message(body)
+                        .isRead(false)
                         .build();
 
                 notificationService.saveNotification(notification);

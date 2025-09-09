@@ -25,7 +25,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -45,7 +48,7 @@ public class SonarService {
     @Value("${sonarqube.token}")
     private String sonarToken;
 
-    public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException {
+    public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException, InterruptedException {
         Path tempDir = Files.createTempDirectory("source-");
         File targetDir = tempDir.toFile();
 
@@ -54,12 +57,161 @@ public class SonarService {
         zipFile.transferTo(tempZip);
         unzip(tempZip, targetDir);
 
+        // ✅ GitHub zipball wrapper 디렉토리 보정
+        File[] children = targetDir.listFiles(File::isDirectory);
+        if (children != null && children.length == 1) {
+            File wrapper = children[0];
+            if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
+                System.out.println("⚠️ GitHub zipball wrapper 감지 → baseDir 교체: " + wrapper.getAbsolutePath());
+                targetDir = wrapper;
+            }
+        }
+
+        // ✅ 빌드 실행 (target/classes 생성 목적)
+        runBuild(targetDir);
+
         // sonar-project.properties 자동 생성
         createSonarPropertiesFile(targetDir, projectKey);
 
         return targetDir.getAbsolutePath();
     }
 
+    private File findProjectRoot(File start, int maxDepth) {
+        if (start == null || !start.isDirectory()) return null;
+        Deque<File> q = new ArrayDeque<>();
+        q.add(start);
+        int depth = 0;
+        while (!q.isEmpty() && depth <= maxDepth) {
+            int sz = q.size();
+            for (int i = 0; i < sz; i++) {
+                File cur = q.poll();
+                if (cur == null) continue;
+                if (new File(cur, "pom.xml").exists()
+                        || new File(cur, "build.gradle").exists()
+                        || new File(cur, "build.gradle.kts").exists()) {
+                    return cur;
+                }
+                File[] children = cur.listFiles(File::isDirectory);
+                if (children != null) for (File c : children) q.add(c);
+            }
+            depth++;
+        }
+        return null;
+    }
+
+    private void runBuild(File dir) throws IOException, InterruptedException {
+        // 0) zip 최상위 디렉토리가 루트가 아닐 수 있으니, 하위에서 pom/gradle 파일 자동 탐색
+        File root = findProjectRoot(dir, 3); // 하위 3단계까지
+        if (root == null) {
+            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵 (pom.xml/gradle 파일 없음)");
+            return;
+        }
+
+        File pom = new File(root, "pom.xml");
+        File gradle = new File(root, "build.gradle");
+        File gradleKts = new File(root, "build.gradle.kts");
+        File mvnw = new File(root, "mvnw");
+        File gradlew = new File(root, "gradlew");
+
+        if (pom.exists()) {
+            System.out.println("📄 사용되는 pom.xml 경로: " + pom.getAbsolutePath());
+        }
+
+        // 1) 프리빌트 감지: 이미 classes가 있으면 스킵 (업로드가 산출물 포함시)
+        if (new File(root, "target/classes").exists() || new File(root, "build/classes/java/main").exists()) {
+            System.out.println("🔎 Prebuilt artifacts detected → build step skip (" + root.getAbsolutePath() + ")");
+            return;
+        }
+
+        // 2) 래퍼 권한 보정
+        chmodX(mvnw);
+        chmodX(gradlew);
+
+        // 3) 커맨드 구성(래퍼 우선)
+        String cmd;
+        if (pom.exists()) {
+            String mvnCmd = mvnw.exists() ? "./mvnw" : "mvn";
+            // -B 배치, 테스트 완전 스킵(둘 다 넣어 확실하게)
+            cmd = mvnCmd + " -B -e -DskipTests -Dmaven.test.skip=true clean package";
+        } else if (gradle.exists() || gradleKts.exists()) {
+            String g = gradlew.exists() ? "./gradlew" : "gradle";
+            cmd = g + " assemble --no-daemon --console=plain -x test";
+        } else {
+            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵");
+            return;
+        }
+
+        System.out.println("▶ 실행할 빌드 명령어: " + cmd);
+        System.out.println("▶ 작업 디렉터리: " + root.getAbsolutePath());
+
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
+        pb.directory(root);
+        pb.redirectErrorStream(true);
+
+        // 4) PATH 보정(IDE/서비스 환경 PATH 빈약 이슈 대비)
+        Map<String, String> env = pb.environment();
+        env.put("PATH", env.getOrDefault("PATH", "")
+                + ":/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin");
+
+        StringBuilder all = new StringBuilder(16 * 1024);
+        Process process = pb.start();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                all.append(line).append('\n');
+                if (line.contains("[ERROR]")) {
+                    System.err.println("▶ [Build][ERROR] " + line);
+                } else {
+                    System.out.println("▶ [Build] " + line);
+                }
+            }
+        }
+
+        // 5) 타임아웃(예: 20분)
+        boolean finished = process.waitFor(20, TimeUnit.MINUTES);
+        if (!finished) {
+            process.destroyForcibly();
+            throw new RuntimeException("❌ 빌드 타임아웃(20m)\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
+        }
+
+        int exitCode = process.exitValue();
+        if (exitCode != 0) {
+            // 흔한 케이스: 하위에 진짜 루트가 따로 있을 때 maven이 'no POM'을 토함 → 이미 root 재탐색으로 예방됨
+            throw new RuntimeException("❌ 빌드 실패! exitCode=" + exitCode + "\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
+        }
+
+        // ✅ 빌드 후 클래스 디렉토리 확인
+        File mavenClasses = new File(root, "target/classes");
+        File gradleClasses = new File(root, "build/classes/java/main");
+
+        if (mavenClasses.exists()) {
+            System.out.println("✅ 빌드 성공. Maven target/classes 생성됨 → " + mavenClasses.getAbsolutePath());
+        } else if (gradleClasses.exists()) {
+            System.out.println("✅ 빌드 성공. Gradle build/classes 생성됨 → " + gradleClasses.getAbsolutePath());
+        } else {
+            System.out.println("⚠️ 빌드는 성공했지만 target/classes 또는 build/classes 를 찾을 수 없음.");
+        }
+    }
+
+    private void chmodX(File f) {
+        try {
+            if (f != null && f.exists()) {
+                // macOS/Linux
+                Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-xr-x");
+                Files.setPosixFilePermissions(f.toPath(), perms);
+            }
+        } catch (UnsupportedOperationException ignore) {
+            // Windows면 무시
+            if (f != null) f.setExecutable(true, true);
+        } catch (Exception ignore) {}
+    }
+
+    private String tailLines(String text, int lines) {
+        String[] arr = text.split("\n");
+        int from = Math.max(0, arr.length - lines);
+        return String.join("\n", Arrays.copyOfRange(arr, from, arr.length));
+    }
     private void unzip(File zipFile, File destDir) throws IOException {
         try (ZipFile zip = new ZipFile(zipFile)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -465,6 +617,13 @@ public class SonarService {
     }
 
     private List<String> detectAllValidSourceFolders(File baseDir) {
+        // 📦 GitHub zipball wrapper 처리 (repoName-commitHash)
+        File[] children = baseDir.listFiles(File::isDirectory);
+        if (children != null && children.length == 1 && children[0].getName().matches(".+-[0-9a-f]{5,}")) {
+            System.out.println("⚠️ GitHub zipball wrapper 감지 → baseDir 교체: " + children[0].getAbsolutePath());
+            baseDir = children[0];
+        }
+
         String[] candidates = {"src", "client", "apps", "js", "python", "."};
         List<String> validPaths = new ArrayList<>();
 
@@ -477,7 +636,6 @@ public class SonarService {
             }
         }
 
-        // 아무 폴더도 없으면 루트 fallback
         if (validPaths.isEmpty()) {
             System.err.println("후보 중 유효한 폴더 없음. 루트로 fallback");
             validPaths.add(baseDir.getAbsolutePath());
@@ -485,6 +643,7 @@ public class SonarService {
 
         return validPaths;
     }
+
 
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;

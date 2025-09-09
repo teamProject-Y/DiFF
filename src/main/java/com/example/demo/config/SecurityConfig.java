@@ -66,7 +66,7 @@ public class SecurityConfig {
                                         "/oauth2/**", "/login/**",
 
                                         // 드래프트
-                                        "/api/DiFF/draft/**", "/upload",
+                                        "/api/DiFF/draft/**", "/upload","/api/DiFF/github/diag",
 
                                         // 로그인 & 회원가입
                                         "/DiFF/member/login", "/DiFF/member/doLogin",
