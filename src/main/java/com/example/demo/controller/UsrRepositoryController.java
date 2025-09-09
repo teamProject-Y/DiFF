@@ -204,7 +204,6 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "The repository has been deleted", rows);
     }
 
-
     @GetMapping("/average/{repositoryId}")
     public ResponseEntity<Map<String, Object>> getAverageMetrics(@PathVariable Long repositoryId) {
         return ResponseEntity.ok(analysisService.getAverageMetrics(repositoryId));

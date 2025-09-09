@@ -120,9 +120,6 @@ public class ArticleService {
         return articleId;
     }
 
-
-
-
     public int getLastInsertId() {
         return articleRepository.getLastInsertId();
     }
@@ -141,25 +138,25 @@ public class ArticleService {
                                      int limitFrom,
                                      int itemsInAPage,
                                      Long loginedMemberId) {
-        System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
+//        System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
 
         List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
-        System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
+//        System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
 
         for (Article article : articles) {
-            System.out.println("📝 [getArticles] article id=" + article.getId()
-                    + ", title=" + article.getTitle()
-                    + ", checksum=" + article.getChecksum()
-                    + ", isPublic=" + article.getIsPublic());
+//            System.out.println("📝 [getArticles] article id=" + article.getId()
+//                    + ", title=" + article.getTitle()
+//                    + ", checksum=" + article.getChecksum()
+//                    + ", isPublic=" + article.getIsPublic());
 
             Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
-            System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
-                    + " → " + (analysis != null ? "FOUND" : "null"));
+//            System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
+//                    + " → " + (analysis != null ? "FOUND" : "null"));
 
             if (analysis != null) {
-                System.out.println("   - coverage=" + analysis.getCoverage()
-                        + ", bugs=" + analysis.getBugs()
-                        + ", smells=" + analysis.getCodeSmells());
+//                System.out.println("   - coverage=" + analysis.getCoverage()
+//                        + ", bugs=" + analysis.getBugs()
+//                        + ", smells=" + analysis.getCodeSmells());
 
                 analysis.setGradeCoverage(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
                 analysis.setGradeReliability(SonarGradeUtil.gradeReliability(analysis.getBugs()));
@@ -169,7 +166,7 @@ public class ArticleService {
                 analysis.setGradeComplexity(SonarGradeUtil.gradeComplexity(analysis.getComplexity()));
 
                 article.setAnalysis(analysis);
-                System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
+//                System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
             }
         }
 
