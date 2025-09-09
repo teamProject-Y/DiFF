@@ -29,7 +29,7 @@ public class UsrNotionInquiryController {
 
         if (memberId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "로그인이 필요합니다."));
+                    .body(Map.of("result", "fail", "message", "Please log in and try again."));
         }
 
         Member member = memberService.getMemberById(memberId);
@@ -38,12 +38,9 @@ public class UsrNotionInquiryController {
         notionInquiryService.saveAndCreateInquiry(inquiry);
 
         return ResponseEntity.ok(Map.of(
-                "message", "문의사항이 정상적으로 접수되었습니다.",
+                "result", "success",
+                "message", "Your inquiry has been submitted.",
                 "nickName", member.getNickName()
         ));
     }
-
-
-
-
 }
