@@ -56,7 +56,9 @@
     <select id="existsByMemberIdAndRepoName" resultType="int">
         SELECT COUNT(*)
         FROM repository
-        WHERE memberId = #{memberId} AND `name` = #{name}
+        WHERE memberId = #{memberId}
+          AND `name` = #{name}
+          AND delStatus = 0
     </select>
 
     <insert id="insertRepository">
@@ -72,12 +74,14 @@
         SELECT memberId
         FROM repository
         where id = #{repositoryId}
+        AND delStatus = 0
     </select>
 
     <select id="getRepoCountsByMemberId" parameterType="Long">
         SELECT COUNT(*)
         FROM repository
         WHERE memberId = #{memberId}
+        AND delStatus = 0
     </select>
 
     <select id="getLanguageDistributionByRepo" resultType="map">
@@ -118,18 +122,22 @@
         FROM repository
         WHERE memberId = #{memberId}
         AND githubName = #{githubName}
+        AND delStatus = 0
     </select>
 
     <select id="getRepositoryById" resultType="com.example.demo.vo.Repository">
         SELECT *
         FROM repository
         WHERE id = #{id}
+        AND delStatus = 0
     </select>
 
-    <delete id="deleteRepository">
-        DELETE FROM repository
+    <update id="deleteRepository">
+        UPDATE repository
+        SET delStatus = 1,
+            delDate = NOW()
         WHERE id = #{id}
-          AND memberId = #{loginedMemberId}
-    </delete>
+        AND memberId = #{loginedMemberId}
+    </update>
 
 </mapper>

@@ -49,7 +49,7 @@ public class UsrArticleController {
             @RequestParam(defaultValue = "0") int searchItem) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
-        System.out.println("list 진입");
+//        System.out.println("list 진입");
 
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
@@ -58,12 +58,11 @@ public class UsrArticleController {
         int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
         List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
 
-
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
-        result.put("totalCnt", totalCnt);
-        result.put("totalPage", totalPage);
-        result.put("page", page);
+//        result.put("totalCnt", totalCnt);
+//        result.put("totalPage", totalPage);
+//        result.put("page", page);
 
         return ResponseEntity.ok(result);
     }
