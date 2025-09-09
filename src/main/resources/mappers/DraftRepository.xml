@@ -32,7 +32,6 @@
             (#{memberId}, #{repositoryId}, #{checksum}, #{title}, #{body}, true, NOW())
     </insert>
 
-    <!-- Draft 수정 -->
     <update id="updateDraft" parameterType="com.example.demo.vo.Draft">
         UPDATE draft
         SET
@@ -44,7 +43,6 @@
         regDate = NOW()
         WHERE id = #{id}
     </update>
-
 
     <select id="getDraftsByMember" parameterType="long" resultType="com.example.demo.vo.Draft">
         SELECT d.*, r.name as extra__repositoryName
