@@ -590,7 +590,7 @@ public class GithubController {
                             // 토큰 생략(=비인증 요청)
                             h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
                             h.set("X-GitHub-Api-Version", "2022-11-28");
-                            h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
+                             h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
                         })
                         .retrieve()
                         .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
@@ -835,6 +835,7 @@ public class GithubController {
             }
         }
     }
+
     private String stripFirstDir(String name) {
         int idx = name.indexOf('/');
         return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;
