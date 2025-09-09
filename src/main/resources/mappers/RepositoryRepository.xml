@@ -74,28 +74,28 @@
         SELECT memberId
         FROM repository
         where id = #{repositoryId}
-        AND delStatus = 0
+          AND delStatus = 0
     </select>
 
     <select id="getRepoCountsByMemberId" parameterType="Long">
         SELECT COUNT(*)
         FROM repository
         WHERE memberId = #{memberId}
-        AND delStatus = 0
+          AND delStatus = 0
     </select>
 
     <select id="getLanguageDistributionByRepo" resultType="map">
         SELECT
-        a.repositoryId,
-        al.language,
-        SUM(al.lines) AS totalLines,
-        ROUND(
-        SUM(al.lines) * 100.0 /
-        SUM(SUM(al.lines)) OVER (PARTITION BY a.repositoryId),
-        2
-        ) AS percentage
+            a.repositoryId,
+            al.language,
+            SUM(al.lines) AS totalLines,
+            ROUND(
+                    SUM(al.lines) * 100.0 /
+                    SUM(SUM(al.lines)) OVER (PARTITION BY a.repositoryId),
+                    2
+            ) AS percentage
         FROM analysis a
-        JOIN analysisLanguage al ON a.id = al.analyzeId
+                 JOIN analysisLanguage al ON a.id = al.analyzeId
         WHERE a.repositoryId = #{repositoryId}
         GROUP BY a.repositoryId, al.language
         ORDER BY totalLines DESC
@@ -121,15 +121,15 @@
         SELECT id
         FROM repository
         WHERE memberId = #{memberId}
-        AND githubName = #{githubName}
-        AND delStatus = 0
+          AND githubName = #{githubName}
+          AND delStatus = 0
     </select>
 
     <select id="getRepositoryById" resultType="com.example.demo.vo.Repository">
         SELECT *
         FROM repository
         WHERE id = #{id}
-        AND delStatus = 0
+          AND delStatus = 0
     </select>
 
     <update id="deleteRepository">
@@ -137,7 +137,31 @@
         SET delStatus = 1,
             delDate = NOW()
         WHERE id = #{id}
-        AND memberId = #{loginedMemberId}
+          AND memberId = #{loginedMemberId}
     </update>
+
+    <select id="getAnalysisRecent" resultType="com.example.demo.vo.Analysis">
+        SELECT
+            id,
+            repositoryId,
+            diffId,
+            coverage,
+            totalScore,
+            bugs,
+            complexity,
+            codeSmells,
+            duplicatedLinesDensity,
+            vulnerabilities,
+            analyzeDate
+        FROM analysis
+        WHERE repositoryId = #{repoId}
+          AND analyzeDate >= (
+            SELECT DATE_SUB(MAX(analyzeDate), INTERVAL 14 DAY)
+            FROM analysis
+            WHERE repositoryId = #{repoId}
+        )
+        ORDER BY analyzeDate ASC
+    </select>
+
 
 </mapper>
