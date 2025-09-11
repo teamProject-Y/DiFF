@@ -89,6 +89,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 그 외는 인증 필요
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
