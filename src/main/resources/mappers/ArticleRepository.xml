@@ -15,31 +15,31 @@
 
     <select id="getArticles" resultType="com.example.demo.vo.Article">
         SELECT
-        A.*,
-        M.nickName AS extra__writer,
-        COALESCE(R.likes, 0) AS extra__sumReaction,
-        COALESCE(RE.replies, 0) AS extra__sumReplies
+            A.*,
+            M.nickName AS extra__writer,
+            COALESCE(R.likes, 0) AS extra__sumReaction,
+            COALESCE(RE.replies, 0) AS extra__sumReplies
         FROM article A
-        JOIN member M
-        ON A.memberId = M.id
-        LEFT JOIN (
-        SELECT relId, COUNT(*) AS likes
-        FROM reaction
-        WHERE relType = 'article'
-        GROUP BY relId
+                 JOIN member M
+                      ON A.memberId = M.id
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
         ) R ON A.id = R.relId
-        LEFT JOIN (
-        SELECT articleId, COUNT(*) AS replies
-        FROM reply
-        GROUP BY articleId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
         ) RE ON A.id = RE.articleId
         WHERE
-        A.repositoryId = #{repositoryId}
-        AND (#{keyword} IS NULL OR A.title LIKE CONCAT('%', #{keyword}, '%'))
-        AND (#{searchItem} = 0 OR A.memberId = #{searchItem})
-        AND (A.isPublic = 1 OR A.memberId = #{loginedMemberId})
+            A.repositoryId = #{repositoryId}
+          AND (#{keyword} IS NULL OR A.title LIKE CONCAT('%', #{keyword}, '%'))
+          AND (#{searchItem} = 0 OR A.memberId = #{searchItem})
+          AND (A.isPublic = 1 OR A.memberId = #{loginedMemberId})
         ORDER BY A.id DESC
-        LIMIT #{limitFrom}, #{itemsInAPage}
+            LIMIT #{limitFrom}, #{itemsInAPage}
     </select>
 
     <insert id="writeArticle" parameterType="com.example.demo.vo.Article"
@@ -63,9 +63,9 @@
     <update id="modifyArticle" parameterType="com.example.demo.vo.Article">
         UPDATE article
         SET
-        title = #{title},
-        body = #{body},
-        isPublic = #{isPublic}
+            title = #{title},
+            body = #{body},
+            isPublic = #{isPublic}
         WHERE id = #{id}
     </update>
 
@@ -107,24 +107,24 @@
 
     <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT a.*, m.nickName as extra__writer, m.email,
-        COALESCE(r.likes, 0) AS extra__sumReaction,
-        COALESCE(re.replies, 0) AS extra__sumReplies
+               COALESCE(r.likes, 0) AS extra__sumReaction,
+               COALESCE(re.replies, 0) AS extra__sumReplies
         FROM article a
-        LEFT JOIN (
-        SELECT relId, COUNT(*) AS likes
-        FROM reaction
-        WHERE relType = 'article'
-        GROUP BY relId
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
         ) r ON a.id = r.relId
-        LEFT JOIN (
-        SELECT articleId, COUNT(*) AS replies
-        FROM reply
-        GROUP BY articleId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
         ) re ON a.id = re.articleId
-        INNER JOIN follow f ON f.fromMemberId = a.memberId
-        INNER JOIN member m ON a.memberId = m.id
+                 INNER JOIN follow f ON f.fromMemberId = a.memberId
+                 INNER JOIN member m ON a.memberId = m.id
         WHERE f.toMemberId = #{loginedMemberId}
-        AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
+          AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
         ORDER BY a.regDate DESC
     </select>
 
@@ -165,36 +165,35 @@
 
     <select id="searchArticles" resultType="com.example.demo.vo.Article">
         SELECT a.*,
-        m.nickName AS extra__writer,
-        m.email,
-        COALESCE(r.likes, 0)    AS extra__sumReaction,
-        COALESCE(re.replies, 0) AS extra__sumReplies,
-        COALESCE(h.viewCount, 0) AS hits
+               m.nickName AS extra__writer,
+               m.email,
+               COALESCE(r.likes, 0)    AS extra__sumReaction,
+               COALESCE(re.replies, 0) AS extra__sumReplies,
+               COALESCE(h.viewCount, 0) AS hits
         FROM article a
-        INNER JOIN member m ON a.memberId = m.id
-        LEFT JOIN (
-        SELECT relId, COUNT(*) AS likes
-        FROM reaction
-        WHERE relType = 'article'
-        GROUP BY relId
+                 INNER JOIN member m ON a.memberId = m.id
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
         ) r ON a.id = r.relId
-        LEFT JOIN (
-        SELECT articleId, COUNT(*) AS replies
-        FROM reply
-        GROUP BY articleId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
         ) re ON a.id = re.articleId
-        LEFT JOIN (
-        SELECT articleId, COUNT(*) AS viewCount
-        FROM hits
-        GROUP BY articleId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS viewCount
+            FROM hits
+            GROUP BY articleId
         ) h ON a.id = h.articleId
         WHERE (a.title LIKE CONCAT('%', #{keyword}, '%')
-        OR a.body LIKE CONCAT('%', #{keyword}, '%')
-        OR m.nickName LIKE CONCAT('%', #{keyword}, '%'))
-        AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
+            OR a.body LIKE CONCAT('%', #{keyword}, '%')
+            OR m.nickName LIKE CONCAT('%', #{keyword}, '%'))
+          AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
         ORDER BY a.regDate DESC
     </select>
-
 
     <select id="getArticleCountsByMemberId" parameterType="long">
         SELECT COUNT(*)
