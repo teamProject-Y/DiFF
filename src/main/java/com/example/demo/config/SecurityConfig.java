@@ -112,7 +112,7 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("http://13.124.33.233:3000/DiFF/home/main")
+                        .logoutSuccessUrl("http://44.206.130.144:3000/DiFF/home/main")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
@@ -143,7 +143,7 @@ public class SecurityConfig {
         cfg.setAllowCredentials(true);
 
         // 허용할 프론트 주소들
-        cfg.addAllowedOriginPattern("http://13.124.33.233:3000");
+        cfg.addAllowedOriginPattern("http://44.206.130.144:3000");
         cfg.addAllowedOriginPattern("http://localhost:3000");
         cfg.addAllowedOriginPattern("http://127.0.0.1:3000");
 
