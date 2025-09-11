@@ -271,7 +271,6 @@ public class UsrMemberController {
         return ResponseEntity.ok(ResultData.from("S-1", "팔로우 성공"));
     }
 
-
     @DeleteMapping("/unfollow")
     public ResponseEntity<ResultData> unfollow(HttpServletRequest req,
                                                @RequestParam Long fromMemberId) {
@@ -388,5 +387,22 @@ public class UsrMemberController {
 
         List<Member> members = memberService.searchMembers(keyword);
         return ResultData.from("S-1", "검색 성공", "data1", members);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResultData<String> deleteAccount(@PathVariable Long id){
+
+        System.out.println("\n===== [DELETE] /api/DiFF/member/delete =====");
+
+        if(rq.getLoginedMemberId() != id){
+            return ResultData.from("F-401", "Unauthorized request.");
+        }
+
+        int effectedRow = memberService.deleteAccount(id);
+
+        if(effectedRow != 1){
+            return ResultData.from("F-404", "Account not found.");
+        } else return ResultData.from("S-1", "Account removal completed.");
+
     }
 }

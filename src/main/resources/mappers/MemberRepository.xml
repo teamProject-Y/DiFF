@@ -21,22 +21,22 @@
 
     <!-- 이메일 존재 여부 -->
     <select id="isExistsEmail" parameterType="string" resultType="int">
-        SELECT COUNT(*) FROM `member` WHERE email = #{email}
+        SELECT COUNT(*) FROM `member` WHERE email = #{email} AND delStatus = 0
     </select>
 
     <!-- 회원 조회 -->
     <select id="getMemberById" parameterType="long" resultType="com.example.demo.vo.Member">
         SELECT *
         FROM `member`
-        WHERE id = #{id}
+        WHERE id = #{id} AND delStatus = 0
     </select>
 
     <select id="getMemberByEmail" parameterType="string" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE email = #{email}
+        SELECT * FROM member WHERE email = #{email} AND delStatus = 0
     </select>
 
     <select id="getMemberByNickName" parameterType="string" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE nickName = #{nickName}
+        SELECT * FROM member WHERE nickName = #{nickName} AND delStatus = 0
     </select>
 
     <!-- OAuth -->
@@ -46,6 +46,7 @@
                  JOIN member m ON oa.memberId = m.id
         WHERE oa.oauthId = #{oauthId}
           AND oa.provider = #{provider}
+          AND delStatus = 0
     </select>
 
     <insert id="saveMember" useGeneratedKeys="true" keyProperty="id">
@@ -59,6 +60,7 @@
         SET emailVerificationToken = #{token},
             emailVerificationExpiry = #{expiry}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- 토큰으로 회원 조회 -->
@@ -66,6 +68,7 @@
         SELECT *
         FROM member
         WHERE emailVerificationToken = #{token}
+          AND delStatus = 0
     </select>
 
     <update id="verifyEmail" parameterType="long">
@@ -75,6 +78,7 @@
             emailVerificationExpiry = NULL,
             updateDate = NOW()
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <update id="updateResetToken">
@@ -82,21 +86,23 @@
         SET resetToken = #{token},
             resetTokenExpiry = #{expiry}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- 토큰으로 회원 조회 (비밀번호 재설정) -->
     <select id="findByResetToken" parameterType="string" resultType="com.example.demo.vo.Member">
-        SELECT * FROM member WHERE resetToken = #{token}
+        SELECT * FROM member WHERE resetToken = #{token} AND delStatus = 0
     </select>
 
     <!-- 비밀번호 변경 -->
     <update id="updatePassword">
         UPDATE member
-        SET loginPw = #{loginPw},   <!-- newPw 아님 -->
+        SET loginPw = #{loginPw},
         resetToken = NULL,
         resetTokenExpiry = NULL,
         updateDate = NOW()
         WHERE id = #{memberId}
+        AND delStatus = 0
     </update>
 
     <update id="clearResetToken">
@@ -104,6 +110,7 @@
         SET resetToken = NULL,
             resetTokenExpiry = NULL
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- 회원 수정 -->
@@ -116,7 +123,7 @@
             <if test="nickName != null and nickName != ''">nickName = #{nickName},</if>
             <if test="email != null and email != ''">email = #{email},</if>
         </set>
-        WHERE id = #{loginedMemberId}
+        WHERE id = #{loginedMemberId} AND delStatus = 0
     </update>
 
     <!-- 닉네임 중복 검사 -->
@@ -128,12 +135,14 @@
         UPDATE member
         SET nickName = #{nickName}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <update id="modifyIntroduce">
         UPDATE member
         SET introduce = #{introduce}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- 프로필 이미지 업로드 -->
@@ -141,6 +150,7 @@
         UPDATE member
         SET profileUrl = #{profileUrl}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- FCM -->
@@ -148,18 +158,21 @@
         SELECT id, nickName, email, fcmToken
         FROM member
         WHERE id = #{memberId}
+          AND delStatus = 0
     </select>
 
     <update id="saveFcmToken">
         UPDATE member
         SET fcmToken = #{fcmToken}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <update id="updateFcmToken">
         UPDATE member
         SET fcmToken = #{token}
         WHERE id = #{memberId}
+          AND delStatus = 0
     </update>
 
     <!-- 팔로우/언팔로우 -->
@@ -198,6 +211,7 @@
         FROM member
         WHERE nickName LIKE CONCAT('%', #{keyword}, '%')
            OR email LIKE CONCAT('%', #{keyword}, '%')
+            AND delStatus = 0
         ORDER BY regDate DESC
     </select>
 
@@ -226,6 +240,13 @@
             </choose>
         </set>
         WHERE id = #{memberId}
+    </update>
+
+    <update id="deleteAccount">
+        UPDATE `member`
+        SET delStatus = 1,
+            delDate = NOW()
+        WHERE id = #{id}
     </update>
 
 </mapper>

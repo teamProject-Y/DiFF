@@ -87,4 +87,6 @@ public interface MemberRepository {
     int isExistsNickName(String nickName);
 
     void updateNotificationSetting(Long memberId, String type, boolean enabled);
+
+    int deleteAccount(Long id);
 }
