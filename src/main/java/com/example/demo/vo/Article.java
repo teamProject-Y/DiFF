@@ -28,7 +28,7 @@ public class Article {
     private int extra__sumReaction;
     private int extra__sumReplies;
     private String extra__writer;
-
+    private String extra__profileUrl;
     private boolean userCanModify;
     private boolean userCanDelete;
     private Long draftId;
