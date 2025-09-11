@@ -835,6 +835,7 @@ public class GithubController {
             }
         }
     }
+
     private String stripFirstDir(String name) {
         int idx = name.indexOf('/');
         return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;
