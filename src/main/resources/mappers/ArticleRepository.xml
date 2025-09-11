@@ -78,32 +78,32 @@
 
     <select id="getTrendingArticles" resultType="com.example.demo.vo.Article">
         SELECT
-        a.*,
-        COALESCE(r.likes, 0) AS extra__sumReaction,
-        COALESCE(re.replies, 0) AS extra__sumReplies,
-        m.nickName AS extra__writer,
-        (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
-        (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
-        (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
+            a.*,
+            COALESCE(r.likes, 0) AS extra__sumReaction,
+            COALESCE(re.replies, 0) AS extra__sumReplies,
+            m.nickName AS extra__writer,
+            m.profileUrl AS extra__profileUrl,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) AS weighted_score,
+            (a.hits * 0.3 + COALESCE(r.likes, 0) * 0.7) *
+            (1 - LEAST(DATEDIFF(CURRENT_DATE, a.regDate), #{days}) / #{days}) AS trending_score
         FROM article a
-        LEFT JOIN (
-        SELECT relId, COUNT(*) AS likes
-        FROM reaction
-        WHERE relType = 'article'
-        GROUP BY relId
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
         ) r ON a.id = r.relId
-        LEFT JOIN (
-        SELECT articleId, COUNT(*) AS replies
-        FROM reply
-        GROUP BY articleId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
         ) re ON a.id = re.articleId
-        LEFT JOIN member m ON a.memberId = m.id
+                 LEFT JOIN member m ON a.memberId = m.id
         WHERE a.regDate >= DATE_SUB(CURRENT_DATE, INTERVAL #{days} DAY)
-        AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
+          AND (a.isPublic = 1 OR a.memberId = #{loginedMemberId})
         ORDER BY trending_score DESC
-        LIMIT #{count};
+            LIMIT #{count};
     </select>
-
 
     <select id="getFollowingArticles" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT a.*, m.nickName as extra__writer, m.email,
