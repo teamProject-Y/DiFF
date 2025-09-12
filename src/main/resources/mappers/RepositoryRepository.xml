@@ -26,10 +26,10 @@
         VALUES (
                    #{memberId},
                    #{name},
-                   #{url},
+                   null,
                    #{lastRqCommit},
-                   #{delStatus},
-                   #{delDate},
+                   0,
+                   null,
                    NOW(),
                    NOW()
                )
