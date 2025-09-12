@@ -144,9 +144,12 @@ public class SecurityConfig {
         cfg.setAllowCredentials(true);
 
         // 허용할 프론트 주소들
-        cfg.addAllowedOriginPattern("http://13.124.33.233:3000");
-        cfg.addAllowedOriginPattern("http://localhost:3000");
-        cfg.addAllowedOriginPattern("http://127.0.0.1:3000");
+        cfg.addAllowedOrigin("http://13.124.33.233:3000");  // EC2 프론트
+        cfg.addAllowedOrigin("http://localhost:3000");     // 로컬 개발
+        cfg.addAllowedOrigin("http://127.0.0.1:3000");     // 로컬 개발
+
+        // 테스트 시 전체 허용 (필요하면 주석 풀고 테스트)
+        // cfg.addAllowedOriginPattern("*");
 
         cfg.addAllowedHeader("*");
         cfg.addAllowedMethod("*");
@@ -160,5 +163,6 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", cfg);
         return source;
     }
+
 
 }
