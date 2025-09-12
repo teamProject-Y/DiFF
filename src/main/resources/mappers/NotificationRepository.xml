@@ -35,8 +35,8 @@
                  LEFT JOIN member m ON n.type = 'FOLLOW' AND n.relId = m.id
         WHERE n.memberId = #{memberId}
         ORDER BY n.regDate DESC
+        LIMIT 30
     </select>
-
 
     <!-- 4. 알림 저장 -->
     <insert id="saveNotification" parameterType="com.example.demo.vo.Notification"

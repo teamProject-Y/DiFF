@@ -5,6 +5,7 @@ import com.example.demo.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -834,6 +835,7 @@ public class GithubController {
             }
         }
     }
+
     private String stripFirstDir(String name) {
         int idx = name.indexOf('/');
         return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;

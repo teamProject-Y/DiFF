@@ -59,6 +59,13 @@ public class UsrRepositoryController {
         return ResultData.from("S-1", "분석 이력 조회 성공", history);
     }
 
+    @GetMapping("/{repoId}/recent")
+    public ResultData<List<Analysis>> getAnalysisRecent(@PathVariable Long repoId) {
+        List<Analysis> recent = analysisService.getAnalysisRecent(repoId);
+        System.out.println("🔰repoId"+repoId+"최근 2주 분석이력" + recent);
+        return ResultData.from("S-1", "분석 이력 조회 성공", recent);
+    }
+
     @PostMapping("/rename")
     public ResultData<Repository> renameRepository(HttpServletRequest req, @RequestBody Repository repo) {
 
