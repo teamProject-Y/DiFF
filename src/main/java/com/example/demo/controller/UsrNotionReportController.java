@@ -41,6 +41,7 @@ public class UsrNotionReportController {
         report.setNickName(member.getNickName());
         report.setEmail(member.getEmail());
 
+        // 로그 출력
         System.out.println("\n===== 🚨 [POST] /notionReport/saveReport =====");
         System.out.println("memberId     = " + memberId);
         System.out.println("nickName     = " + member.getNickName());
@@ -53,8 +54,7 @@ public class UsrNotionReportController {
         // DB 저장 + Notion 페이지 생성
         notionReportService.saveAndCreateReport(report);
 
-        return ResponseEntity.ok(Map.of(
-                "resultCode", "S-1",
+        return ResponseEntity.ok(Map.of("resultCode", "S-1",
                 "message", "신고가 정상적으로 접수되었습니다.",
                 "nickName", member.getNickName()
         ));

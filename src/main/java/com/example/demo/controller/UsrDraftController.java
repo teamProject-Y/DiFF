@@ -63,7 +63,9 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData mkRepo(@RequestBody Map<String, Object> param) {
 
-        Long memberId = (Long) param.get("memberId");
+        Object mid = param.get("memberId");
+        long memberId = (mid instanceof Number) ? ((Number) mid).longValue()
+                : Long.parseLong(String.valueOf(mid));
         String repoName = (String) param.get("repoName");
         String firstCommit = (String) param.get("firstCommit");
         System.out.println(memberId);
@@ -71,7 +73,7 @@ public class UsrDraftController {
         System.out.println(firstCommit);
 
         boolean existsRepoName = repositoryService.existsByMemberIdAndRepoName(memberId, repoName);
-        if(!existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
+        if(existsRepoName) return ResultData.from("F-1", "이미 존재하는 리포지토리 이름");
 
         repositoryService.makeRepository(memberId, repoName, firstCommit);
         int repoId = repositoryService.getLastInsertId();
