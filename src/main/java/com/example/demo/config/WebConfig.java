@@ -10,6 +10,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
+                        "https://diff-front.fly.dev",
                         "https://diff.io.kr",
                         "http://13.124.33.233:3000",
                         "http://localhost:3000",
