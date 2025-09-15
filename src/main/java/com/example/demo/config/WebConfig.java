@@ -10,10 +10,10 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                        "https://diff.io.kr:8080",
+                        "https://diff.io.kr",
                         "http://13.124.33.233:3000",
-                        "http://localhost:3000",   // 개발용
-                        "http://127.0.0.1:3000"    // 또는 이 주소
+                        "http://localhost:3000",
+                        "http://127.0.0.1:3000"
                 )
                 .allowedMethods("*")
                 .allowedHeaders("*")
