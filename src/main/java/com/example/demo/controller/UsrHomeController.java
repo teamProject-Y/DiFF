@@ -10,7 +10,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {
+        "https://diff.io.kr",
+        "https://diff-front.fly.dev",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+})
 @RequiredArgsConstructor
 public class UsrHomeController {
 
