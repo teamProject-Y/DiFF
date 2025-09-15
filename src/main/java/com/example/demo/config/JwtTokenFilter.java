@@ -30,7 +30,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         // 로그인/회원가입은 토큰 검사 생략
         if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login") || path.equals("/upload")
-        || path.equals("/.well-known/**") || path.equals("/actuator/**"))) {
+        || path.equals("/.well-known/**") || path.equals("/actuator/**")) {
             filterChain.doFilter(request, response);
             return;
         }
