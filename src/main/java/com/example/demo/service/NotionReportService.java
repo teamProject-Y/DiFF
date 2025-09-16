@@ -29,13 +29,13 @@ public class NotionReportService {
 
     @Transactional
     public void saveAndCreateReport(NotionReport report) {
-        // 1. DB 저장
+        // DB 저장
         notionReportRepository.saveReport(report);
 
-        // 2. Notion API 호출
+        // Notion API 호출
         String notionPageId = createReport(report);
 
-        // 3. 생성된 pageId 업데이트
+        // 생성된 pageId 업데이트
         notionReportRepository.updatePageId(report.getId(), notionPageId);
     }
 

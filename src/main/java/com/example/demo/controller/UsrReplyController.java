@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,11 +14,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/DiFF/reply")
 public class UsrReplyController {
-
-    private final BeforeActionInterceptor beforeActionInterceptor;
-
-    @Autowired
-    private Rq rq;
 
     @Autowired
     private ReplyService replyService;
@@ -40,14 +33,13 @@ public class UsrReplyController {
     @Autowired
     private MemberService memberService;
 
-    public UsrReplyController(BeforeActionInterceptor beforeActionInterceptor) {
-        this.beforeActionInterceptor = beforeActionInterceptor;
-    }
-
     @PostMapping("/doWrite")
     @ResponseBody
     public ResultData<Integer> doWrite(HttpServletRequest req,
                                        @RequestBody Reply reply) {
+
+        System.out.println("===== 💬✏️ [Post] /api/DiFF/reply/doWrite =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
@@ -57,28 +49,23 @@ public class UsrReplyController {
 
         reply.setMemberId(loginedMemberId);
 
-        System.out.println("\n===== 🐶🐶 [POST] /reply/doWrite =====");
-        System.out.println("로그인 회원 ID : " + loginedMemberId);
-        System.out.println("댓글 대상 글 ID : " + reply.getArticleId());
-        System.out.println("댓글 내용 : " + reply.getBody());
-
         if (reply.getArticleId() == null) {
             return ResultData.from("F-400", "articleId가 필요합니다.");
         } else if (reply.getBody() == null) {
             return ResultData.from("F-400", "내용을 입력하세요.");
         }
 
-        // ✅ 댓글 저장
+        // 댓글 저장
         int wr = replyService.doReplyWrtie(
                 reply.getArticleId(),
                 loginedMemberId,
                 reply.getBody()
         );
-        System.out.println("댓글 저장 완료 wr=" + wr);
+        System.out.println(" 💬✏️ 댓글 저장 완료 wr=" + wr);
 
         // 글 작성자 조회
         Long articleWriter = articleService.getWriterIdByArticleId(reply.getArticleId());
-        System.out.println("글 작성자 ID : " + articleWriter);
+        System.out.println(" 💬✏️ 글 작성자 ID : " + articleWriter);
 
         if (!articleWriter.equals(loginedMemberId)) {
             String title = "새 댓글 알림";
@@ -88,7 +75,7 @@ public class UsrReplyController {
             Member articleWriterMember = memberService.getMemberById(articleWriter);
 
             if (articleWriterMember != null) {
-                // 1) DB에 알림 저장 (항상)
+                // DB에 알림 저장
                 Notification notification = Notification.builder()
                         .memberId(articleWriter)
                         .type("REPLY")
@@ -98,9 +85,9 @@ public class UsrReplyController {
                         .build();
 
                 notificationService.saveNotification(notification);
-                System.out.println("✅ 알림 저장 완료 → 대상:" + articleWriter + ", 메시지:" + body);
+                System.out.println(" 💬✏️✅ 알림 저장 완료 → 대상:" + articleWriter + ", 메시지:" + body);
 
-                // 2) FCM 발송 (알림 ON일 때만)
+                // FCM 발송
                 if (articleWriterMember.isAllowReplyNotification()) {
                     if (articleWriterMember.getFcmToken() != null && !articleWriterMember.getFcmToken().isEmpty()) {
                         String targetToken = articleWriterMember.getFcmToken();
@@ -110,38 +97,34 @@ public class UsrReplyController {
                         data.put("type", "REPLY");
 
                         fcmService.sendMessage(targetToken, title, body, data);
-                        System.out.println("📲 FCM 발송 완료 → 대상:" + articleWriter + ", token:" + targetToken);
+                        System.out.println(" 💬✏️📲 FCM 발송 완료 → 대상:" + articleWriter + ", token:" + targetToken);
                     } else {
-                        System.out.println("⚠️ 글 작성자의 FCM 토큰이 없음 → FCM 발송 불가");
+                        System.out.println(" 💬✏️⚠️ 글 작성자의 FCM 토큰이 없음 → FCM 발송 불가");
                     }
                 } else {
-                    System.out.println("⚠️ 댓글 알림 OFF → FCM 스킵 (DB 저장은 완료)");
+                    System.out.println(" 💬✏️⚠️ 댓글 알림 OFF → FCM 스킵");
                 }
             }
         } else {
-            System.out.println("자기 자신의 글에 댓글 → 알림 스킵");
+            System.out.println(" 💬✏️ 자기 자신의 글에 댓글");
         }
 
         return ResultData.from("S-1", "작성 성공", wr);
     }
-
-
-
 
     @GetMapping("/list")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> replyList(HttpServletRequest req,
                                                     @RequestParam Long articleId) {
 
+        System.out.println("===== 💬🔢️ [Get] /api/DiFF/reply/list =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("📌 댓글 리스트 호출됨, articleId=" + articleId);
-        System.out.println("📌 로그인 유저=" + loginedMemberId);
+        System.out.println("💬🔢️👤 로그인 유저=" + loginedMemberId);
 
         List<Reply> replies = replyService.getReplies(articleId, loginedMemberId);
-
-        System.out.println("💬" + replies.size());
 
         Map<String, Object> result = new HashMap<>();
         result.put("replies", replies);
@@ -154,7 +137,7 @@ public class UsrReplyController {
     @ResponseBody
     public ResultData<Integer> modifyReply(HttpServletRequest req, @RequestBody Reply reply) {
 
-        System.out.println("\n===== 🐶🐶 [POST] /api/DiFF/reply/modify =====");
+        System.out.println("===== 💬✍️ [Post] /api/DiFF/reply/list =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
@@ -185,10 +168,10 @@ public class UsrReplyController {
     public ResultData<Integer> deleteReply(
             HttpServletRequest req, @PathVariable Long id) {
 
+        System.out.println("===== 💬🗑️ [DELETE] /api/DiFF/reply/{id} =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
-
-        System.out.println("\n===== [DELETE] /api/DiFF/reply/" + id + " =====");
 
         Reply reply = replyService.getReplyById(id);
         if (reply == null) {
@@ -210,14 +193,14 @@ public class UsrReplyController {
     @PostMapping("/like/{replyId}")
     public Map<String,Object> likeReply(HttpServletRequest req, @PathVariable Long replyId) {
 
-        System.out.println("post/like/reply 진입");
+        System.out.println("===== 💬👍 [Post] /api/DiFF/reply/like/{replyId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         int row = reactionService.like("reply", replyId, memberId);
 
-        System.out.println("like success: " + row);
+        System.out.println("💬👍 reply like success: " + row);
 
         return Map.of("relType","reply",
                 "relId",replyId,
@@ -229,14 +212,14 @@ public class UsrReplyController {
     @DeleteMapping("/like/{replyId}")
     public Map<String,Object> unlikeReply(HttpServletRequest req, @PathVariable Long replyId) {
 
-        System.out.println("delete/like/reply 진입");
+        System.out.println("===== 💬👎 [Delete] /api/DiFF/reply/like/{replyId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         int row = reactionService.unlike("reply", replyId, memberId);
 
-        System.out.println("unlike success: " + row);
+        System.out.println("💬👎 reply unlike success: " + row);
 
         return Map.of("relType","reply",
                 "relId",replyId,
@@ -248,7 +231,7 @@ public class UsrReplyController {
     @GetMapping("/like/{replyId}")
     public Map<String,Object> getReplyLike(HttpServletRequest req, @PathVariable Long replyId) {
 
-        System.out.println("get/like/reply 진입");
+        System.out.println("===== 💬👍🔢 [Get] /api/DiFF/reply/like/{replyId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();

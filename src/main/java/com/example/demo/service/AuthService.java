@@ -1,6 +1,5 @@
 package com.example.demo.service;
 
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.config.JwtTokenProvider;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,12 +37,12 @@ public class AuthService {
             throw new UsernameNotFoundException("해당 유저를 찾을 수 없습니다. email = " + email);
         }
 
-        // 2. 비밀번호 검증
+        // 비밀번호 검증
         if (!passwordEncoder.matches(loginPw, member.getLoginPw())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다. email = " + email);
         }
 
-        // 3. 토큰 발급 (DB 저장 ❌)
+        // 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(
                 member.getId(), member.getNickName(), member.getEmail()
         );
@@ -75,9 +73,5 @@ public class AuthService {
         auth.setAccessToken(newAccessToken);
         authRepository.updateAccessToken(auth.getId(), newAccessToken);
         return newAccessToken;
-    }
-
-    public String getGithubToken(Long memberId) {
-        return authRepository.getTokenByMemberIdAndProvider(memberId, "github");
     }
 }
