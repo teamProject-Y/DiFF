@@ -22,6 +22,9 @@ public class UsrNotificationController {
 
     @GetMapping("/unread")
     public boolean hasUnreadNotifications(HttpServletRequest req) {
+
+        System.out.println("===== 🔔🫣 [Get] /api/DiFF/notification/unread =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = rq.getLoginedMemberId();
         return notificationService.hasUnread(memberId);
@@ -29,6 +32,9 @@ public class UsrNotificationController {
 
     @GetMapping("/list")
     public List<Notification> getNotifications(HttpServletRequest req) {
+
+        System.out.println("===== 🔔🔢 [Get] /api/DiFF/notification/list =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = rq.getLoginedMemberId();
         return notificationService.getNotifications(memberId);
@@ -36,6 +42,9 @@ public class UsrNotificationController {
 
     @PostMapping("/readAll")
     public void markAllAsRead(HttpServletRequest req) {
+
+        System.out.println("===== 🔔☑️ [Ppst] /api/DiFF/notification/readAll =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = rq.getLoginedMemberId();
         notificationService.markAllAsRead(memberId);
@@ -46,6 +55,9 @@ public class UsrNotificationController {
     public ResultData updateNotificationSetting(@RequestParam String type,
                                                 @RequestParam boolean enabled,
                                                 HttpServletRequest req) {
+
+        System.out.println("===== 🔔⚙️ [Post] /api/DiFF/notification/updateNotificationSetting =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 

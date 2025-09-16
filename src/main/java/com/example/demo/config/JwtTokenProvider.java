@@ -7,8 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
-// 구분선을 기준으로 각각 JWT의 생성, 분석, 유효성 검사 기능을 수행
-
 @Component
 public class JwtTokenProvider {
     @Value("${jwt.secret}")
@@ -17,6 +15,8 @@ public class JwtTokenProvider {
     private Long jwtAccessTokenExpirationTime;
     @Value("${jwt.refresh-token-expiration-time}")
     private Long jwtRefreshTokenExpirationTime;
+
+    // JWT 생성
 
     public String generateAccessToken(Long memberId, String nickName, String email) {
         Date expiryDate = new Date(new Date().getTime() + jwtAccessTokenExpirationTime);
@@ -42,7 +42,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    /// ////////////////////////////////////////////////
+    // JWT 분석
 
     public Long getMemberIdFromToken(String token) {
         return Jwts.parser()
@@ -65,18 +65,18 @@ public class JwtTokenProvider {
                 .setSigningKey(jwtSecretKey)
                 .parseClaimsJws(token)
                 .getBody()
-                .getSubject();     // ✅ subject = email
+                .getSubject();
     }
 
-    public Date getExpirationFromToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(jwtSecretKey)
-                .parseClaimsJws(token)
-                .getBody()
-                .getExpiration();
-    }
+//    public Date getExpirationFromToken(String token) {
+//        return Jwts.parser()
+//                .setSigningKey(jwtSecretKey)
+//                .parseClaimsJws(token)
+//                .getBody()
+//                .getExpiration();
+//    }
 
-    /// //////////////////////////////////////////
+    // JWT 유효성 검사
 
     public Boolean validateToken(String token) {
         try {

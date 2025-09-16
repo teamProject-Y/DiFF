@@ -4,28 +4,9 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.demo.repository.AuthRepository">
 
-    <insert id="saveAuth" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO auth (memberId, accessToken, refreshToken, tokenType, regDate, updateDate)
-        VALUES (#{memberId}, #{accessToken}, #{refreshToken}, #{tokenType}, NOW(), NOW())
-    </insert>
-
     <select id="getLastInsertId" parameterType="long">
         SELECT LAST_INSERT_ID()
     </select>
-
-    <select id="findByMemberId" parameterType="java.lang.Long"
-            resultType="com.example.demo.vo.Auth">
-        SELECT * FROM `auth`
-        WHERE memberId = #{id}
-    </select>
-
-    <update id="updateTokens" parameterType="com.example.demo.vo.Auth">
-        UPDATE auth
-        SET accessToken = #{accessToken},
-            refreshToken = #{refreshToken},
-            updateDate = NOW()
-        WHERE memberId = #{memberId}
-    </update>
 
     <select id="findByRefreshToken" parameterType="String" resultType="com.example.demo.vo.Auth">
         SELECT *

@@ -41,16 +41,16 @@ public class GptService {
                                         "\n" +
                                         "Output example:\n" +
                                         "1. 명확하게 요약한 제목\n" +
-                                        "[FileName.java - methodName]\n" +
-                                        "```java\n" +
-                                        "updated code here\n" +
-                                        "```\n" +
+                                        "\t[FileName.java - methodName]\n" +
+                                        "\t```java\n" +
+                                        "\tupdated code here\n" +
+                                        "\t```\n" +
                                         "\n" +
                                         "2. 명확하게 요약한 제목\n" +
-                                        "[Repository.xml - queryName]\n" +
-                                        "```xml\n" +
-                                        "updated code here\n" +
-                                        "```\n"
+                                        "\t[Repository.xml - queryName]\n" +
+                                        "\t```xml\n" +
+                                        "\tupdated code here\n" +
+                                        "\t```\n"
                         ),
                         Map.of("role", "user", "content", prompt)
                 ),

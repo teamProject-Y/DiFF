@@ -65,49 +65,6 @@
         WHERE repositoryId = #{repositoryId}
     </select>
 
-    <!-- articleId로 분석 결과 조회 -->
-    <select id="findByArticleId" parameterType="long" resultType="com.example.demo.vo.Analysis">
-        SELECT
-            id,
-            repositoryId,
-            memberId,
-            articleId,
-            projectKey,
-            projectName,
-            coverage,
-            bugs,
-            complexity,
-            codeSmells,
-            duplicatedLinesDensity,
-            vulnerabilities,
-            analyzeDate,
-            totalScore
-        FROM analysis
-        WHERE articleId = #{articleId}
-            LIMIT 1
-    </select>
-
-    <select id="findByDiffId" parameterType="long" resultType="com.example.demo.vo.Analysis">
-        SELECT
-            id,
-            repositoryId,
-            memberId,
-            diffId,
-            projectKey,
-            projectName,
-            coverage,
-            bugs,
-            complexity,
-            codeSmells,
-            duplicatedLinesDensity,
-            vulnerabilities,
-            analyzeDate,
-            totalScore
-        FROM analysis
-        WHERE diffId = #{diffId}
-            LIMIT 1
-    </select>
-
     <select id="findByChecksum" resultType="com.example.demo.vo.Analysis">
         SELECT *
         FROM analysis

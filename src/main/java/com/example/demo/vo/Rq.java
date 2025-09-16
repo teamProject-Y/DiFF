@@ -101,37 +101,8 @@ public class Rq {
         resp.getWriter().append(str);
     }
 
-    public void logout() {
-        session.invalidate(); // 전체 세션 무효화
-        this.loginedMember = null;
-        this.isLogined = false;
-        this.loginedMemberId = 0;
-        this.loginedMemberNickName = null;
-    }
-
     public void login(Member member) {
         session.setAttribute("loginedMemberId", member.getId());
-    }
-
-
-    public String historyBackOnView(String msg) {
-        req.setAttribute("msg", msg);
-        req.setAttribute("historyBack", true);
-        return "usr/common/js";
-    }
-
-    public String getCurrentUri() {
-        String currentUri = req.getRequestURI();
-        String queryString = req.getQueryString();
-
-        System.out.println(currentUri);
-        System.out.println(queryString);
-
-        if (currentUri != null && queryString != null) {
-            currentUri += "?" + queryString;
-        }
-
-        return currentUri;
     }
 
 }

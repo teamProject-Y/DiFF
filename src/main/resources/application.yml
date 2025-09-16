@@ -1,0 +1,102 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:8080}
+  tomcat:
+    max-swallow-size: 500MB
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration-time: 3600000
+  refresh-token-expiration-time: 86400000
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope: user:email
+            redirect-uri: "{baseUrl}/login/oauth2/code/github"
+            client-name: GitHub
+
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+
+        provider:
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+mybatis:
+  type-aliases-package: org.example.vo
+  mapper-locations: classpath:/mappers/**/*.xml
+
+logging:
+  level:
+    root: WARN
+    com.example.demo: INFO
+    com.example.demo.controller.GithubController: INFO
+    org.springframework.web: DEBUG
+    org.springframework.web.cors: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.oauth2.client: DEBUG
+    org.springframework.security.oauth2.core.endpoint: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+
+sonarqube:
+  host: ${SONARQUBE_HOST}
+  token: ${SONARQUBE_TOKEN}
+
+openai:
+  api:
+    key: ${OPENAI_KEY}
+
+notion:
+  secret: ${NOTION_SECRET}
+  database-id: ${NOTION_DB}
+  report-secret: ${NOTION_REPORT_SECRET}
+  report-database-id: ${NOTION_REPORT_DB}
+
+fcm:
+  key: ${FIREBASE_KEY}

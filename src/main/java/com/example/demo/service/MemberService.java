@@ -56,7 +56,7 @@ public class MemberService {
         memberRepository.updateEmailVerificationToken(memberId, token, String.valueOf(expiry));
 
         // 인증 메일 발송
-        String link = "http://localhost:8080/api/DiFF/member/verify?token=" + token;
+        String link = "http://diff.io.kr/api/DiFF/member/verify?token=" + token;
         mailService.sendMail(email, "이메일 인증",
                 nickName + "님, 아래 링크를 클릭하여 이메일 인증을 완료하세요:\n" + link);
 
@@ -173,10 +173,6 @@ public class MemberService {
         memberRepository.updateFcmToken(memberId, token);
     }
 
-    public Member getFcmTokenById(Long memberId) {
-        return memberRepository.getFcmTokenById(memberId);
-    }
-
     public void saveFcmToken(Long memberId, String fcmToken) {
         memberRepository.saveFcmToken(memberId, fcmToken);
     }
@@ -203,7 +199,7 @@ public class MemberService {
             System.out.println("🆕 새 resetToken 발급: " + token);
         }
 
-        String link = "http://localhost:3000/DiFF/member/resetPw?token=" + member.getResetToken();
+        String link = "http://diff.io.kr:3000/DiFF/member/resetPw?token=" + member.getResetToken();
         mailService.sendMail(email, "비밀번호 재설정",
                 "비밀번호를 바꾸려면 클릭: " + link + "\n\n만료 시간: " + member.getResetTokenExpiry());
     }

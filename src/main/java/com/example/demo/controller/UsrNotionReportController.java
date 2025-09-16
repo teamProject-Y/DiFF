@@ -26,6 +26,9 @@ public class UsrNotionReportController {
     @PostMapping("/saveReport")
     public ResponseEntity<Map<String, Object>> saveReport(HttpServletRequest req,
                                                           @RequestBody NotionReport report) {
+
+        System.out.println("===== 🚨✉️ [Post] /api/DiFF/notionReport/saveReport =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
@@ -34,22 +37,12 @@ public class UsrNotionReportController {
                     .body(Map.of("message", "로그인이 필요합니다."));
         }
 
-        // 로그인한 회원 정보 가져오기
+        // 로그인한 회원 정보
         Member member = memberService.getMemberById(memberId);
 
         // 신고자 정보 세팅
         report.setNickName(member.getNickName());
         report.setEmail(member.getEmail());
-
-        // 로그 출력
-        System.out.println("\n===== 🚨 [POST] /notionReport/saveReport =====");
-        System.out.println("memberId     = " + memberId);
-        System.out.println("nickName     = " + member.getNickName());
-        System.out.println("email        = " + member.getEmail());
-        System.out.println("articleId    = " + report.getArticleId());
-        System.out.println("title        = " + report.getTitle());
-        System.out.println("body         = " + report.getBody());
-        System.out.println("=============================================\n");
 
         // DB 저장 + Notion 페이지 생성
         notionReportService.saveAndCreateReport(report);

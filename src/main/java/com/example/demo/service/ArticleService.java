@@ -2,7 +2,6 @@ package com.example.demo.service;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import com.example.demo.repository.*;
 import com.example.demo.vo.*;
@@ -34,22 +33,25 @@ public class ArticleService {
 
     @Autowired
     private NotificationService notificationService;
+
     @Autowired
     private HitsRepository hitsRepository;
 
     public Long writeArticle(Long memberId,
                              String title,
                              String body,
+                             boolean isPublic,
                              String checksum,
                              Long repositoryId,
                              Long draftId,
                              Long diffId) {
 
-        // 1. 글 저장
+        // 글 저장
         Article article = Article.builder()
                 .memberId(memberId)
                 .title(title)
                 .body(body)
+                .isPublic(isPublic)
                 .checksum(checksum)
                 .repositoryId(repositoryId)
                 .draftId(draftId)
@@ -60,24 +62,24 @@ public class ArticleService {
         Long articleId = article.getId();
         System.out.println("✅ 새 글 저장됨 → articleId=" + articleId + ", checksum=" + checksum);
 
-        // 2. Analysis repositoryId 동기화
+        // Analysis repositoryId 동기화
         if (checksum != null && repositoryId != null) {
             int updated = analysisRepository.updateRepositoryIdByChecksum(checksum, repositoryId);
             System.out.println("✅ Analysis repositoryId 동기화됨 (rows=" + updated + ")");
         }
 
-        // 3. 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
+        // 드래프트 삭제 (이미 사용된 임시저장글이면 삭제)
         if (draftId != null) {
             draftService.deleteDraft(draftId, memberId);
         }
 
-        // 4. 작성자 정보 가져오기
+        // 작성자 정보 가져오기
         Member writer = memberRepository.getMemberById(memberId);
 
-        // 5. 팔로워 목록 조회
+        // 팔로워 목록 조회
         List<Member> followers = memberRepository.getFollowingList(writer.getId());
 
-        // 6. 팔로워들에게 푸시 알림 + DB 알림 발송
+        // 팔로워들에게 푸시 알림 + DB 알림 발송
         for (Member follower : followers) {
 
             String msg = writer.getNickName() + " has published a new post";
@@ -124,40 +126,20 @@ public class ArticleService {
         return articleRepository.getLastInsertId();
     }
 
-    public int getArticlesCnt(Long repositoryId,
-                              String keyword,
-                              int searchItem,
-                              Long loginedMemberId) {
-        return articleRepository.getArticlesCnt(repositoryId, keyword, searchItem, loginedMemberId);
-    }
-
-
     public List<Article> getArticles(Long repositoryId,
                                      String keyword,
                                      int searchItem,
                                      int limitFrom,
                                      int itemsInAPage,
                                      Long loginedMemberId) {
-//        System.out.println("📌 [getArticles] start: repoId=" + repositoryId + ", pageFrom=" + limitFrom);
 
         List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
-//        System.out.println("📋 [getArticles] articles.size=" + (articles != null ? articles.size() : 0));
 
         for (Article article : articles) {
-//            System.out.println("📝 [getArticles] article id=" + article.getId()
-//                    + ", title=" + article.getTitle()
-//                    + ", checksum=" + article.getChecksum()
-//                    + ", isPublic=" + article.getIsPublic());
 
             Analysis analysis = analysisRepository.findByChecksum(article.getChecksum());
-//            System.out.println("🔍 [getArticles] analysis for checksum=" + article.getChecksum()
-//                    + " → " + (analysis != null ? "FOUND" : "null"));
 
             if (analysis != null) {
-//                System.out.println("   - coverage=" + analysis.getCoverage()
-//                        + ", bugs=" + analysis.getBugs()
-//                        + ", smells=" + analysis.getCodeSmells());
-
                 analysis.setGradeCoverage(SonarGradeUtil.gradeCoverage(analysis.getCoverage()));
                 analysis.setGradeReliability(SonarGradeUtil.gradeReliability(analysis.getBugs()));
                 analysis.setGradeMaintainability(SonarGradeUtil.gradeMaintainability(analysis.getCodeSmells()));
@@ -166,14 +148,10 @@ public class ArticleService {
                 analysis.setGradeComplexity(SonarGradeUtil.gradeComplexity(analysis.getComplexity()));
 
                 article.setAnalysis(analysis);
-//                System.out.println("✅ [getArticles] analysis set with grades: " + analysis);
             }
         }
-
         return articles;
     }
-
-
 
     public List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId) {
         return articleRepository.getTrendingArticles(count, days, loginedMemberId);

@@ -60,7 +60,7 @@ public class NotionInquiryService {
                 )
         );
 
-        // 🚨 요청 JSON 로그 출력
+        // 요청 JSON 로그 출력
         try {
             String jsonLog = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(requestBody);
             System.out.println("===== 📨 Notion API 요청 JSON (Inquiry) =====");

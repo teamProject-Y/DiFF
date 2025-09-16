@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.example.demo.repository.DraftRepository;
-import com.example.demo.repository.RepositoryRepository;
 import com.example.demo.vo.Draft;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,6 @@ public class DraftService {
         return draftRepository.getDraftsByMember(memberId);
     }
 
-
     public Draft getDraftById(Long id) {
         return draftRepository.getDraftById(id);
     }
@@ -48,7 +46,6 @@ public class DraftService {
             }
             draftRepository.updateDraft(draft);
 
-//            draftRepository.updateDraft(draft);
         } else {
             System.out.println("🛠️ [Service] 새 draft 인서트 실행");
             System.out.println("👉 draft.memberId = " + draft.getMemberId());

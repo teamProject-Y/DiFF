@@ -45,11 +45,10 @@
     <insert id="writeArticle" parameterType="com.example.demo.vo.Article"
             useGeneratedKeys="true" keyProperty="id">
         INSERT INTO article
-        (memberId, repositoryId, title, body, checksum, diffId, regDate, updateDate)
+        (memberId, repositoryId, title, body, isPublic, checksum, diffId, regDate, updateDate)
         VALUES
-            (#{memberId}, #{repositoryId}, #{title}, #{body}, #{checksum}, #{diffId}, NOW(), NOW())
+            (#{memberId}, #{repositoryId}, #{title}, #{body}, #{isPublic}, #{checksum}, #{diffId}, NOW(), NOW())
     </insert>
-
 
     <select id="getArticleById" parameterType="long" resultType="com.example.demo.vo.Article">
         SELECT A.*, M.nickName AS extra__writer
@@ -68,7 +67,6 @@
             isPublic = #{isPublic}
         WHERE id = #{id}
     </update>
-
 
     <delete id="deleteArticle" parameterType="map">
         DELETE FROM article
