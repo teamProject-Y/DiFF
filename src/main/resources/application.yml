@@ -37,13 +37,13 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
-            redirect-uri: "{baseUrl}/login/oauth2/code/github"
+            redirect-uri: "https://api.diff.io.kr/login/oauth2/code/github"
             client-name: GitHub
 
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            redirect-uri: "https://api.diff.io.kr/login/oauth2/code/google"
 
         provider:
           github:
