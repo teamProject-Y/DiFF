@@ -17,7 +17,6 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // 권한 필요 없으면 빈 리스트
         return Collections.emptyList();
     }
 

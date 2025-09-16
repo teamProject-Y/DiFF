@@ -21,8 +21,8 @@ public class UsrHomeController {
 
     @GetMapping("/api/DiFF/home/main")
     public Map<String, String> showMain() {
-        System.err.println("home come in");
-        return Map.of("text", "Spring에서 온 메인 메시지!");
+        System.out.println("===== 🏠 [Get] /api/DiFF/home/main =====");
+        return Map.of("text", "🏠 home request is successful ");
     }
 
     @RequestMapping("/")

@@ -23,11 +23,11 @@ import java.util.Map;
 @RequestMapping("/api/DiFF/auth")
 public class UsrAuthController {
 
+    private final Rq rq;
+
     private final AuthService authService;
 
     private final OAuthAccountService oAuthAccountService;
-
-    private final Rq rq;
 
     private final MemberService memberService;
 
@@ -38,6 +38,7 @@ public class UsrAuthController {
     /** 토큰갱신 API */
     @GetMapping("/refresh")
     public ResponseEntity<Object> refreshToken(@RequestHeader("REFRESH_TOKEN") String refreshToken) {
+        System.out.println("===== 🍪 [Get] /api/DiFF/auth/refresh =====");
         String newAccessToken = this.authService.refreshToken(refreshToken);
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
@@ -48,7 +49,7 @@ public class UsrAuthController {
             @PathVariable String provider,
             HttpServletResponse response
     ) throws IOException {
-        System.out.println("🐞🐞 link/" +  provider + "진입");
+        System.out.println("===== 🔗 [Get] /api/DiFF/auth/link/{provider} =====");
         String redirectUrl = switch (provider.toLowerCase()) {
             case "github" -> "/oauth2/authorization/github";
             case "google" -> "/oauth2/authorization/google";
@@ -60,6 +61,7 @@ public class UsrAuthController {
 
     @GetMapping("/linked")
     public ResponseEntity<?> getLinked() {
+        System.out.println("===== 🔗🐈‍⬛ [Get] /api/DiFF/auth/linked =====");
 
         Long memberId = rq.getLoginedMemberId();
         if (memberId == null) {
@@ -71,51 +73,53 @@ public class UsrAuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ResultData> doLogin(@RequestBody Member member) {
+
+        System.out.println("===== 🔐👤 [Post] /api/DiFF/auth/login =====");
         String email = member.getEmail();
         String loginPw = member.getLoginPw();
 
-        System.out.println("📌 로그인 시도: email=" + email + ", pw=" + loginPw);
+        System.out.println("🔐👤 로그인 시도: email=" + email + ", pw=" + loginPw);
 
-        // 1. 유효성 체크
+        // 유효성 체크
         if (Ut.isEmpty(email) || !email.contains("@")) {
-            System.out.println("❌ 잘못된 이메일 입력: " + email);
+            System.out.println("🔐👤❌ 잘못된 이메일 입력: " + email);
             return ResponseEntity.badRequest().body(ResultData.from("F-1", "이메일을 바르게 입력해주세요"));
         }
         if (Ut.isEmpty(loginPw)) {
-            System.out.println("❌ 비밀번호 없음 (email=" + email + ")");
+            System.out.println("🔐👤❌ 비밀번호 없음 (email=" + email + ")");
             return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 입력해주세요"));
         }
 
-        // 2. 회원 조회
+        // 회원 조회
         Member found = memberService.getMemberByEmail(email);
         if (found == null) {
-            System.out.println("❌ 존재하지 않는 계정: " + email);
+            System.out.println("🔐👤❌ 존재하지 않는 계정: " + email);
             return ResponseEntity.status(401).body(ResultData.from("F-3", "존재하지 않는 계정입니다."));
         }
-        System.out.println("✅ 회원 조회 성공: id=" + found.getId()
+        System.out.println("🔐👤✅ 회원 조회 성공: id=" + found.getId()
                 + ", nick=" + found.getNickName()
                 + ", isVerified=" + found.getIsVerified());
 
-        // 3. 이메일 인증 여부 확인
+        // 이메일 인증 여부 확인
         if (!Boolean.TRUE.equals(found.getIsVerified())) {
-            System.out.println("❌ 이메일 미인증 계정: id=" + found.getId() + ", email=" + found.getEmail());
+            System.out.println("🔐👤❌ 이메일 미인증 계정: id=" + found.getId() + ", email=" + found.getEmail());
             return ResponseEntity.status(403).body(ResultData.from("F-5", "이메일 인증이 필요합니다."));
         }
 
-        // 4. 비밀번호 매칭
+        // 비밀번호 매칭
         if (!passwordEncoder.matches(loginPw, found.getLoginPw())) {
-            System.out.println("❌ 비밀번호 불일치: email=" + email);
+            System.out.println("🔐👤❌ 비밀번호 불일치: email=" + email);
             return ResponseEntity.status(401).body(ResultData.from("F-4", "비밀번호가 일치하지 않습니다."));
         }
 
-        // 5. 토큰 발급
+        // 토큰 발급
         String accessToken = jwtTokenProvider.generateAccessToken(found.getId(), found.getNickName(), found.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(found.getId(), found.getNickName(), found.getEmail());
-        System.out.println("🎟️ 토큰 발급 성공: id=" + found.getId()
+        System.out.println("🔐👤🎟️ 토큰 발급 성공: id=" + found.getId()
                 + ", email=" + email
                 + ", accessToken=" + accessToken);
 
-        // 6. 응답
+        // 응답
         return ResponseEntity.ok(
                 ResultData.from("S-1", found.getNickName() + "님 환영합니다.",
                         "accessToken", accessToken,
@@ -125,6 +129,8 @@ public class UsrAuthController {
 
     @PostMapping("/join")
     public ResponseEntity<ResultData> doJoin(@RequestBody Member member) {
+
+        System.out.println("===== 👤🆕 [Post] /api/DiFF/auth/join =====");
         if (Ut.isEmpty(member.getLoginPw())) {
             return ResponseEntity.badRequest().body(ResultData.from("F-2", "비밀번호를 작성하세요."));
         }
@@ -164,7 +170,6 @@ public class UsrAuthController {
             return ResponseEntity.badRequest().body(ResultData.from("F-400", "Password does not match."));
         }
 
-
         return ResponseEntity.ok(ResultData.from("S-1",
                 member.getNickName() + " \n" +
                         "Your registration has been completed. Please verify your email address."));
@@ -172,6 +177,9 @@ public class UsrAuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+
+        System.out.println("===== 🍪🆕 [Post] /api/DiFF/auth/refresh =====");
+
         String refreshToken = body.get("refreshToken");
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh Token invalid");

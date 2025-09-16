@@ -19,17 +19,17 @@ public class SseController {
 
     private final SseEmitters sseEmitters;
 
-    // "/sse/connect"에 EventSource로 접속
     @GetMapping(value = "/connect", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter connect(@AuthenticationPrincipal Member member) {
+
+        System.out.println("===== 💬 [Get] //sse/connect =====");
+
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // 타임아웃 무제한
-        // 로그인한 userId로 등록
 
         sseEmitters.add((long) member.getId(), emitter);
 
         // 초기 연결 확인 이벤트
         try {
-            // 초깃값으로 "연결됨!" 이벤트 전송
             emitter.send(SseEmitter.event()
                     .name("connect")
                     .data("연결됨!"));

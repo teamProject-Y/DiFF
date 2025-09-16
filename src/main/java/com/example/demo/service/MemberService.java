@@ -173,10 +173,6 @@ public class MemberService {
         memberRepository.updateFcmToken(memberId, token);
     }
 
-    public Member getFcmTokenById(Long memberId) {
-        return memberRepository.getFcmTokenById(memberId);
-    }
-
     public void saveFcmToken(Long memberId, String fcmToken) {
         memberRepository.saveFcmToken(memberId, fcmToken);
     }

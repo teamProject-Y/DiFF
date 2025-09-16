@@ -27,8 +27,6 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
     @Autowired
     private Rq rq;
-    @Autowired
-    private OAuthAccountRepository oAuthAccountRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
