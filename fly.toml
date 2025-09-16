@@ -1,0 +1,19 @@
+app = 'diff'                # 앱 이름
+primary_region = 'nrt'      # 기본 리전 (지금 도쿄로 잘 잡혔네요)
+
+[http_service]
+internal_port = 8080      # 컨테이너에서 열릴 포트 (Spring Boot 기본값 8080)
+force_https = true        # HTTP 요청을 HTTPS로 자동 리다이렉트
+
+auto_stop_machines = 'false'  # 자동 정지 끄기
+
+auto_start_machines = true
+min_machines_running = 0  # 유휴 시 꺼지고 요청 들어오면 자동으로 켜짐
+processes = ['app']       # 실행 프로세스 이름
+
+[[vm]]
+memory = '1gb'            # VM 메모리 1GB
+cpu_kind = 'shared'       # 공유 CPU
+cpus = 1                  # CPU 1개
+auto_stop_machines = false   # 자동 정지 끄기
+auto_start_machines = true   # 꺼져있을 때 요청 오면 켜기 (이건 그대로 두는 게 좋아요)
