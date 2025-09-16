@@ -1,6 +1,5 @@
 package com.example.demo.controller;
 
-import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
