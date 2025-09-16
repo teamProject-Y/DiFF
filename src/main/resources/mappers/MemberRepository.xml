@@ -113,19 +113,6 @@
           AND delStatus = 0
     </update>
 
-    <!-- 회원 수정 -->
-    <update id="modifyMember" parameterType="map">
-        UPDATE `member`
-        <set>
-            <if test="loginId != null and loginId != ''">loginId = #{loginId},</if>
-            <if test="loginPw != null and loginPw != ''">loginPw = #{loginPw},</if>
-            <if test="name != null and name != ''">`name` = #{name},</if>
-            <if test="nickName != null and nickName != ''">nickName = #{nickName},</if>
-            <if test="email != null and email != ''">email = #{email},</if>
-        </set>
-        WHERE id = #{loginedMemberId} AND delStatus = 0
-    </update>
-
     <!-- 닉네임 중복 검사 -->
     <select id="countByNickName" parameterType="string" resultType="int">
         SELECT COUNT(*) FROM member WHERE nickName = #{nickName}

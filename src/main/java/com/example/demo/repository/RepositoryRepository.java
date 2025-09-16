@@ -8,6 +8,7 @@ import java.util.Map;
 
 @Mapper
 public interface RepositoryRepository {
+
     void makeRepository(Long memberId, String name, String lastRqCommit);
 
     List<Repository> getRepositoriesByMemberId(Long memberId);

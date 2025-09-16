@@ -24,6 +24,9 @@ public class UsrNotionInquiryController {
 
     @PostMapping("/saveInquiry")
     public ResponseEntity<Map<String, Object>> saveInquiry(HttpServletRequest req, @RequestBody NotionInquiry inquiry) {
+
+        System.out.println("===== ❓✉️ [Post] /api/DiFF/notionInquiry/saveInquiry =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 

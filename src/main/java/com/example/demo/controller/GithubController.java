@@ -5,7 +5,6 @@ import com.example.demo.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +34,6 @@ import java.nio.file.StandardOpenOption;
 @RequestMapping("/api/DiFF/github")
 public class GithubController {
 
-    @Autowired
-    private Rq rq;
-
     private final WebClient github;
 
     private final MemberService memberService;
@@ -48,15 +44,13 @@ public class GithubController {
 
     private final GptService gptService;
 
-    private final RepositoryService repositoryService;
-
     private final NotificationService notificationService;
 
     private final FcmService fcmService;
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GithubController.class);
 
-    // 요청 단위 스텝 로그 누적용
+    // 요청 단위 스텝 로그 누적
     private static final class StepLog {
         final String reqId;
         final java.util.List<String> steps = new java.util.ArrayList<>();
@@ -64,7 +58,7 @@ public class GithubController {
         void add(String msg) {
             String line = "[" + reqId + "] " + msg;
             steps.add(line);
-            log.info(line);              // SLF4J로 즉시 출력(버퍼링 이슈 회피)
+            log.info(line);
         }
         void dumpSummary() {
             log.info("[{}] ----- SUMMARY START -----", reqId);
@@ -72,12 +66,12 @@ public class GithubController {
             log.info("[{}] ----- SUMMARY END -----", reqId);
         }
     }
+
     private StepLog newStepLog() {
         return new StepLog(java.util.UUID.randomUUID().toString().substring(0,8));
     }
 
-
-    // util
+    // util: allowed file
     private static final String[] ALLOWED_EXTENSIONS = {
             ".mjs", ".jsx", ".java", ".ts", ".tsx", ".jsp", ".js",
             ".py", ".c", ".cs", ".cpp", ".php", ".go", ".rs",
@@ -100,6 +94,7 @@ public class GithubController {
 
     @GetMapping("/repos")
     public ResultData<List<Repository>> listRepos(HttpServletRequest req) {
+        System.out.println("===== 😸 [Get] /api/DiFF/github/repos =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Member member = memberService.getMemberById((long) rq.getLoginedMemberId());
@@ -109,7 +104,7 @@ public class GithubController {
             return ResultData.from("F-1", "깃허브 연동(토큰) 없음");
         }
 
-        System.out.println("🐳🐳 github token: " + token);
+        System.out.println("😸😸 github token: " + token);
 
         List<Map<String, Object>> res;
 
@@ -162,8 +157,8 @@ public class GithubController {
             Object login = ((Map<?, ?>) m.get("owner")).get("login");
             r.setOwner(login != null ? login.toString() : null);
 
-            System.out.println("githubOwner: " + r.getGithubOwner());
-            System.out.println("githubName: " + r.getGithubName());
+            System.out.println("😸 githubOwner: " + r.getGithubOwner());
+            System.out.println("😸 githubName: " + r.getGithubName());
             return r;
         }).toList();
 
@@ -181,14 +176,7 @@ public class GithubController {
             @RequestParam(required = false, defaultValue = "10") int perPage
     ) {
 
-        System.out.println("rq memberId = " + rq.getLoginedMemberId());
-        System.out.println("owner: " + owner);
-        System.out.println("repoName: " + repoName);
-        System.out.println("page: " + page);
-        System.out.println("perPage: " + perPage);
-
-        Rq raq = (Rq) req.getAttribute("rq");
-        System.out.println("raq memberId = " + raq.getLoginedMemberId());
+        System.out.println("===== 😹 [Get] /api/DiFF/github/commits =====");
 
         String token = oAuthAccountService.findGithubAccessTokenByMemberId(rq.getLoginedMemberId());
 
@@ -255,19 +243,19 @@ public class GithubController {
             return ResultData.from("S-1", "커밋 조회 성공", "commits", commits);
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Unauthorized e) {
-            System.out.println("github error 401: " + e.getMessage());
+            System.out.println("😹 github error 401: " + e.getMessage());
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.NotFound e) {
-            System.out.println("github error 404: " + e.getMessage());
+            System.out.println("😹 github error 404: " + e.getMessage());
             return ResultData.from("F-404", "No search results found.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Forbidden e) {
-            System.out.println("github error 403: " + e.getMessage());
+            System.out.println("😹 github error 403: " + e.getMessage());
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트리밋 초과.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.out.println("github error 2: " + e.getMessage());
+            System.out.println("😹 github error 2: " + e.getMessage());
             return ResultData.from("F-2", "깃허브 API 오류: " + e.getMessage());
         } catch (Exception e) {
-            System.out.println("github error 2-2: " + e.getMessage());
+            System.out.println("😹 github error 2-2: " + e.getMessage());
             return ResultData.from("F-3", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
@@ -280,8 +268,9 @@ public class GithubController {
             @PathVariable String repoName,
             @PathVariable String sha
     ) {
-        System.out.println("========= mkDraftByCommit (create draft blocking) ==========");
-        StepLog step = newStepLog(); // SLF4J + 요약 로그
+        System.out.println("===== 🙀 [Get] /api/DiFF/github/commit/{repoId}/{owner}/{repoName}/{sha} =====");
+
+        StepLog step = newStepLog(); // SLF4J 요약 로그
         long tStart = System.nanoTime();
 
         step.add("req owner=" + owner + ", repo=" + repoName + ", sha=" + sha);
@@ -297,7 +286,7 @@ public class GithubController {
         }
 
         try {
-            // 1) 커밋 조회
+            // 커밋 조회
             long t1 = System.nanoTime();
             step.add("✅ 1. 커밋 조회 시작");
             Map<String, Object> raw = github.get()
@@ -319,7 +308,7 @@ public class GithubController {
             }
             step.add(String.format("✅ 2. 깃허브 응답 있음 (%.1f ms)", (System.nanoTime() - t1)/1e6));
 
-            // 2) diff 조립(허용 파일만)
+            // diff 조립
             List<Map<String, Object>> rawFiles = (List<Map<String, Object>>) raw.getOrDefault("files", List.of());
             StringBuilder diff = new StringBuilder();
             int patchedFiles = 0;
@@ -335,8 +324,7 @@ public class GithubController {
             }
             step.add("ℹ️ diff 조립: files=" + rawFiles.size() + ", patchedFiles(allowed)=" + patchedFiles + ", diffLen=" + diff.length());
 
-            // 3) 리포 매칭
-//            Long repoId = repositoryService.getRepoIdByMemberIdAndGithubRepoName(member.getId(), repoName);
+            // 리포 매칭
             if (repoId == null) {
                 step.add("❌ 3. 매칭된 리포 없음 (memberId=" + member.getId() + ", repoName=" + repoName + ")");
                 step.dumpSummary();
@@ -344,7 +332,7 @@ public class GithubController {
             }
             step.add("✅ 3. 리포 매칭 됨 repoId=" + repoId);
 
-            // 4) Draft 생성
+            // Draft 생성
             Draft draft = new Draft();
             draft.setRepositoryId(repoId);
             draft.setMemberId(member.getId());
@@ -354,7 +342,7 @@ public class GithubController {
             draftService.saveDraft(draft);
             step.add("✅ 4. draft 기본값 생성 draftId=" + draft.getId());
 
-            // 5) ZIP 다운로드 → 빌드 ZIP 생성 → 업로드
+            // ZIP 다운로드 → 빌드 ZIP 생성 → 업로드
             Path zipPath = null;
             Path builtZip = null;
             boolean downloadOk = false, buildOk = false, uploadOk = false;
@@ -401,7 +389,6 @@ public class GithubController {
                     step.add(String.format("✅ 업로드 완료 (%.1f ms)", (System.nanoTime() - tu)/1e6));
                 }
             } catch (org.springframework.web.reactive.function.client.WebClientResponseException we) {
-                // zipball 3xx/4xx/5xx 같은 경우
                 step.add("❌ zip/build/upload 중 WebClient 오류: " + we.getStatusCode().value() + " " + we.getStatusText());
                 log.error("zip/build/upload WebClient error", we);
             } catch (Exception zerr) {
@@ -434,10 +421,9 @@ public class GithubController {
                     step.add("ℹ️ builtZip == null (빌드 실패 가능)");
                 }
             }
-
             step.add("✅ 5. zip/build/upload 종료: downloadOk=" + downloadOk + ", buildOk=" + buildOk + ", uploadOk=" + uploadOk);
 
-            // 6) GPT 초안 생성/저장
+            // GPT 초안 생성/저장
             long tg = System.nanoTime();
             String draftBody = gptService.makeDraft(
                     diff.toString(),
@@ -449,7 +435,7 @@ public class GithubController {
             draftService.saveDraft(draft);
             step.add(String.format("✅ 6. 초안 저장 성공 draftId=%d (%.1f ms)", draft.getId(), (System.nanoTime() - tg)/1e6));
 
-            // 7) 알림 + FCM
+            // 알림 + FCM
             if (member != null) {
                 String message = "Your draft has been created.";
                 Notification notification = Notification.builder()
@@ -508,20 +494,20 @@ public class GithubController {
             @RequestParam("url") String url
     ) {
 
-        System.out.println("======== validate 진입 ========");
-        // 1) URL에서 owner/repo 추출
+        System.out.println("===== 😾 [Get] /api/DiFF/github/validate =====");
+        // URL에서 owner/repo 추출
         String[] or = parseOwnerRepoFromUrl(url);
         if (or == null) {
-            System.out.println("F-400 " + "유효하지 않은 GitHub 리포지토리 URL입니다. 예) https://github.com/{owner}/{repo}");
+            System.out.println("😾 F-400 " + "유효하지 않은 GitHub 리포지토리 URL");
             return ResultData.from("F-400", "유효하지 않은 GitHub 리포지토리 URL입니다. 예) https://github.com/{owner}/{repo}");
         }
         String owner = or[0];
         String repoName = or[1];
 
-        // 2) 토큰 확인
+        // 토큰 확인
         String token = oAuthAccountService.findGithubAccessTokenByMemberId(rq.getLoginedMemberId());
         if (token == null || token.isBlank()) {
-            System.out.println("F-1 " + "깃허브 연동(토큰) 없음");
+            System.out.println("😾 F-1 " + "깃허브 연동(토큰) 없음");
             return ResultData.from("F-1", "깃허브 연동(토큰) 없음");
         }
 
@@ -530,7 +516,7 @@ public class GithubController {
         data.put("name", repoName);
         data.put("requestedUrl", url);
 
-        // 3) 토큰으로 조회
+        // 토큰으로 조회
         try {
             Map<String, Object> authed = github.get()
                     .uri(uriBuilder -> uriBuilder.path("/repos/{owner}/{repo}").build(owner, repoName))
@@ -545,11 +531,10 @@ public class GithubController {
                     .block();
 
             if (authed == null) {
-                System.out.println("F-2 " + "깃허브 API 응답이 비었습니다.");
+                System.out.println("😾 F-2 " + "깃허브 API 응답 없음");
                 return ResultData.from("F-2", "깃허브 API 응답이 비었습니다.");
             }
 
-            // 200 OK → 존재 + 토큰으로 접근 가능
             boolean isPrivate = Boolean.TRUE.equals(authed.get("private"));
 
             // push 권한 확인
@@ -561,28 +546,25 @@ public class GithubController {
             data.put("canPush", canPush);
             data.put("visibility", isPrivate ? "private" : "public");
             data.put("id", authed.get("id"));
-//            data.put("htmlUrl", authed.get("html_url"));
             data.put("defaultBranch", authed.get("default_branch"));
 
             if (!canPush) {
-                System.out.println("F-NO-PUSH " + "푸시 권한이 없습니다.");
+                System.out.println("😾 F-NO-PUSH " + "푸시 권한이 없음");
                 return ResultData.from("F-NO-PUSH", "푸시 권한이 없습니다. 이 리포지토리는 사용할 수 없습니다.", data);
             }
 
-            // push 가능 → 성공
             if (isPrivate) {
-                System.out.println("S-1 " + "리포지토리 인증 완료(비공개, 푸시 가능) " + data);
+                System.out.println("😾 S-1 " + "리포지토리 인증 완료(비공개, 푸시 가능) " + data);
                 return ResultData.from("S-1", "리포지토리 인증 완료(비공개, 푸시 가능).", data);
             } else {
-                System.out.println("S-2 " + "리포지토리 인증 완료(공개, 푸시 가능) " + data);
+                System.out.println("😾 S-2 " + "리포지토리 인증 완료(공개, 푸시 가능) " + data);
                 return ResultData.from("S-2", "리포지토리 인증 완료(공개, 푸시 가능).", data);
             }
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Unauthorized e) {
-            System.out.println("F-401 " + "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
+            System.out.println("😾 F-401 " + "깃허브 인증 실패(토큰 만료/폐기).");
             return ResultData.from("F-401", "깃허브 인증 실패(토큰 만료/폐기). 다시 연동하세요.");
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.NotFound e) {
-            // 404 → 토큰으로는 404. 공개 여부 확인(비인증 1회)
             try {
                 Map<String, Object> unauth = github.get()
                         .uri(uriBuilder -> uriBuilder.path("/repos/{owner}/{repo}").build(owner, repoName))
@@ -605,12 +587,12 @@ public class GithubController {
                     data.put("defaultBranch", unauth.get("default_branch"));
                     data.put("canPush", false);
 
-                    System.out.println("F-NO-PUSH " + "공개 리포이지만 푸시 권한이 없습니다.");
+                    System.out.println("😾 F-NO-PUSH " + "공개 리포이지만 푸시 권한이 없습니다.");
                     return ResultData.from("F-NO-PUSH", "공개 리포지토리이지만 푸시 권한이 없어 사용할 수 없습니다.", data);
                 }
 
-                // unauth == null → 응답 비었음
-                System.out.println("F-2 " + "깃허브 API 응답이 비었습니다.");
+                // 응답 비었음
+                System.out.println("😾 F-2 " + "깃허브 API 응답이 비었습니다.");
                 return ResultData.from("F-2", "깃허브 API 응답이 비었습니다.");
 
             } catch (org.springframework.web.reactive.function.client.WebClientResponseException.NotFound e2) {
@@ -618,24 +600,24 @@ public class GithubController {
                 data.put("exists", false);
                 data.put("accessibleWithToken", false);
                 data.put("visibility", "unknown");
-                System.out.println("F-404 " + "리포지토리가 존재하지 않거나 비공개이며 권한이 없습니다. " + data);
+                System.out.println("😾 F-404 " + "리포지토리가 존재하지 않거나 비공개이며 권한이 없습니다. " + data);
                 return ResultData.from("F-404", "리포지토리가 존재하지 않거나 비공개이며 권한이 없습니다.", data);
             } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Forbidden e2) {
-                System.out.println("F-403 " + "비인증 호출 레이트 리밋 초과. 잠시 후 다시 시도하세요.");
+                System.out.println("😾 F-403 " + "비인증 호출 레이트 리밋 초과. 잠시 후 다시 시도하세요.");
                 return ResultData.from("F-403", "비인증 호출 레이트 리밋 초과. 잠시 후 다시 시도하세요.");
             } catch (Exception e2) {
-                System.out.println("F-2 " + "공개 여부 확인 실패: " + e2.getMessage());
+                System.out.println("😾 F-2 " + "공개 여부 확인 실패: " + e2.getMessage());
                 return ResultData.from("F-2", "공개 여부 확인 실패: " + e2.getMessage());
             }
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException.Forbidden e) {
-            System.out.println("F-403 " + "접근 권한 부족 또는 레이트 리밋 초과.");
+            System.out.println("😾 F-403 " + "접근 권한 부족 또는 레이트 리밋 초과.");
             return ResultData.from("F-403", "접근 권한 부족 또는 레이트 리밋 초과.", null);
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.out.println("F-2 " + "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
+            System.out.println("😾 F-2 " + "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
             return ResultData.from("F-2", "깃허브 API 오류: " + e.getStatusCode().value() + " " + e.getStatusText());
         } catch (Exception e) {
-            System.out.println("F-2 " + "깃허브 API 호출 실패: " + e.getMessage());
+            System.out.println("😾 F-2 " + "깃허브 API 호출 실패: " + e.getMessage());
             return ResultData.from("F-2", "깃허브 API 호출 실패: " + e.getMessage());
         }
     }
@@ -684,7 +666,7 @@ public class GithubController {
         }
     }
 
-    // ====== 스트리밍: zipball을 임시 파일에 저장 (리다이렉트 포함) ======
+    // 스트리밍: zipball을 임시 파일에 저장
     private Path downloadZipballToTempFile(String owner, String repo, String ref, String token) throws Exception {
         Path tmp = Files.createTempFile("zipball-", ".zip");
 
@@ -696,7 +678,6 @@ public class GithubController {
                     h.setBearerAuth(token);
                     h.set(HttpHeaders.USER_AGENT, "DiFF-App/1.0");
                     h.set("X-GitHub-Api-Version", "2022-11-28");
-                    // 1차 호출은 JSON 리다이렉트만 받는다
                     h.set(HttpHeaders.ACCEPT, "application/vnd.github+json");
                 })
                 .exchangeToMono(r -> {
@@ -704,7 +685,7 @@ public class GithubController {
                         String loc = r.headers().asHttpHeaders().getFirst(HttpHeaders.LOCATION);
                         if (loc == null) return r.createException().flatMap(Mono::error);
 
-                        // 2차: 실제 ZIP 다운로드 (codeload) - octet-stream으로 스트리밍 저장
+                        // 실제 ZIP 다운로드 (codeload) - octet-stream으로 스트리밍 저장
                         return WebClient.builder()
                                 .defaultHeader(HttpHeaders.USER_AGENT, "DiFF-App/1.0")
                                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token) // private repo 대비
@@ -718,7 +699,6 @@ public class GithubController {
                                         StandardOpenOption.TRUNCATE_EXISTING))
                                 .then(Mono.just(tmp));
                     } else if (r.statusCode().is2xxSuccessful()) {
-                        // 드물게 본문을 직접 줄 수도 있음 → 그대로 스트리밍
                         Flux<DataBuffer> body = r.bodyToFlux(DataBuffer.class);
                         return DataBufferUtils.write(body, tmp, StandardOpenOption.TRUNCATE_EXISTING)
                                 .then(Mono.just(tmp));
@@ -726,7 +706,6 @@ public class GithubController {
                         return r.createException().flatMap(Mono::error);
                     }
                 })
-                // 415 Unsupported Media Type이면 codeload 직접 호출로 폴백
                 .onErrorResume(
                         org.springframework.web.reactive.function.client.WebClientResponseException.UnsupportedMediaType.class,
                         e -> {
@@ -755,13 +734,13 @@ public class GithubController {
         return saved;
     }
 
-    // ====== /upload 로 파일 멀티파트 전송 ======
+    // /upload 로 파일 멀티파트 전송
     private void postZipFileToUpload(Path zipPath, Map<String, Object> meta) throws Exception {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("file", new FileSystemResource(zipPath));
         parts.add("meta", new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(meta));
 
-        String resp = WebClient.create("http://localhost:8080")
+        String resp = WebClient.create("http://api.diff.io.kr")
                 .post()
                 .uri("/upload")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -770,21 +749,21 @@ public class GithubController {
                 .bodyToMono(String.class)
                 .block();
 
-        System.out.println("upload response: " + resp);
+        System.out.println("postZipFileToUpload response: " + resp);
     }
 
-    // ====== (A) ZIP → 언팩 → Docker 빌드 → 산출물 포함 새 ZIP 생성 ======
+    // ZIP → 언팩 → Docker 빌드 → 산출물 포함 새 ZIP 생성
     private Path buildZipForUpload(Path inputZip, Long repositoryId, String sha) throws Exception {
         final String dockerBin = Optional.ofNullable(System.getenv("DOCKER_BIN")).orElse("docker");
         final long timeoutSeconds = Optional.ofNullable(System.getenv("BUILD_TIMEOUT_SECONDS"))
                 .map(Long::parseLong).orElse(900L);
 
-        // 1) 워크스페이스
+        // 워크스페이스
         Path workspace = Files.createTempDirectory("diff-ws-" + repositoryId + "-" + sha + "-");
         Path srcDir = workspace.resolve("src");
-        unzipGitHubZip(inputZip, srcDir); // GitHub zipball 최상위 디렉토리 제거하여 전개
+        unzipGitHubZip(inputZip, srcDir);
 
-        // 2) 빌드 타입 감지 → 플랜 구성 → Docker 빌드/테스트/커버리지(옵션)
+        // 빌드 타입 감지 → 플랜 구성 → Docker 빌드/테스트/커버리지(옵션)
         BuildType bt = detectBuildType(srcDir);
         BuildPlan plan = makeBuildPlanForBuildOnly(bt, srcDir);
         ExecResult buildRes = runDocker(dockerBin, plan.image, srcDir, plan.env, plan.commands, plan.volumes, timeoutSeconds);
@@ -814,13 +793,13 @@ public class GithubController {
             throw new IllegalStateException("Build failed (type=" + bt + "):\n" + tail(buildRes.log, 4000));
         }
 
-        // 3) 빌드 산출물 포함 새 ZIP 만들기 (소스 + target/build + coverage 등, 캐시는 제외)
+        // 빌드 산출물 포함 새 ZIP 만들기 (소스 + target/build + coverage 등, 캐시는 제외)
         Path builtZip = workspace.resolve("built-" + repositoryId + "-" + sha + ".zip");
         zipDirectorySelective(srcDir, builtZip);
         return builtZip; // 호출부에서 업로드 후 삭제 권장
     }
 
-    // ====== (B) ZIP 언팩 (GitHub zipball 최상위 디렉토리 strip) ======
+    // ZIP 언팩 (GitHub zipball 최상위 디렉토리 strip)
     private void unzipGitHubZip(Path zip, Path dest) throws IOException {
         Files.createDirectories(dest);
         try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(Files.newInputStream(zip))) {
@@ -841,7 +820,7 @@ public class GithubController {
         return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;
     }
 
-    // ====== (C) 빌드 타입 감지 ======
+    // 빌드 타입 감지
     private enum BuildType { MAVEN, GRADLE, NODE, PYTHON, GO, UNKNOWN }
     private BuildType detectBuildType(Path src) {
         if (Files.exists(src.resolve("pom.xml"))) return BuildType.MAVEN;
@@ -852,7 +831,7 @@ public class GithubController {
         return BuildType.UNKNOWN;
     }
 
-    // ====== (D) 빌드 전용 플랜 (Sonar 없음, 테스트/커버리지는 best-effort) ======
+    // 빌드 전용 플랜 (Sonar 없음, 테스트/커버리지는 best-effort)
     private static class BuildPlan {
         String image;
         java.util.List<String> commands;
@@ -863,13 +842,10 @@ public class GithubController {
         }
     }
 
-    // ====== (D) 빌드 전용 플랜 (테스트는 선택: 실패해도 빌드는 성공 처리) ======
+    // 빌드 전용 플랜 (테스트는 선택: 실패해도 빌드는 성공 처리)
     private BuildPlan makeBuildPlanForBuildOnly(BuildType t, Path srcDir) {
         switch (t) {
             case MAVEN -> {
-                // 1) package 는 테스트 완전 스킵(빌드 산출물 보장)
-                // 2) 테스트는 별도로 best-effort 수행하고 실패해도 무시(|| true)
-                // 3) jacoco 리포트도 best-effort
                 return new BuildPlan(
                         "maven:3.9-eclipse-temurin-17",
                         java.util.List.of(
@@ -909,8 +885,8 @@ public class GithubController {
                         "node:20",
                         java.util.List.of(
                                 installer,
-                                "npm run build || true",          // 빌드 우선
-                                "npm test -- --coverage || true"  // 테스트는 선택
+                                "npm run build || true",
+                                "npm test -- --coverage || true"
                         ),
                         java.util.Map.of("CI","true"),
                         java.util.List.of("diff-npm:/root/.npm")
@@ -952,7 +928,7 @@ public class GithubController {
         }
     }
 
-    // ====== (E) Docker 실행기 ======
+    // Docker 실행기
     private static class ExecResult { int exitCode; String log; ExecResult(int c, String l){exitCode=c;log=l;} }
     private ExecResult runDocker(String dockerBin, String image, Path workDir, java.util.Map<String,String> env,
                                  java.util.List<String> commands, java.util.List<String> volumes, long timeoutSeconds) throws Exception {
@@ -989,13 +965,13 @@ public class GithubController {
         return new ExecResult(p.exitValue(), out.toString());
     }
 
-    // ====== (F) 빌드 산출물 포함 ZIP 생성 (캐시/의존성 디렉토리는 제외) ======
+    // 빌드 산출물 포함 ZIP 생성 (캐시/의존성 디렉토리는 제외)
     private void zipDirectorySelective(Path root, Path zipOut) throws IOException {
         java.util.Set<String> EXCLUDES = java.util.Set.of(
                 ".git/", ".idea/", ".vscode/", "node_modules/", ".gradle/", "build-cache/",
                 "target/surefire-reports/temp/", "__pycache__/", ".m2/", ".venv/", "out/", "bin/"
         );
-        // 포함 우선 디렉토리 힌트(없어도 되지만 우선 포함되도록)
+        // 포함 우선 디렉토리
         java.util.Set<String> INCLUDE_HINTS = java.util.Set.of(
                 "target/", "build/", "coverage/", "build/reports/", "dist/"
         );
@@ -1010,7 +986,7 @@ public class GithubController {
                         for (String ex : EXCLUDES) {
                             if (rel.startsWith(ex) || rel.contains("/" + ex)) return;
                         }
-                        // 너무 큰 산출물은 제외(예: 50MB 이상) — 필요시 조정
+                        // 너무 큰 산출물 제외
                         try {
                             long size = Files.size(p);
                             if (size > 50L * 1024 * 1024) return;
@@ -1023,14 +999,13 @@ public class GithubController {
                             Files.copy(p, zos);
                             zos.closeEntry();
                         } catch (IOException e) {
-                            // 로그만
+                            // 로그
                             System.out.println("zip skip error: " + rel + " - " + e.getMessage());
                         }
                     });
         }
     }
 
-    // ====== (G) 유틸 ======
     private String tail(String s, int max) {
         if (s == null) return "";
         return (s.length() <= max) ? s : s.substring(s.length() - max);

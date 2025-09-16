@@ -16,6 +16,7 @@ public class UsrDraftController {
 
     @Autowired
     private Rq rq;
+
     @Autowired
     private DraftService draftService;
 
@@ -36,14 +37,12 @@ public class UsrDraftController {
 
     @Autowired
     private DiffService diffService;
-    @Autowired
-    private SonarService sonarService;
 
     @PostMapping("/verifyGitUser")
     @ResponseBody
     public ResultData verifyGitUser(@RequestBody Map<String, String> requestMap) {
 
-        System.out.println("👹 verifygituser 진입");
+        System.out.println("===== ✅💻 [Post] /api/DiFF/draft/verifyGitUser =====");
 
         String email = requestMap.get("email");
         Integer verifiedMemberId = memberService.isVerifiedUser(email);
@@ -51,10 +50,10 @@ public class UsrDraftController {
         System.out.println(verifiedMemberId);
 
         if(verifiedMemberId != null) {
-            System.out.println("git email로 찾은 memberID: " + verifiedMemberId);
+            System.out.println("✅💻 git email로 찾은 memberID: " + verifiedMemberId);
             return ResultData.from("S-1", "사용자 인증 완료", "인증된 사용자 id", verifiedMemberId);
         }else {
-            System.err.println("git email로 찾은 member 없음");
+            System.err.println("✅💻 git email로 찾은 member 없음");
             return ResultData.from("F-1", "사용자 인증 실패");
         }
     }
@@ -62,6 +61,8 @@ public class UsrDraftController {
     @PostMapping("/mkRepo")
     @ResponseBody
     public ResultData mkRepo(@RequestBody Map<String, Object> param) {
+
+        System.out.println("===== 🆕📁 [Post] /api/DiFF/draft/mkRepo =====");
 
         Object mid = param.get("memberId");
         long memberId = (mid instanceof Number) ? ((Number) mid).longValue()
@@ -85,6 +86,8 @@ public class UsrDraftController {
     @ResponseBody
     public ResultData isUsableRepoName(@RequestBody Map<String, Object> param) {
 
+        System.out.println("===== 🪪📁 [Post] /api/DiFF/draft/isUsableRepoName =====");
+
         int memberId = (Integer) param.get("memberId");
         String repoName = (String) param.get("repoName");
 
@@ -99,15 +102,15 @@ public class UsrDraftController {
     @PostMapping("/mkDraft")
     @ResponseBody
     public ResultData<Map<String, Object>> mkDraft(@RequestBody Map<String, Object> param) {
-        System.out.println("🍔 mkDraft 메서드 진입");
-        System.out.println("🍔 param: " + param);
+
+        System.out.println("===== 🆕📨 [Post] /api/DiFF/draft/mkDraft =====");
 
         try {
             Long memberId = ((Number) param.get("memberId")).longValue();
             Long repositoryId = ((Number) param.get("repositoryId")).longValue();
             String checksum = (String) param.get("checksum");
 
-            // 1. Draft 생성
+            // Draft 생성
             Draft draft = Draft.builder()
                     .memberId(memberId)
                     .repositoryId(repositoryId)
@@ -119,14 +122,14 @@ public class UsrDraftController {
 
             Long draftId = draftService.saveDraft(draft);
 
-            // 2. Diff 생성
+            // Diff 생성
             Diff diff = Diff.builder()
                     .draftId(draftId)
                     .checksum(checksum)
                     .build();
             Long diffId = diffService.saveDiff(diff);
 
-            System.out.println("✅ mkDraft Draft 생성 완료 → draftId=" + draftId + ", diffId=" + diffId);
+            System.out.println("🆕📨 mkDraft Draft 생성 완료 → draftId=" + draftId + ", diffId=" + diffId);
 
             Map<String, Object> resultData = new HashMap<>();
             resultData.put("draftId", draftId);
@@ -144,8 +147,7 @@ public class UsrDraftController {
     @PostMapping("/receiveDiff")
     @ResponseBody
     public ResultData<String> receiveDiff(@RequestBody Map<String, Object> param) {
-        System.out.println("📥 receiveDiff 진입");
-        System.out.println("📥 param: " + param);
+        System.out.println("===== 📞💬 [Post] /api/DiFF/draft/receiveDiff =====");
 
         try {
             Long memberId = ((Number) param.get("memberId")).longValue();
@@ -155,23 +157,23 @@ public class UsrDraftController {
             String lastChecksum = (String) param.get("lastChecksum");
             String diffText = (String) param.get("diff");
 
-            System.out.println("➡️ memberId     = " + memberId);
-            System.out.println("➡️ repositoryId = " + repositoryId);
-            System.out.println("➡️ draftId      = " + draftId);
-            System.out.println("➡️ diffId       = " + diffId);
-            System.out.println("➡️ lastChecksum = " + lastChecksum);
+            System.out.println("📞💬 memberId     = " + memberId);
+            System.out.println("📞💬 repositoryId = " + repositoryId);
+            System.out.println("📞💬 draftId      = " + draftId);
+            System.out.println("📞💬️ diffId       = " + diffId);
+            System.out.println("📞💬 lastChecksum = " + lastChecksum);
 
             if (diffText == null || diffText.trim().isEmpty()) {
-                System.out.println("⚠️ diffText 비어있음 → 실패 반환");
+                System.out.println("📞💬⚠️ diffText 비어있음 → 실패 반환");
                 return ResultData.from("F-1", "diff 내용이 비어있습니다.");
             }
 
-            // 1. GPT 호출 → Draft 본문 생성
-            System.out.println("🧠 GPT 호출 시작...");
+            // GPT 호출 → Draft 본문 생성
+            System.out.println("📞💬🧠 GPT 호출 시작...");
             String draftBody = gptService.makeDraft(diffText, repositoryId, memberId, lastChecksum, draftId);
-            System.out.println("🧠 GPT 호출 완료. 생성된 draftBody 길이 = " + (draftBody != null ? draftBody.length() : 0));
+            System.out.println("📞💬🧠 GPT 호출 완료. 생성된 draftBody 길이 = " + (draftBody != null ? draftBody.length() : 0));
 
-            // 2. Draft 업데이트
+            // Draft 업데이트
             Draft draft = Draft.builder()
                     .id(draftId)
                     .memberId(memberId)
@@ -181,7 +183,7 @@ public class UsrDraftController {
                     .build();
             draftService.updateDraft(draft);
 
-            // 3. Diff 업데이트
+            // Diff 업데이트
             Diff diffEntity = Diff.builder()
                     .id(diffId)
                     .draftId(draftId)
@@ -189,14 +191,14 @@ public class UsrDraftController {
                     .build();
             diffService.updateDiff(diffEntity);
 
-            // 4. 알림 처리
+            // 알림 처리
             Member member = memberService.getMemberById(memberId);
-            System.out.println("👤 대상 사용자 조회: " + (member != null ? member.getNickName() : "없음"));
+            System.out.println("📞💬👤 대상 사용자 조회: " + (member != null ? member.getNickName() : "없음"));
 
             if (member != null) {
                 String message = "Your draft has been created.";
 
-                //  DB 알림 저장
+                // DB 알림 저장
                 Notification notification = Notification.builder()
                         .memberId(member.getId())
                         .type("DRAFT")
@@ -207,25 +209,24 @@ public class UsrDraftController {
 
                 notificationService.saveNotification(notification);
 
-                //  FCM 발송
+                // FCM 발송
                 if (member.isAllowDraftNotification()) {
                     if (member.getFcmToken() != null && !member.getFcmToken().isEmpty()) {
-                        System.out.println("📲 FCM 발송 시작 → token=" + member.getFcmToken());
+                        System.out.println("📞💬📲 FCM 발송 시작 → token=" + member.getFcmToken());
                         fcmService.sendMessage(
                                 member.getFcmToken(),
                                 "Your draft has been created.",
                                 message,
                                 null
                         );
-                        System.out.println("✅ FCM 알림 전송 완료");
+                        System.out.println("📞💬✅ FCM 알림 전송 완료");
                     } else {
-                        System.out.println("⚠️ fcmToken 없음 → FCM 발송 스킵");
+                        System.out.println("📞💬⚠️ fcmToken 없음 → FCM 발송 스킵");
                     }
                 } else {
-                    System.out.println("⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
+                    System.out.println("📞💬⚠️ Draft 알림 OFF → 푸시 스킵 (DB 저장은 완료)");
                 }
             }
-
             return ResultData.from("S-1", "Draft 업데이트 및 분석 성공", draftBody);
 
         } catch (Exception e) {
@@ -236,7 +237,7 @@ public class UsrDraftController {
 
     @GetMapping("/drafts")
     public ResponseEntity<Map<String, Object>> getDrafts() {
-        System.out.println("📥 /api/DiFF/draft/drafts 요청 도착");
+        System.out.println("===== 🔢📨 [Get] /api/DiFF/draft/drafts =====");
 
         Number memberIdNum = (Number) rq.getLoginedMemberId();
         Long memberId = memberIdNum.longValue();
@@ -245,17 +246,17 @@ public class UsrDraftController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("drafts", drafts);
-        System.out.println("" + result);
         return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{id}")
     public ResultData<Integer> deleteDraft(
             HttpServletRequest req, @PathVariable Long id) {
+
+        System.out.println("===== 🗑️📨 [Delete] /api/DiFF/draft/{id} =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
-
-        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/draft/" + id + " =====");
 
         Draft draft = draftService.getDraftById(id);
         if (draft == null) {
@@ -275,6 +276,9 @@ public class UsrDraftController {
 
     @GetMapping("/{id}")
     public ResultData<Draft> getDraftById(HttpServletRequest req, @PathVariable Long id) {
+
+        System.out.println("===== ✏️📨 [Get] /api/DiFF/draft/{id} =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
@@ -291,11 +295,14 @@ public class UsrDraftController {
 
     @PostMapping("/save")
     public ResultData<Long> saveDraft(HttpServletRequest req, @RequestBody Draft draft) {
+
+        System.out.println("===== 🛟📨 [Pst] /api/DiFF/draft/save =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("📥 [Controller] /draft/save 요청 도착");
-        System.out.println("📥 [Controller] 요청 데이터: id=" + draft.getId()
+        System.out.println("🛟📨 [Controller] /draft/save 요청 도착");
+        System.out.println("🛟📨 [Controller] 요청 데이터: id=" + draft.getId()
                 + ", title=" + draft.getTitle()
                 + ", body=" + (draft.getBody() != null
                 ? draft.getBody().substring(0, Math.min(20, draft.getBody().length())) + "..."
@@ -310,9 +317,8 @@ public class UsrDraftController {
         }
         Long draftId = draftService.saveDraft(draft);
       
-        System.out.println("📤 [Controller] save Draft 완료 → draftId=" + draftId);
+        System.out.println("🛟📨 [Controller] save Draft 완료 → draftId=" + draftId);
 
         return ResultData.from("S-1", "임시저장이 완료되었습니다.", draftId);
     }
-
 }

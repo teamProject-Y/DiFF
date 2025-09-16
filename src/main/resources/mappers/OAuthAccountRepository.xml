@@ -28,12 +28,6 @@
         WHERE id = #{id}
     </update>
 
-    <select id="findByOauthId" resultType="com.example.demo.vo.OAuthAccount">
-        SELECT *
-        FROM oauthAccount
-        WHERE oauthId = #{oauthId}
-    </select>
-
     <select id="findProvidersByMemberId" parameterType="long" resultType="string">
         SELECT provider
         FROM oauthAccount
@@ -44,13 +38,6 @@
         UPDATE oauthAccount
         SET accessToken = #{accessToken}
         WHERE id = #{id}
-    </update>
-
-    <update id="updateAccessTokenByProviderAndOauthId">
-        UPDATE oauthAccount
-        SET accessToken = #{accessToken}
-        WHERE provider = #{provider}
-          AND oauthId = #{oauthId}
     </update>
 
     <select id="findAccessTokenByMemberIdAndProvider" resultType="string">

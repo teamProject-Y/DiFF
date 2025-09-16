@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -49,6 +48,12 @@ public class SecurityConfig {
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
+
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                        .requestMatchers("/.well-known/**", "/actuator/health").permitAll()
+
                         .requestMatchers("/error").permitAll()
 
                         // 완전 공개 (누구나 접근 가능)
@@ -89,7 +94,6 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // 그 외는 인증 필요
-
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -113,7 +117,7 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("http://diff.io.kr:3000/DiFF/home/main")
+                        .logoutSuccessUrl("https://diff.io.kr/DiFF/home/main")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
@@ -144,13 +148,18 @@ public class SecurityConfig {
         cfg.setAllowCredentials(true);
 
         // 허용할 프론트 주소들
-        cfg.addAllowedOrigin("http://13.124.33.233:3000");
-        cfg.addAllowedOrigin("http://diff.io.kr:3000");// EC2 프론트
-        cfg.addAllowedOrigin("http://localhost:3000");     // 로컬 개발
-        cfg.addAllowedOrigin("http://127.0.0.1:3000");     // 로컬 개발
+        cfg.addAllowedOrigin("https://diff-front.fly.dev");
+        cfg.addAllowedOrigin("https://diff.io.kr");
 
-        // 테스트 시 전체 허용 (필요하면 주석 풀고 테스트)
-        // cfg.addAllowedOriginPattern("*");
+        // 로컬 개발용
+        cfg.addAllowedOrigin("http://localhost:3000");
+        cfg.addAllowedOrigin("http://127.0.0.1:3000");
+
+        // 여러 fly.dev 서브도메인 테스트할 때
+        cfg.addAllowedOriginPattern("https://*.fly.dev");
+
+        // 테스트 시 전체 허용
+        cfg.addAllowedOriginPattern("*");
 
         cfg.addAllowedHeader("*");
         cfg.addAllowedMethod("*");
