@@ -1,4 +1,5 @@
 server:
+  forward-headers-strategy: framework
   address: 0.0.0.0
   port: ${PORT:8080}
   tomcat:
@@ -42,6 +43,7 @@ spring:
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
 
         provider:
           github:
