@@ -10,10 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -36,50 +33,44 @@ import java.util.zip.ZipFile;
 @Service
 public class SonarService {
 
-    @Autowired
-    private AnalysisRepository analysisRepository;
-    @Autowired
-    private DraftRepository draftRepository;
-    @Autowired
-    private AnalysisService analysisService;
+    @Autowired private AnalysisRepository analysisRepository;
+    @Autowired private DraftRepository draftRepository;
+    @Autowired private AnalysisService analysisService;
 
-    @Value("${sonar.host}")
-    private String sonarHost;
+    @Value("${sonar.host}") private String sonarHost;             // https://sonarcloud.io
+    @Value("${sonar.token}") private String sonarToken;           // SonarCloud token
+    @Value("${sonar.organization}") private String sonarOrg;      // e.g. yullc
 
-    @Value("${sonar.token}")
-    private String sonarToken;
-
-    @Value("${sonar.organization}")
-    private String sonarOrg;
-
+    /** ZIP 업로드 → 해제 → 빌드(테스트+JaCoCo) → sonar-project.properties 생성 */
     public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException, InterruptedException {
         Path tempDir = Files.createTempDirectory("source-");
         File targetDir = tempDir.toFile();
 
-        // zip 저장 및 압축 해제
+        // 1) ZIP 저장 및 해제
         File tempZip = File.createTempFile("upload-", ".zip");
         zipFile.transferTo(tempZip);
         unzip(tempZip, targetDir);
 
-        // GitHub zipball wrapper 디렉토리 보정
+        // 2) GitHub zipball wrapper(repo-<sha>) 폴더 보정
         File[] children = targetDir.listFiles(File::isDirectory);
         if (children != null && children.length == 1) {
             File wrapper = children[0];
             if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
-                System.out.println("⚠️ GitHub zipball wrapper 감지 → baseDir 교체: " + wrapper.getAbsolutePath());
+                System.out.println("⚠️ zipball wrapper 감지 → baseDir 교체: " + wrapper.getAbsolutePath());
                 targetDir = wrapper;
             }
         }
 
-        // 빌드 실행 (target/classes 생성 목적)
+        // 3) 빌드(테스트+JaCoCo 리포트 생성)
         runBuild(targetDir);
 
-        // sonar-project.properties 자동 생성
+        // 4) 정적 설정 파일 생성(민감/동적 값은 파일에 쓰지 않음)
         createSonarPropertiesFile(targetDir, projectKey);
 
         return targetDir.getAbsolutePath();
     }
 
+    /** 빌드 루트(pom/gradle) 탐색 */
     private File findProjectRoot(File start, int maxDepth) {
         if (start == null || !start.isDirectory()) return null;
         Deque<File> q = new ArrayDeque<>();
@@ -95,19 +86,19 @@ public class SonarService {
                         || new File(cur, "build.gradle.kts").exists()) {
                     return cur;
                 }
-                File[] children = cur.listFiles(File::isDirectory);
-                if (children != null) for (File c : children) q.add(c);
+                File[] ch = cur.listFiles(File::isDirectory);
+                if (ch != null) for (File c : ch) q.add(c);
             }
             depth++;
         }
         return null;
     }
 
+    /** mvnw/gradlew로 깨끗하게 빌드 + 테스트 + JaCoCo XML 생성 */
     private void runBuild(File dir) throws IOException, InterruptedException {
-        // 0) zip 최상위 디렉토리가 루트가 아닐 수 있으니, 하위에서 pom/gradle 파일 자동 탐색
-        File root = findProjectRoot(dir, 3); // 하위 3단계까지
+        File root = findProjectRoot(dir, 3);
         if (root == null) {
-            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵 (pom.xml/gradle 파일 없음)");
+            System.out.println("⚠️ Maven/Gradle 프로젝트 아님 → 빌드 스킵");
             return;
         }
 
@@ -117,99 +108,83 @@ public class SonarService {
         File mvnw = new File(root, "mvnw");
         File gradlew = new File(root, "gradlew");
 
-        if (pom.exists()) {
-            System.out.println("📄 사용되는 pom.xml 경로: " + pom.getAbsolutePath());
-        }
-
-        // 1) 프리빌트 감지: 이미 classes가 있으면 스킵 (업로드가 산출물 포함시)
+        // 프리빌트 감지(산출물 이미 포함된 ZIP일 수 있음)
         if (new File(root, "target/classes").exists() || new File(root, "build/classes/java/main").exists()) {
-            System.out.println("🔎 Prebuilt artifacts detected → build step skip (" + root.getAbsolutePath() + ")");
+            System.out.println("🔎 Prebuilt artifacts 감지 → 빌드 스킵: " + root.getAbsolutePath());
             return;
         }
 
-        // 2) 래퍼 권한 보정
         chmodX(mvnw);
         chmodX(gradlew);
 
-        // 3) 커맨드 구성(래퍼 우선)
         String cmd;
         if (pom.exists()) {
-            String mvnCmd = mvnw.exists() ? "./mvnw" : "mvn";
-            // -B 배치, 테스트 완전 스킵(둘 다 넣어 확실하게)
-            cmd = mvnCmd + " -B -e -DskipTests -Dmaven.test.skip=true clean package";
+            String mvn = mvnw.exists() ? "./mvnw" : "mvn";
+            // 테스트 실행 + JaCoCo 보고서 생성
+            cmd = String.join(" ",
+                    mvn, "-B", "-e", "clean",
+                    "org.jacoco:jacoco-maven-plugin:prepare-agent",
+                    "verify",
+                    "org.jacoco:jacoco-maven-plugin:report"
+            );
         } else if (gradle.exists() || gradleKts.exists()) {
             String g = gradlew.exists() ? "./gradlew" : "gradle";
-            cmd = g + " assemble --no-daemon --console=plain -x test";
+            cmd = String.join(" ", g, "clean", "test", "jacocoTestReport", "--no-daemon", "--console=plain");
         } else {
-            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵");
+            System.out.println("⚠️ 빌드 도구 없음 → 스킵");
             return;
         }
 
-        System.out.println("▶ 실행할 빌드 명령어: " + cmd);
-        System.out.println("▶ 작업 디렉터리: " + root.getAbsolutePath());
+        System.out.println("▶ Build cmd: " + cmd);
+        System.out.println("▶ Workdir  : " + root.getAbsolutePath());
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
         pb.directory(root);
         pb.redirectErrorStream(true);
-
-        // 4) PATH 보정(IDE/서비스 환경 PATH 빈약 이슈 대비)
+        // PATH 보정(컨테이너 환경 대비)
         Map<String, String> env = pb.environment();
-        env.put("PATH", env.getOrDefault("PATH", "")
-                + ":/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin");
+        env.put("PATH", env.getOrDefault("PATH", "") + ":/usr/local/bin:/usr/bin:/bin");
 
         StringBuilder all = new StringBuilder(16 * 1024);
-        Process process = pb.start();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        Process p = pb.start();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = r.readLine()) != null) {
                 all.append(line).append('\n');
-                if (line.contains("[ERROR]")) {
-                    System.err.println("▶ [Build][ERROR] " + line);
-                } else {
-                    System.out.println("▶ [Build] " + line);
-                }
+                if (line.contains("[ERROR]")) System.err.println("▶ [Build][ERROR] " + line);
+                else System.out.println("▶ [Build] " + line);
             }
         }
 
-        // 5) 타임아웃(예: 20분)
-        boolean finished = process.waitFor(20, TimeUnit.MINUTES);
+        boolean finished = p.waitFor(20, TimeUnit.MINUTES);
         if (!finished) {
-            process.destroyForcibly();
+            p.destroyForcibly();
             throw new RuntimeException("❌ 빌드 타임아웃(20m)\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
         }
-
-        int exitCode = process.exitValue();
-        if (exitCode != 0) {
-            // 흔한 케이스: 하위에 진짜 루트가 따로 있을 때 maven이 'no POM'을 토함 → 이미 root 재탐색으로 예방됨
-            throw new RuntimeException("❌ 빌드 실패! exitCode=" + exitCode + "\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
+        if (p.exitValue() != 0) {
+            throw new RuntimeException("❌ 빌드 실패(exit=" + p.exitValue() + ")\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
         }
 
-        // 빌드 후 클래스 디렉토리 확인
         File mavenClasses = new File(root, "target/classes");
         File gradleClasses = new File(root, "build/classes/java/main");
-
         if (mavenClasses.exists()) {
-            System.out.println("✅ 빌드 성공. Maven target/classes 생성됨 → " + mavenClasses.getAbsolutePath());
+            System.out.println("✅ Maven build OK → " + mavenClasses.getAbsolutePath());
         } else if (gradleClasses.exists()) {
-            System.out.println("✅ 빌드 성공. Gradle build/classes 생성됨 → " + gradleClasses.getAbsolutePath());
+            System.out.println("✅ Gradle build OK → " + gradleClasses.getAbsolutePath());
         } else {
-            System.out.println("⚠️ 빌드는 성공했지만 target/classes 또는 build/classes 를 찾을 수 없음.");
+            System.out.println("⚠️ classes 폴더 미발견(빌드는 성공)");
         }
     }
 
     private void chmodX(File f) {
         try {
             if (f != null && f.exists()) {
-                // macOS/Linux
                 Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-xr-x");
                 Files.setPosixFilePermissions(f.toPath(), perms);
             }
         } catch (UnsupportedOperationException ignore) {
-            // Windows면 무시
             if (f != null) f.setExecutable(true, true);
-        } catch (Exception ignore) {
-        }
+        } catch (Exception ignore) {}
     }
 
     private String tailLines(String text, int lines) {
@@ -222,15 +197,13 @@ public class SonarService {
         try (ZipFile zip = new ZipFile(zipFile)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                File newFile = new File(destDir, entry.getName());
-
-                if (entry.isDirectory()) {
-                    newFile.mkdirs();
-                } else {
-                    newFile.getParentFile().mkdirs();
-                    try (InputStream is = zip.getInputStream(entry);
-                         FileOutputStream fos = new FileOutputStream(newFile)) {
+                ZipEntry e = entries.nextElement();
+                File out = new File(destDir, e.getName());
+                if (e.isDirectory()) out.mkdirs();
+                else {
+                    out.getParentFile().mkdirs();
+                    try (InputStream is = zip.getInputStream(e);
+                         FileOutputStream fos = new FileOutputStream(out)) {
                         is.transferTo(fos);
                     }
                 }
@@ -238,121 +211,111 @@ public class SonarService {
         }
     }
 
+    /** Sonar 분석: Maven 플러그인으로 실행(별도 CLI 설치 불필요) */
     public void runSonarScanner(String dir, String projectKey) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(
-                "sonar-scanner",
-                "-Dsonar.projectKey=" + projectKey,
-                "-Dsonar.host.url=" + sonarHost,
-                "-Dsonar.organization=" + sonarOrg,
-                "-Dsonar.token=" + sonarToken
-//                "-Dsonar.login=" + sonarToken
-        );
+        File work = new File(dir);
+        String mvn = new File(work, "mvnw").exists() ? "./mvnw" : "mvn";
 
-        pb.directory(new File(dir));
-        pb.redirectErrorStream(true);
-        Process process = pb.start();
+        List<String> cmd = new ArrayList<>();
+        cmd.add(mvn);
+        cmd.add("-B");
+        cmd.add("org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
+        cmd.add("-Dsonar.host.url=" + sonarHost);
+        cmd.add("-Dsonar.organization=" + sonarOrg);
+        cmd.add("-Dsonar.projectKey=" + projectKey);
+        cmd.add("-Dsonar.token=" + sonarToken);
 
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println("▶ " + line);
-            }
+        // 커버리지 리포트가 있으면 연결
+        File jacoco = Paths.get(dir, "target", "site", "jacoco", "jacoco.xml").toFile();
+        if (jacoco.isFile()) {
+            cmd.add("-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml");
         }
 
-        process.waitFor();
+        String joined = String.join(" ", cmd);
+        System.out.println("▶ Sonar cmd: " + joined);
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", joined);
+        pb.directory(work);
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line; while ((line = r.readLine()) != null) System.out.println("▶ [Sonar] " + line);
+        }
+        if (!p.waitFor(30, TimeUnit.MINUTES)) { p.destroyForcibly(); throw new RuntimeException("❌ Sonar timeout(30m)"); }
+        if (p.exitValue() != 0) throw new RuntimeException("❌ Sonar 실패(exit=" + p.exitValue() + ")");
     }
 
+    /** 분석 결과 수집(간단 폴링) */
     public String getAnalysisResult(String projectKey) throws InterruptedException {
-        System.out.println("getAnalysisResult sonar token : " + sonarToken);
-
-        RestTemplate restTemplate = new RestTemplate();
-
+        RestTemplate rest = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(sonarToken, "");
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
+        // 1) Compute Engine 상태 폴링 (component별 큐)
         String statusUrl = sonarHost + "/api/ce/component?component=" + projectKey;
-        int maxRetries = 5;
-        int delayMillis = 2000;
-
-        // 1. 분석이 끝날 때까지 기다리기
+        int maxRetries = 10, delayMs = 2000;
         for (int i = 0; i < maxRetries; i++) {
             try {
-                ResponseEntity<String> response = restTemplate.exchange(statusUrl, HttpMethod.GET, entity, String.class);
-                String body = response.getBody();
+                ResponseEntity<String> res = rest.exchange(statusUrl, HttpMethod.GET, entity, String.class);
+                String body = res.getBody();
                 if (body != null && body.contains("\"status\":\"SUCCESS\"")) {
-                    System.out.println("SonarQube 분석 완료 감지됨");
+                    System.out.println("✅ Sonar 분석 완료 감지");
                     break;
-                } else {
-                    System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
-                    Thread.sleep(delayMillis);
                 }
+                System.out.println("⌛ 분석 대기중... " + (i + 1) + "/" + maxRetries);
+                Thread.sleep(delayMs);
             } catch (Exception e) {
                 System.out.println("상태 확인 실패: " + e.getMessage());
-                Thread.sleep(delayMillis);
+                Thread.sleep(delayMs);
             }
         }
 
-        // 2. 실제 측정 결과 가져오기
+        // 2) Measures 조회
         String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
                 + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity,ncloc_language_distribution";
         System.out.println("measuresUrl : " + measuresUrl);
         for (int i = 0; i < 10; i++) {
             try {
-                ResponseEntity<String> response = restTemplate.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
-                System.out.println("분석 결과 가져오기 성공");
-                return response.getBody();
+                ResponseEntity<String> res = rest.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
+                System.out.println("✅ 분석 결과 가져오기 성공");
+                return res.getBody();
             } catch (HttpClientErrorException.NotFound e) {
-                System.out.println("분석 결과 대기 중... " + (i + 1) + "/10");
-                Thread.sleep(delayMillis);
+                System.out.println("⏳ 분석 결과 대기중... " + (i + 1) + "/10");
+                Thread.sleep(delayMs);
             }
         }
-
         throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    public void analysisInsertDB(Long repositoryId,
-                                 Long memberId,
-                                 Long draftId,
-                                 Long diffId,
-                                 String checksum,
-                                 String projectKey) throws IOException, InterruptedException {
+    /** DB 저장 */
+    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId, Long diffId, String checksum, String projectKey)
+            throws IOException, InterruptedException {
         try {
-            // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
-
             if (resultJson == null || !resultJson.trim().startsWith("{")) {
-                System.out.println("❌ 분석 결과 JSON 아님! resultJson = " + resultJson);
+                System.out.println("❌ 분석 결과 JSON 아님: " + resultJson);
                 return;
             }
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(resultJson);
+            ObjectMapper om = new ObjectMapper();
+            JsonNode root = om.readTree(resultJson);
             JsonNode component = root.get("component");
-
             String projectKeyFromJson = component.get("key").asText();
             String projectName = component.get("name").asText();
             JsonNode measures = component.get("measures");
 
             Map<String, String> metricMap = new HashMap<>();
-            for (JsonNode measure : measures) {
-                metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
+            for (JsonNode m : measures) {
+                metricMap.put(m.get("metric").asText(), m.get("value").asText());
             }
 
-            // Draft 조회 (안전 확인용)
             Draft draft = draftRepository.getDraftById(draftId);
             if (draft == null) {
                 System.out.println("❌ draftId=" + draftId + " 에 해당 Draft 없음!");
                 return;
             }
+            if (checksum == null) checksum = draft.getChecksum();
 
-            if (checksum == null) {
-                checksum = draft.getChecksum();
-            }
-            System.out.println("🔑 draftId=" + draftId + " 의 checksum=" + checksum);
-
-            // Analysis 저장
             Analysis analysis = Analysis.builder()
                     .repositoryId(repositoryId)
                     .memberId(memberId)
@@ -373,32 +336,27 @@ public class SonarService {
             Long analyzeId = analysis.getId();
             System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
 
-            // ✅ totalScore 계산 및 update
             analysis.setId(analyzeId);
             analysisService.updateTotalScore(analysis);
             System.out.println("✅ totalScore 업데이트 완료 - score: " + analysis.getTotalScore());
 
-            // 언어 분포 저장
             String langRaw = metricMap.get("ncloc_language_distribution");
             if (langRaw != null) {
-                List<AnalysisLanguage> languages = parseLanguageDistribution(langRaw, analyzeId);
-                for (AnalysisLanguage lang : languages) {
-                    analysisRepository.insertLanguage(lang);
-                }
-                System.out.println("✅ 언어 분포 저장 완료 - " + languages.size() + "개 언어");
+                List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
+                for (AnalysisLanguage l : langs) analysisRepository.insertLanguage(l);
+                System.out.println("✅ 언어 분포 저장 완료 - " + langs.size() + "개 언어");
             }
 
         } catch (Exception e) {
-            System.out.println("❌ analysisInsertDB 분석 결과 저장 실패: " + e.getMessage());
+            System.out.println("❌ analysisInsertDB 실패: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     public List<AnalysisLanguage> parseLanguageDistribution(String raw, Long analyzeId) {
-        System.out.println("parseLanguageDistribution 잔입 raw: " + raw);
         List<AnalysisLanguage> result = new ArrayList<>();
-        String[] pairs = raw.split(";");
-        for (String pair : pairs) {
+        if (raw == null || raw.isBlank()) return result;
+        for (String pair : raw.split(";")) {
             String[] parts = pair.split("=");
             if (parts.length == 2) {
                 String lang = parts[0].trim();
@@ -413,144 +371,76 @@ public class SonarService {
         return result;
     }
 
-    private Double parseDouble(String value) {
-        try {
-            return value == null ? null : Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private Integer parseInt(String value) {
-        try {
-            return value == null ? null : Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-
+    /** SonarCloud 프로젝트 삭제(토큰 BasicAuth) */
     public void deleteProject(String projectKey) {
         try {
-//            String sonarBaseUrl = sonarHost;
             String deleteUrl = sonarHost + "/api/projects/delete?project=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
+            HttpURLConnection conn = (HttpURLConnection) new URL(deleteUrl).openConnection();
+            conn.setRequestMethod("POST");
+            String basicAuth = "Basic " + Base64.getEncoder().encodeToString((sonarToken + ":").getBytes(StandardCharsets.UTF_8));
+            conn.setRequestProperty("Authorization", basicAuth);
 
-            String adminUsername = "admin";
-            String adminPassword = "teamprojectY1!";
-
-            HttpURLConnection connection = (HttpURLConnection) new URL(deleteUrl).openConnection();
-            connection.setRequestMethod("POST");
-
-            String basicAuth = "Basic " + Base64.getEncoder()
-                    .encodeToString((adminUsername + ":" + adminPassword).getBytes(StandardCharsets.UTF_8));
-            connection.setRequestProperty("Authorization", basicAuth);
-//            String basicAuth = "Basic " + Base64.getEncoder()
-//                    .encodeToString((sonarToken + ":").getBytes(StandardCharsets.UTF_8));
-//            conn.setRequestProperty("Authorization", basicAuth);
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 204) {
-                System.out.println(" 프로젝트 삭제 성공");
+            int code = conn.getResponseCode();
+            if (code == 204) {
+                System.out.println("✅ 프로젝트 삭제 성공: " + projectKey);
             } else {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                String response = in.lines().collect(Collectors.joining());
-                in.close();
-                System.out.println(" 프로젝트 삭제 실패: " + response);
+                InputStream es = conn.getErrorStream() != null ? conn.getErrorStream() : conn.getInputStream();
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                    System.out.println("❌ 프로젝트 삭제 실패(" + code + "): " + in.lines().collect(Collectors.joining()));
+                }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void deleteDirectoryRecursively(File dir) {
-        if (dir == null || !dir.exists()) return;
-
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectoryRecursively(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-        dir.delete();
-    }
-
-
+    /** 정적 설정만 파일에 반영(민감/동적 값은 CLI -D 로) */
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
-        System.out.println(propertiesFile.getAbsolutePath() + " 소스 경로 감지 ");
 
-        // 여러 유효 폴더 모두 포함 (하드코딩 제거, 외부 빌드/라이브러리 폴더 제외)
         List<String> sourcePaths = detectAllValidSourceFolders(projectDir).stream()
                 .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
-                .distinct()
-                .collect(Collectors.toList());
+                .distinct().collect(Collectors.toList());
 
-        // 멀티모듈 지원: 모든 모듈의 .class 경로 찾기
         List<String> javaBins = findAllJavaBinaries(projectDir).stream()
                 .map(path -> projectDir.toPath().relativize(Path.of(path)).toString())
-                .distinct()
-                .collect(Collectors.toList());
+                .distinct().collect(Collectors.toList());
 
-        // 언어 포함 여부 체크
         boolean containsJava = !javaBins.isEmpty();
-        boolean containsJS = containsExtension(projectDir, ".js");
-        boolean containsPY = containsExtension(projectDir, ".py");
+        boolean containsPY   = containsExtension(projectDir, ".py");
+        boolean containsJS   = containsExtension(projectDir, ".js");
 
-        System.out.println("✅ [DEBUG] .java 포함 여부: " + containsJava);
-        System.out.println("✅ [DEBUG] .class 경로 개수: " + javaBins.size());
-        System.out.println("✅ [DEBUG] .js 포함 여부: " + containsJS);
-        System.out.println("✅ [DEBUG] .py 포함 여부: " + containsPY);
+        try (PrintWriter w = new PrintWriter(propertiesFile)) {
+            w.println("sonar.projectKey=" + projectKey);
+            w.println("sonar.projectName=" + projectKey);
+            w.println("sonar.projectVersion=1.0");
+            w.println("sonar.host.url=" + sonarHost); // CLI -D 가 우선하므로 있어도 무방
 
-        try (PrintWriter writer = new PrintWriter(propertiesFile)) {
-            writer.println("sonar.projectKey=" + projectKey);
-            writer.println("sonar.projectName=" + projectKey);
-            writer.println("sonar.projectVersion=1.0");
-            writer.println("sonar.host.url=" + sonarHost);
+            w.println("sonar.sources=" + String.join(",", sourcePaths));
+            w.println("sonar.exclusions=" + String.join(",",
+                    "**/node_modules/**","**/build/**","**/dist/**","**/target/**",
+                    "**/.venv/**","**/venv/**","**/.tox/**","**/.pytest_cache/**",
+                    "**/.next/**","**/.nuxt/**","**/.yarn/**","**/.pnpm-store/**"));
+            w.println("sonar.inclusions=" + String.join(",",
+                    "**/*.java","**/*.kt","**/*.kts","**/*.py","**/*.js","**/*.jsx","**/*.ts","**/*.tsx"));
 
-            // 1. 소스 경로
-            writer.println("sonar.sources=" + String.join(",", sourcePaths));
-
-            // 2. 공통 제외 패턴 (외부 라이브러리/빌드 산출물)
-            writer.println("sonar.exclusions=" + String.join(",",
-                    "**/node_modules/**", "**/build/**", "**/dist/**", "**/target/**",
-                    "**/.venv/**", "**/venv/**", "**/.tox/**", "**/.pytest_cache/**",
-                    "**/.next/**", "**/.nuxt/**", "**/.yarn/**", "**/.pnpm-store/**"));
-
-            // 3. 포함 패턴 (원본 코드 확장자)
-            writer.println("sonar.inclusions=" + String.join(",",
-                    "**/*.java", "**/*.kt", "**/*.kts", "**/*.py", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"));
-
-            // 4. Java 설정 (멀티모듈 binaries)
             if (containsJava) {
-                writer.println("sonar.java.binaries=" + String.join(",", javaBins));
-                writer.println("sonar.java.source=17");
+                w.println("sonar.java.binaries=" + String.join(",", javaBins));
+                w.println("sonar.java.source=17");
             }
-
-            // 5. Python 설정 (자동 감지)
             if (containsPY) {
-                writer.println("sonar.python.version=3.10");
-                // sonar.language는 지정 안 하면 JS/Java/Python 다 잡힘
+                w.println("sonar.python.version=3.10");
             }
-
-//            writer.println("sonar.login=" + sonarToken);
+            // ❌ 민감/동적 값 금지: sonar.token / sonar.organization / login 등은 쓰지 않음
         }
 
-        System.out.println(" 최종 분석 대상 폴더들: " + sourcePaths);
-        if (containsJava) {
-            System.out.println(" Java 바이너리 경로들: " + javaBins);
-        }
+        System.out.println("📝 sonar-project.properties 생성 완료 @ " + propertiesFile.getAbsolutePath());
     }
 
     private List<String> findAllJavaBinaries(File root) {
         List<String> bins = new ArrayList<>();
         Deque<File> dq = new ArrayDeque<>();
         dq.add(root);
-
         while (!dq.isEmpty()) {
             File dir = dq.pollFirst();
             File[] list = dir.listFiles();
@@ -565,9 +455,9 @@ public class SonarService {
 
             if (isModuleRoot) {
                 String[] candidates = {
-                        "target/classes", "target/test-classes",
-                        "build/classes/java/main", "build/classes/java/test",
-                        "build/classes/kotlin/main", "build/classes/kotlin/test"
+                        "target/classes","target/test-classes",
+                        "build/classes/java/main","build/classes/java/test",
+                        "build/classes/kotlin/main","build/classes/kotlin/test"
                 };
                 for (String rel : candidates) {
                     File c = new File(dir, rel);
@@ -588,87 +478,28 @@ public class SonarService {
         return bins.stream().distinct().collect(Collectors.toList());
     }
 
-    private String findClassFolder(File projectDir) {
-        File[] classDirs = {
-                new File(projectDir, "target/classes"),
-                new File(projectDir, "build/classes/java/main")
-        };
-
-        for (File dir : classDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                return dir.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-    private String findJavaSourceFolder(File projectDir) {
-        return findDirectoryContainingExtension(projectDir, ".java");
-    }
-
-    private String findDirectoryContainingExtension(File dir, String extension) {
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-
-        boolean containsTargetFile = false;
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith(extension)) {
-                containsTargetFile = true;
-            }
-        }
-        if (containsTargetFile) {
-            return dir.getAbsolutePath();
-        }
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String found = findDirectoryContainingExtension(file, extension);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-
-        return null;
-    }
-
     private List<String> detectAllValidSourceFolders(File baseDir) {
-        // 📦 GitHub zipball wrapper 처리 (repoName-commitHash)
         File[] children = baseDir.listFiles(File::isDirectory);
         if (children != null && children.length == 1 && children[0].getName().matches(".+-[0-9a-f]{5,}")) {
-            System.out.println("⚠️ GitHub zipball wrapper 감지 → baseDir 교체: " + children[0].getAbsolutePath());
             baseDir = children[0];
         }
-
         String[] candidates = {"src", "client", "apps", "js", "python", "."};
-        List<String> validPaths = new ArrayList<>();
-
+        List<String> valid = new ArrayList<>();
         for (String name : candidates) {
-            File dir = new File(baseDir, name);
-            System.out.println(" 후보 탐색 중: " + dir.getAbsolutePath());
-            if (dir.exists() && dir.isDirectory()) {
-                System.out.println(" 후보 선택됨: " + dir.getAbsolutePath());
-                validPaths.add(dir.getAbsolutePath());
-            }
+            File d = new File(baseDir, name);
+            if (d.exists() && d.isDirectory()) valid.add(d.getAbsolutePath());
         }
-
-        if (validPaths.isEmpty()) {
-            System.err.println("후보 중 유효한 폴더 없음. 루트로 fallback");
-            validPaths.add(baseDir.getAbsolutePath());
-        }
-
-        return validPaths;
+        if (valid.isEmpty()) valid.add(baseDir.getAbsolutePath());
+        return valid;
     }
 
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;
-        for (File file : dir.listFiles()) {
-            if (file.isDirectory()) {
-                if (containsExtension(file, ext)) return true;
-            } else if (file.getName().endsWith(ext)) {
-                return true;
-            }
+        File[] files = dir.listFiles();
+        if (files == null) return false;
+        for (File f : files) {
+            if (f.isDirectory()) { if (containsExtension(f, ext)) return true; }
+            else if (f.getName().endsWith(ext)) return true;
         }
         return false;
     }

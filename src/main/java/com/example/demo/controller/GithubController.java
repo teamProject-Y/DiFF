@@ -363,18 +363,18 @@ public class GithubController {
                 if (downloadOk) {
                     step.add("✴️ 5-2. 서버측 빌드 수행(컨테이너) → 산출물 포함 ZIP 생성 시작");
                     long tb = System.nanoTime();
-                    builtZip = buildZipForUpload(zipPath, repoId, sha);
-                    if (builtZip != null && Files.exists(builtZip)) {
-                        long bsize = 0L;
-                        try { bsize = Files.size(builtZip); } catch (Exception ignore) {}
-                        step.add(String.format("✅ 빌드 ZIP 생성 완료: %s (%d bytes, %.1f ms)", builtZip, bsize, (System.nanoTime() - tb)/1e6));
-                        buildOk = true;
-                    } else {
-                        step.add("❌ 빌드 ZIP 생성 실패: builtZip is null or not exists");
-                    }
+//                    builtZip = buildZipForUpload(zipPath, repoId, sha);
+//                    if (builtZip != null && Files.exists(builtZip)) {
+//                        long bsize = 0L;
+//                        try { bsize = Files.size(builtZip); } catch (Exception ignore) {}
+//                        step.add(String.format("✅ 빌드 ZIP 생성 완료: %s (%d bytes, %.1f ms)", builtZip, bsize, (System.nanoTime() - tb)/1e6));
+//                        buildOk = true;
+//                    } else {
+//                        step.add("❌ 빌드 ZIP 생성 실패: builtZip is null or not exists");
+//                    }
                 }
 
-                if (buildOk) {
+//                if (buildOk) {
                     step.add("✴️ 5-3. /upload 업로드 시작 (builtZip)");
                     long tu = System.nanoTime();
                     Map<String, Object> meta = new LinkedHashMap<>();
@@ -384,10 +384,10 @@ public class GithubController {
                     meta.put("diffId", 0L);
                     meta.put("lastChecksum", sha);
 
-                    postZipFileToUpload(builtZip, meta);
+                    postZipFileToUpload(zipPath, meta);
                     uploadOk = true;
                     step.add(String.format("✅ 업로드 완료 (%.1f ms)", (System.nanoTime() - tu)/1e6));
-                }
+//                }
             } catch (org.springframework.web.reactive.function.client.WebClientResponseException we) {
                 step.add("❌ zip/build/upload 중 WebClient 오류: " + we.getStatusCode().value() + " " + we.getStatusText());
                 log.error("zip/build/upload WebClient error", we);
