@@ -158,8 +158,8 @@ public class AnalysisOrchestrator {
                 Long diffId       = toLong(meta.get("diffId"));
                 String checksum   = (String) meta.get("lastChecksum");
 
-                // ✅ 경로로부터 분석 준비
-                String dir = sonarService.extractAndPrepare((MultipartFile) new File(zipPath), projectKey);
+                // 경로로부터 분석 준비
+                String dir = sonarService.extractAndPrepare(new File(zipPath), projectKey);
 
                 // SONAR
                 d.step = "SONAR"; debug.set(d);
