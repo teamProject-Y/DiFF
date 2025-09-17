@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.service.SonarService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,6 +22,9 @@ import java.util.stream.Collectors;
 
 @Controller
 public class SonarUploadController {
+
+    @Value("${sonar.host}")
+    private String sonarHost;
 
     @Autowired
     private SonarService sonarService;
@@ -73,8 +77,8 @@ public class SonarUploadController {
     }
 
     private void grantProjectAdminPermission(String projectKey) {
-        String sonarBaseUrl = "http://localhost:9000";
-        String apiEndpoint = sonarBaseUrl + "/api/permissions/add_user";
+//        String sonarBaseUrl = http://localhost:9000;
+        String apiEndpoint = sonarHost + "/api/permissions/add_user";
 
         String login = "admin";
         String password = "teamprojectY1!";
