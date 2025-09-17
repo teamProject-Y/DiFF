@@ -144,8 +144,8 @@ public class SonarService {
         // 🔻 메모리 낮추기
         Map<String,String> env = pb.environment();
         env.put("PATH", env.getOrDefault("PATH","") + ":/usr/local/bin:/usr/bin:/bin");
-        env.put("MAVEN_OPTS", "-Xmx128m -XX:CICompilerCount=1 -Djava.awt.headless=true");
-        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=1 -Dfile.encoding=UTF-8");
+        env.put("MAVEN_OPTS", "-Xmx128m -XX:+UseSerialGC -Djava.awt.headless=true");
+        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8");
 
         StringBuilder all = new StringBuilder(16 * 1024);
         Process process = pb.start();
@@ -242,8 +242,8 @@ public class SonarService {
         pb.redirectErrorStream(true);
 
         Map<String,String> env = pb.environment();
-        env.put("MAVEN_OPTS", "-Xmx128m -XX:CICompilerCount=1 -Djava.awt.headless=true");
-        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=1 -Dfile.encoding=UTF-8");
+        env.put("MAVEN_OPTS", "-Xmx128m -XX:+UseSerialGC -Djava.awt.headless=true");
+        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=2 -Dfile.encoding=UTF-8");
 
         Process p = pb.start();
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
