@@ -418,7 +418,7 @@ public class SonarService {
 
     public void deleteProject(String projectKey) {
         try {
-            String sonarBaseUrl = "http://localhost:9000";
+            String sonarBaseUrl = "http://sonar.diff.io.kr";
             String deleteUrl = sonarBaseUrl + "/api/projects/delete?project=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
 
             String adminUsername = "admin";
