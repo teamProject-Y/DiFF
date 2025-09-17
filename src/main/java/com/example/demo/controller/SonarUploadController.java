@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.AnalysisOrchestrator;
-import com.example.demo.service.SonarService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +16,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
 
 @Controller
@@ -120,4 +119,24 @@ public class SonarUploadController {
         }
     }
 
+    @GetMapping("/upload/debug")
+    public ResponseEntity<Map<String, Object>> debug() {
+        AnalysisOrchestrator.DebugInfo info = orchestrator.getDebug();
+
+        // 서버 로그에도 현재 상태 한 줄로 출력
+        Logger log = LoggerFactory.getLogger(SonarUploadController.class);
+        log.info("[DEBUG] jobId={}, status={}, step={}, queuedAt={}, startedAt={}, finishedAt={}, error={}",
+                info.jobId, info.status, info.step, info.queuedAt, info.startedAt, info.finishedAt, info.error);
+
+        // 응답으로도 상태 반환
+        return ResponseEntity.ok(Map.of(
+                "jobId", info.jobId,
+                "status", info.status,
+                "step", info.step,
+                "queuedAt", info.queuedAt,
+                "startedAt", info.startedAt,
+                "finishedAt", info.finishedAt,
+                "error", info.error
+        ));
+    }
 }
