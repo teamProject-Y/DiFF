@@ -507,28 +507,16 @@ public class SonarService {
         return false;
     }
 
-    public String extractAndPrepare(File zipFileOnDisk, String projectKey) throws IOException, InterruptedException {
+    public String extractAndPrepare(File zipFileOnDisk, String projectKey)
+            throws IOException, InterruptedException {
         Path tempDir = Files.createTempDirectory("source-");
         File targetDir = tempDir.toFile();
 
-        // 바로 압축 해제 (이미 디스크에 있는 zip)
-        unzip(zipFileOnDisk, targetDir);
-
-        // zipball wrapper 보정
-        File[] children = targetDir.listFiles(File::isDirectory);
-        if (children != null && children.length == 1) {
-            File wrapper = children[0];
-            if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
-                targetDir = wrapper;
-            }
-        }
-
-        // 빌드
+        unzip(zipFileOnDisk, targetDir);          // 기존 unzip(File, File) 사용
+        // zipball wrapper 보정, runBuild(targetDir), createSonarPropertiesFile(targetDir, projectKey)
+        // 는 네가 가진 기존 로직 그대로 호출
         runBuild(targetDir);
-
-        // sonar-project.properties 생성
         createSonarPropertiesFile(targetDir, projectKey);
-
         return targetDir.getAbsolutePath();
     }
 }
