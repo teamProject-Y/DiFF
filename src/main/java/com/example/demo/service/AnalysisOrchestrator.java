@@ -1,7 +1,6 @@
 package com.example.demo.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.rpc.DebugInfo;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,22 +18,32 @@ public class AnalysisOrchestrator {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 디버깅용
-    private final AtomicReference<String> lastJobId = new AtomicReference<>(null);
+    private final AtomicReference<String> lastJobId = new AtomicReference<>("");
     private final AtomicReference<DebugInfo> debug = new AtomicReference<>(DebugInfo.idle());
 
+    // 디버그 모델
     public static class DebugInfo {
         public String jobId;
-        public String status;
-        public String step;
+        public String status;    // IDLE/QUEUED/RUNNING/SUCCESS/FAILED
+        public String step;      // EXTRACT/SONAR/RESULT_DB/CLEANUP/DONE/ERROR
         public Instant queuedAt;
         public Instant startedAt;
         public Instant finishedAt;
         public String error;
-
-        static DebugInfo idle() { var d = new DebugInfo(); d.status = "IDLE"; d.step = ""; return d; }
+        public static DebugInfo idle() {
+            DebugInfo d = new DebugInfo();
+            d.jobId = "";
+            d.status = "IDLE";
+            d.step = "";
+            return d;
+        }
     }
 
-    public DebugInfo getDebug() { return debug.get(); }
+    public DebugInfo getDebug() {
+        DebugInfo d = debug.get();
+        return (d != null) ? d : DebugInfo.idle();
+    }
+
     public String getLastJobId() { return lastJobId.get(); }
 
     public AnalysisOrchestrator(SonarService sonarService,

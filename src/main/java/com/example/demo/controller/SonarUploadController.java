@@ -15,9 +15,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -27,6 +30,7 @@ public class SonarUploadController {
     private String sonarHost;
 
     private final AnalysisOrchestrator orchestrator;
+    private static final Logger log = LoggerFactory.getLogger(SonarUploadController.class);
 
     public SonarUploadController(AnalysisOrchestrator orchestrator) {
         this.orchestrator = orchestrator;
@@ -121,22 +125,34 @@ public class SonarUploadController {
 
     @GetMapping("/upload/debug")
     public ResponseEntity<Map<String, Object>> debug() {
-        AnalysisOrchestrator.DebugInfo info = orchestrator.getDebug();
+        try {
+            var info = Optional.ofNullable(orchestrator.getDebug())
+                    .orElseGet(AnalysisOrchestrator.DebugInfo::idle);
 
-        // 서버 로그에도 현재 상태 한 줄로 출력
-        Logger log = LoggerFactory.getLogger(SonarUploadController.class);
-        log.info("[DEBUG] jobId={}, status={}, step={}, queuedAt={}, startedAt={}, finishedAt={}, error={}",
-                info.jobId, info.status, info.step, info.queuedAt, info.startedAt, info.finishedAt, info.error);
+            // 로그도 NPE 없게 String.valueOf 사용
+            log.info("[DEBUG] jobId={}, status={}, step={}, queuedAt={}, startedAt={}, finishedAt={}, error={}",
+                    String.valueOf(info.jobId), String.valueOf(info.status), String.valueOf(info.step),
+                    String.valueOf(info.queuedAt), String.valueOf(info.startedAt),
+                    String.valueOf(info.finishedAt), String.valueOf(info.error));
 
-        // 응답으로도 상태 반환
-        return ResponseEntity.ok(Map.of(
-                "jobId", info.jobId,
-                "status", info.status,
-                "step", info.step,
-                "queuedAt", info.queuedAt,
-                "startedAt", info.startedAt,
-                "finishedAt", info.finishedAt,
-                "error", info.error
-        ));
+            Map<String,Object> body = new LinkedHashMap<>();
+            body.put("jobId", info.jobId);
+            body.put("status", info.status);
+            body.put("step", info.step);
+            body.put("queuedAt", info.queuedAt);
+            body.put("startedAt", info.startedAt);
+            body.put("finishedAt", info.finishedAt);
+            body.put("error", info.error);
+            // 참고로 가장 최근 jobId도 같이
+            body.put("lastJobId", orchestrator.getLastJobId());
+
+            return ResponseEntity.ok(body);
+        } catch (Exception e) {
+            log.error("debug endpoint error", e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "debug_failed",
+                    "detail", e.getMessage()
+            ));
+        }
     }
 }
