@@ -5,7 +5,8 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface NotionInquiryRepository {
-    public void saveInquiry(NotionInquiry inquiry);
 
-    public void updatePageId(Long id, String notionPageId);
+    void saveInquiry(NotionInquiry inquiry);
+
+    void updatePageId(Long id, String notionPageId);
 }

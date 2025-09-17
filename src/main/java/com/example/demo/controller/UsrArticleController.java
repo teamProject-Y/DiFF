@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.example.demo.interceptor.BeforeActionInterceptor;
 import com.example.demo.service.*;
 import com.example.demo.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,8 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/DiFF/article")
 public class UsrArticleController {
-
-    private final BeforeActionInterceptor beforeActionInterceptor;
 
     @Autowired
     private Rq rq;
@@ -34,35 +31,25 @@ public class UsrArticleController {
     @Autowired
     private ReactionService reactionService;
 
-    @Autowired
-    private NotificationService notificationService;
-
-    UsrArticleController(BeforeActionInterceptor beforeActionInterceptor) {
-        this.beforeActionInterceptor = beforeActionInterceptor;
-    }
-
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> showList( HttpServletRequest req,
             @RequestParam(defaultValue = "repositoryId") Long repositoryId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int searchItem) {
+
+        System.out.println("===== 📑 [Get] /api/DiFF/article/list =====");
+
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
-//        System.out.println("list 진입");
 
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
 
-        int totalCnt = articleService.getArticlesCnt(repositoryId, keyword, searchItem, loginedMemberId);
-        int totalPage = (int) Math.ceil(totalCnt / (double) itemsInAPage);
         List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
-//        result.put("totalCnt", totalCnt);
-//        result.put("totalPage", totalPage);
-//        result.put("page", page);
 
         return ResponseEntity.ok(result);
     }
@@ -72,51 +59,38 @@ public class UsrArticleController {
     public ResultData<List<Article>> searchArticles(HttpServletRequest req,
                                                     @RequestParam String keyword) {
         System.out.println("\n===== 🔎 [GET] /api/DiFF/article/search =====");
-        System.out.println("📥 요청 keyword = " + keyword);
+        System.out.println("🔎 요청 keyword = " + keyword);
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
 
-        System.out.println("👤 요청자 memberId = " + loginedMemberId);
-
         List<Article> results = articleService.searchArticles(keyword, loginedMemberId);
 
-        System.out.println("📊 검색 결과 수 = " + (results != null ? results.size() : 0));
-        if (results != null) {
-            for (Article a : results) {
-                System.out.println(" - id=" + a.getId()
-                        + ", title=" + a.getTitle()
-                        + ", isPublic=" + a.getIsPublic());
-            }
-        }
+        System.out.println("🔎 검색 결과 수 = " + (results != null ? results.size() : 0));
 
         return ResultData.from("S-1", "검색 결과", "articles", results);
     }
-
 
     @GetMapping("/trending")
     public ResponseEntity<Map<String, Object>> getTrending(HttpServletRequest req,
                                                            @RequestParam(defaultValue = "100") Integer count,
                                                            @RequestParam(defaultValue = "30") Integer days) {
-        System.out.println("📥 /api/DiFF/article/trending 요청 도착");
+        System.out.println("\n===== 👏 [GET] /api/DiFF/article/trending =====");
 
-        System.out.println("-> count: " + count);
-        System.out.println("-> days: " + days);
+        System.out.println("👏 count: " + count + ", days: " + days);
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq != null ? rq.getLoginedMemberId() : null;
-        System.out.println("👤 loginedMemberId = " + loginedMemberId);
 
         List<Article> articles = articleService.getTrendingArticles(count, days, loginedMemberId);
 
-        System.out.println("📊 trending 결과 수 = " + (articles != null ? articles.size() : 0));
+        System.out.println("👏 trending 결과 수 = " + (articles != null ? articles.size() : 0));
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
 
         return ResponseEntity.ok(result);
     }
-
 
     @PostMapping("/doWrite")
     @ResponseBody
@@ -130,13 +104,11 @@ public class UsrArticleController {
             draft.setIsPublic(true);
         }
 
-        System.out.println("\n===== 🐶🐶 [POST] /article/doWrite =====");
-        System.out.println("memberId      = " + draft.getMemberId());
-        System.out.println("title         = " + draft.getTitle());
-        System.out.println("body.length   = " + (draft.getBody() != null ? draft.getBody().length() : null));
-        System.out.println("checksum      = " + draft.getChecksum());
-        System.out.println("repositoryId  = " + draft.getRepositoryId());
-        System.out.println("draftId       = " + draft.getDraftId());
+        System.out.println("\n===== ✍️ [POST] /article/doWrite =====");
+        System.out.println("️✍️ memberId: " + draft.getMemberId());
+        System.out.println("✍️ checksum      = " + draft.getChecksum());
+        System.out.println("✍️ repositoryId  = " + draft.getRepositoryId());
+        System.out.println("✍️ draftId       = " + draft.getDraftId());
 
         // 유효성 검사
         if (draft.getRepositoryId() == null) {
@@ -155,7 +127,7 @@ public class UsrArticleController {
                 loginedMemberId
         );
         if (repo == null) {
-            System.out.println("[FAIL] 권한 없음 / repo 미존재");
+            System.out.println("✍️ [FAIL] 권한 없음 / repo 미존재");
             return ResultData.from("F-403", "해당 리포지토리에 대한 권한이 없습니다.");
         }
 
@@ -172,6 +144,7 @@ public class UsrArticleController {
                 loginedMemberId,
                 draft.getTitle(),
                 draft.getBody(),
+                draft.getIsPublic(),
                 checksum,
                 draft.getRepositoryId(),
                 draft.getDraftId(),
@@ -184,22 +157,20 @@ public class UsrArticleController {
     @GetMapping("/detail")
     public ResultData<Article> getArticle(HttpServletRequest req, @RequestParam Long id) {
 
-        System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/detail?id=" + id + " =====");
-        System.out.println("detail 진입 id: " + id);
+        System.out.println("\n===== ✏️ [GET] /api/DiFF/article/detail?id=" + id + " =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
-        System.out.println("rq.loginedMemberId: " + rq.getLoginedMemberId());
 
         Article article = articleService.getArticleById(id, loginedMemberId);
-        System.out.println(article == null ? "null" : "article");
+
+        if(!article.getIsPublic() && article.getMemberId() != loginedMemberId){
+            return ResultData.from("F-401", "비공개 게시물. 접근 권한이 없습니다.");
+        }
 
         if (article == null) {
             return ResultData.from("F-404", "해당 게시글이 존재하지 않습니다.");
         }
-
-        System.out.println(article.getExtra__writer());
-        System.out.println("article: " + article);
 
         return ResultData.from("S-1", "게시글 조회 성공", article);
     }
@@ -208,7 +179,7 @@ public class UsrArticleController {
     @ResponseBody
     public ResultData<Integer> modifyArticle(HttpServletRequest req, @RequestBody Article article) {
 
-        System.out.println("\n===== 🐶🐶 [POST] /api/DiFF/article/modify =====");
+        System.out.println("\n===== 📝 [POST] /api/DiFF/article/modify =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
@@ -242,15 +213,13 @@ public class UsrArticleController {
         return ResultData.from("S-1", "수정 성공", affectedRow);
     }
 
-
-
     @DeleteMapping("/{id}")
     public ResultData<Integer> deleteArticle(
             HttpServletRequest req, @PathVariable Long id) {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
 
-        System.out.println("\n===== \uD83D\uDC36 \uD83D\uDC36 [DELETE] /api/DiFF/article/" + id + " =====");
+        System.out.println("\n===== 🗑️ [DELETE] /api/DiFF/article/" + id + " =====");
 
         Article article = articleService.getArticleById(id, loginedMemberId);
         if (article == null) {
@@ -278,7 +247,7 @@ public class UsrArticleController {
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = ((Number) rq.getLoginedMemberId()).longValue();
-        System.out.println("\n===== 🐶🐶 [GET] /api/DiFF/article/followingArticleList =====");
+        System.out.println("\n===== 🌀 [GET] /api/DiFF/article/followingArticleList =====");
 
         int itemsInAPage = 10;
         int limitFrom = (page - 1) * itemsInAPage;
@@ -294,8 +263,6 @@ public class UsrArticleController {
         result.put("totalPage", totalPage);
         result.put("page", page);
 
-        System.out.println("asas");
-
         return ResponseEntity.ok(result);
     }
 
@@ -303,14 +270,14 @@ public class UsrArticleController {
     @PostMapping("/like/{articleId}")
     public Map<String,Object> likeArticle(HttpServletRequest req, @PathVariable Long articleId) {
 
-        System.out.println("put/like/article 진입");
+        System.out.println("\n===== 👍📑 [Post] /api/DiFF/article/like/{articleId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         int row = reactionService.like("article", articleId, memberId);
 
-        System.out.println("dolike success: " + row);
+        System.out.println("👍📑 dolike success: " + row);
 
         return Map.of("relType","article",
                 "relId",articleId,
@@ -322,14 +289,14 @@ public class UsrArticleController {
     @DeleteMapping("/like/{articleId}")
     public Map<String,Object> unlikeArticle(HttpServletRequest req, @PathVariable Long articleId) {
 
-        System.out.println("delete/like/article 진입");
+        System.out.println("\n===== 👍🗑️ [Delete] /api/DiFF/article/like/{articleId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 
         int row = reactionService.unlike("article", articleId, memberId);
 
-        System.out.println("dounlike success: " + row);
+        System.out.println("👍🗑️ dounlike success: " + row);
 
         return Map.of("relType","article",
                 "relId",articleId,
@@ -341,7 +308,7 @@ public class UsrArticleController {
     @GetMapping("/like/{articleId}")
     public Map<String,Object> getArticleLike(HttpServletRequest req, @PathVariable Long articleId) {
 
-        System.out.println("get/like/article 진입");
+        System.out.println("\n===== 👍🔢️ [Get] /api/DiFF/article/like/{articleId} =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
@@ -355,6 +322,8 @@ public class UsrArticleController {
     @PostMapping("/hits/{articleId}")
     @ResponseBody
     public Map<String, Object> increaseHits(HttpServletRequest req, @PathVariable Long articleId) {
+
+        System.out.println("\n===== 👀🔢️ [Get] /api/DiFF/article/hits/{articleId} =====");
         Rq rq = (Rq) req.getAttribute("rq");
         Long memberId = ((Number) rq.getLoginedMemberId()).longValue();
 

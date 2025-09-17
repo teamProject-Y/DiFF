@@ -1,8 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.repository.MemberRepository;
 import com.example.demo.repository.NotificationRepository;
-import com.example.demo.vo.Member;
 import com.example.demo.vo.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,18 +13,12 @@ public class NotificationService {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    @Autowired
-    private MemberRepository memberRepository;
-    /**
-     * 읽지 않은 알림이 있는지 확인 (빨간 점 표시 용)
-     */
+    /** 읽지 않은 알림이 있는지 확인 (빨간 점 표시 용) */
     public boolean hasUnread(Long memberId) {
         return notificationRepository.hasUnread(memberId) > 0;
     }
 
-    /**
-     * 알림 전체 조회
-     */
+    /** 알림 전체 조회 */
     public List<Notification> getNotifications(Long memberId) {
         return notificationRepository.getNotifications(memberId);
     }

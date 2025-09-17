@@ -9,17 +9,17 @@ import java.util.List;
 @Mapper
 public interface ReplyRepository {
 
-    public List<Reply> getReplies(Long articleId);
+    List<Reply> getReplies(Long articleId);
 
-    public int doReplyWrtie(
+    int doReplyWrtie(
             @Param("articleId") Long articleId,
             @Param("memberId") Long memberId,
             @Param("body") String body
     );
 
-    public Reply getReplyById(Long id);
+    Reply getReplyById(Long id);
 
-    public int deleteReply(Long id, Long memberId);
+    int deleteReply(Long id, Long memberId);
 
-    public int modifyReply(Reply reply);
+    int modifyReply(Reply reply);
 }
