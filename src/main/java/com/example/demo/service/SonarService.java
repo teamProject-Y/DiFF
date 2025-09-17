@@ -35,6 +35,7 @@ import java.util.zip.ZipFile;
 
 @Service
 public class SonarService {
+
     @Autowired
     private AnalysisRepository analysisRepository;
     @Autowired
@@ -42,11 +43,14 @@ public class SonarService {
     @Autowired
     private AnalysisService analysisService;
 
-    @Value("${sonarqube.host}")
+    @Value("${sonar.host}")
     private String sonarHost;
 
-    @Value("${sonarqube.token}")
+    @Value("${sonar.token}")
     private String sonarToken;
+
+    @Value("${sonar.organization}")
+    private String sonarOrg;
 
     public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException, InterruptedException {
         Path tempDir = Files.createTempDirectory("source-");
@@ -57,7 +61,7 @@ public class SonarService {
         zipFile.transferTo(tempZip);
         unzip(tempZip, targetDir);
 
-        // ✅ GitHub zipball wrapper 디렉토리 보정
+        // GitHub zipball wrapper 디렉토리 보정
         File[] children = targetDir.listFiles(File::isDirectory);
         if (children != null && children.length == 1) {
             File wrapper = children[0];
@@ -67,7 +71,7 @@ public class SonarService {
             }
         }
 
-        // ✅ 빌드 실행 (target/classes 생성 목적)
+        // 빌드 실행 (target/classes 생성 목적)
         runBuild(targetDir);
 
         // sonar-project.properties 자동 생성
@@ -181,7 +185,7 @@ public class SonarService {
             throw new RuntimeException("❌ 빌드 실패! exitCode=" + exitCode + "\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
         }
 
-        // ✅ 빌드 후 클래스 디렉토리 확인
+        // 빌드 후 클래스 디렉토리 확인
         File mavenClasses = new File(root, "target/classes");
         File gradleClasses = new File(root, "build/classes/java/main");
 
@@ -204,7 +208,8 @@ public class SonarService {
         } catch (UnsupportedOperationException ignore) {
             // Windows면 무시
             if (f != null) f.setExecutable(true, true);
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
     }
 
     private String tailLines(String text, int lines) {
@@ -212,6 +217,7 @@ public class SonarService {
         int from = Math.max(0, arr.length - lines);
         return String.join("\n", Arrays.copyOfRange(arr, from, arr.length));
     }
+
     private void unzip(File zipFile, File destDir) throws IOException {
         try (ZipFile zip = new ZipFile(zipFile)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
@@ -237,8 +243,11 @@ public class SonarService {
                 "sonar-scanner",
                 "-Dsonar.projectKey=" + projectKey,
                 "-Dsonar.host.url=" + sonarHost,
-                "-Dsonar.login=" + sonarToken
+                "-Dsonar.organization=" + sonarOrg,
+                "-Dsonar.token=" + sonarToken
+//                "-Dsonar.login=" + sonarToken
         );
+
         pb.directory(new File(dir));
         pb.redirectErrorStream(true);
         Process process = pb.start();
@@ -308,7 +317,7 @@ public class SonarService {
                                  Long draftId,
                                  Long diffId,
                                  String checksum,
-                                 String projectKey ) throws IOException, InterruptedException {
+                                 String projectKey) throws IOException, InterruptedException {
         try {
             // 분석 결과 가져오기
             String resultJson = getAnalysisResult(projectKey);
@@ -385,7 +394,6 @@ public class SonarService {
         }
     }
 
-
     public List<AnalysisLanguage> parseLanguageDistribution(String raw, Long analyzeId) {
         System.out.println("parseLanguageDistribution 잔입 raw: " + raw);
         List<AnalysisLanguage> result = new ArrayList<>();
@@ -406,29 +414,39 @@ public class SonarService {
     }
 
     private Double parseDouble(String value) {
-        try { return value == null ? null : Double.parseDouble(value); }
-        catch (NumberFormatException e) { return null; }
+        try {
+            return value == null ? null : Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private Integer parseInt(String value) {
-        try { return value == null ? null : Integer.parseInt(value); }
-        catch (NumberFormatException e) { return null; }
+        try {
+            return value == null ? null : Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
 
     public void deleteProject(String projectKey) {
         try {
-            String sonarBaseUrl = "http://localhost:9000";
-            String deleteUrl = sonarBaseUrl + "/api/projects/delete?project=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
+//            String sonarBaseUrl = sonarHost;
+            String deleteUrl = sonarHost + "/api/projects/delete?project=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
 
             String adminUsername = "admin";
             String adminPassword = "teamprojectY1!";
 
             HttpURLConnection connection = (HttpURLConnection) new URL(deleteUrl).openConnection();
             connection.setRequestMethod("POST");
+
             String basicAuth = "Basic " + Base64.getEncoder()
                     .encodeToString((adminUsername + ":" + adminPassword).getBytes(StandardCharsets.UTF_8));
             connection.setRequestProperty("Authorization", basicAuth);
+//            String basicAuth = "Basic " + Base64.getEncoder()
+//                    .encodeToString((sonarToken + ":").getBytes(StandardCharsets.UTF_8));
+//            conn.setRequestProperty("Authorization", basicAuth);
 
             int responseCode = connection.getResponseCode();
             if (responseCode == 204) {
@@ -499,13 +517,13 @@ public class SonarService {
 
             // 2. 공통 제외 패턴 (외부 라이브러리/빌드 산출물)
             writer.println("sonar.exclusions=" + String.join(",",
-                    "**/node_modules/**","**/build/**","**/dist/**","**/target/**",
-                    "**/.venv/**","**/venv/**","**/.tox/**","**/.pytest_cache/**",
-                    "**/.next/**","**/.nuxt/**","**/.yarn/**","**/.pnpm-store/**"));
+                    "**/node_modules/**", "**/build/**", "**/dist/**", "**/target/**",
+                    "**/.venv/**", "**/venv/**", "**/.tox/**", "**/.pytest_cache/**",
+                    "**/.next/**", "**/.nuxt/**", "**/.yarn/**", "**/.pnpm-store/**"));
 
             // 3. 포함 패턴 (원본 코드 확장자)
             writer.println("sonar.inclusions=" + String.join(",",
-                    "**/*.java","**/*.kt","**/*.kts","**/*.py","**/*.js","**/*.jsx","**/*.ts","**/*.tsx"));
+                    "**/*.java", "**/*.kt", "**/*.kts", "**/*.py", "**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"));
 
             // 4. Java 설정 (멀티모듈 binaries)
             if (containsJava) {
@@ -519,7 +537,7 @@ public class SonarService {
                 // sonar.language는 지정 안 하면 JS/Java/Python 다 잡힘
             }
 
-            writer.println("sonar.login=" + sonarToken);
+//            writer.println("sonar.login=" + sonarToken);
         }
 
         System.out.println(" 최종 분석 대상 폴더들: " + sourcePaths);
@@ -547,9 +565,9 @@ public class SonarService {
 
             if (isModuleRoot) {
                 String[] candidates = {
-                        "target/classes","target/test-classes",
-                        "build/classes/java/main","build/classes/java/test",
-                        "build/classes/kotlin/main","build/classes/kotlin/test"
+                        "target/classes", "target/test-classes",
+                        "build/classes/java/main", "build/classes/java/test",
+                        "build/classes/kotlin/main", "build/classes/kotlin/test"
                 };
                 for (String rel : candidates) {
                     File c = new File(dir, rel);
@@ -569,7 +587,6 @@ public class SonarService {
         }
         return bins.stream().distinct().collect(Collectors.toList());
     }
-
 
     private String findClassFolder(File projectDir) {
         File[] classDirs = {
@@ -643,7 +660,6 @@ public class SonarService {
 
         return validPaths;
     }
-
 
     private boolean containsExtension(File dir, String ext) {
         if (!dir.exists() || !dir.isDirectory()) return false;
