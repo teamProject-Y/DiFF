@@ -829,215 +829,217 @@ public class GithubController {
 //    }
 
     // ZIP 언팩 (GitHub zipball 최상위 디렉토리 strip)
-    private void unzipGitHubZip(Path zip, Path dest) throws IOException {
-        Files.createDirectories(dest);
-        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(Files.newInputStream(zip))) {
-            java.util.zip.ZipEntry e;
-            while ((e = zis.getNextEntry()) != null) {
-                if (e.isDirectory()) continue;
-                String normalized = stripFirstDir(e.getName());
-                if (normalized.isBlank()) continue;
-                Path out = dest.resolve(normalized).normalize();
-                Files.createDirectories(out.getParent());
-                Files.copy(zis, out, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-    }
+//    private void unzipGitHubZip(Path zip, Path dest) throws IOException {
+//        Files.createDirectories(dest);
+//        try (java.util.zip.ZipInputStream zis = new java.util.zip.ZipInputStream(Files.newInputStream(zip))) {
+//            java.util.zip.ZipEntry e;
+//            while ((e = zis.getNextEntry()) != null) {
+//                if (e.isDirectory()) continue;
+//                String normalized = stripFirstDir(e.getName());
+//                if (normalized.isBlank()) continue;
+//                Path out = dest.resolve(normalized).normalize();
+//                Files.createDirectories(out.getParent());
+//                Files.copy(zis, out, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+//            }
+//        }
+//    }
 
-    private String stripFirstDir(String name) {
-        int idx = name.indexOf('/');
-        return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;
-    }
+//    private String stripFirstDir(String name) {
+//        int idx = name.indexOf('/');
+//        return (idx >= 0 && idx + 1 < name.length()) ? name.substring(idx + 1) : name;
+//    }
 
     // 빌드 타입 감지
-    private enum BuildType { MAVEN, GRADLE, NODE, PYTHON, GO, UNKNOWN }
-    private BuildType detectBuildType(Path src) {
-        if (Files.exists(src.resolve("pom.xml"))) return BuildType.MAVEN;
-        if (Files.exists(src.resolve("build.gradle")) || Files.exists(src.resolve("build.gradle.kts"))) return BuildType.GRADLE;
-        if (Files.exists(src.resolve("package.json"))) return BuildType.NODE;
-        if (Files.exists(src.resolve("pyproject.toml")) || Files.exists(src.resolve("requirements.txt"))) return BuildType.PYTHON;
-        if (Files.exists(src.resolve("go.mod"))) return BuildType.GO;
-        return BuildType.UNKNOWN;
-    }
+//    private enum BuildType { MAVEN, GRADLE, NODE, PYTHON, GO, UNKNOWN }
+
+//    private BuildType detectBuildType(Path src) {
+//        if (Files.exists(src.resolve("pom.xml"))) return BuildType.MAVEN;
+//        if (Files.exists(src.resolve("build.gradle")) || Files.exists(src.resolve("build.gradle.kts"))) return BuildType.GRADLE;
+//        if (Files.exists(src.resolve("package.json"))) return BuildType.NODE;
+//        if (Files.exists(src.resolve("pyproject.toml")) || Files.exists(src.resolve("requirements.txt"))) return BuildType.PYTHON;
+//        if (Files.exists(src.resolve("go.mod"))) return BuildType.GO;
+//        return BuildType.UNKNOWN;
+//    }
 
     // 빌드 전용 플랜 (Sonar 없음, 테스트/커버리지는 best-effort)
-    private static class BuildPlan {
-        String image;
-        java.util.List<String> commands;
-        java.util.Map<String, String> env;
-        java.util.List<String> volumes;
-        BuildPlan(String image, java.util.List<String> commands, java.util.Map<String, String> env, java.util.List<String> volumes) {
-            this.image = image; this.commands = commands; this.env = env; this.volumes = volumes;
-        }
-    }
+//    private static class BuildPlan {
+//        String image;
+//        java.util.List<String> commands;
+//        java.util.Map<String, String> env;
+//        java.util.List<String> volumes;
+//        BuildPlan(String image, java.util.List<String> commands, java.util.Map<String, String> env, java.util.List<String> volumes) {
+//            this.image = image; this.commands = commands; this.env = env; this.volumes = volumes;
+//        }
+//    }
 
     // 빌드 전용 플랜 (테스트는 선택: 실패해도 빌드는 성공 처리)
-    private BuildPlan makeBuildPlanForBuildOnly(BuildType t, Path srcDir) {
-        switch (t) {
-            case MAVEN -> {
-                return new BuildPlan(
-                        "maven:3.9-eclipse-temurin-17",
-                        java.util.List.of(
-                                "mvn -B -q -DskipTests=true -DskipITs package",
-                                "mvn -B -q -DskipTests=false -Dsurefire.skipAfterFailureCount=1 -Dsurefire.forkCount=1 -Dsurefire.reuseForks=true test || true",
-                                "mvn -B -q jacoco:report || true"
-                        ),
-                        // 테스트 포크 안정화 & 메모리 절약
-                        java.util.Map.of(
-                                "MAVEN_OPTS", "-Xmx768m -XX:+UseSerialGC -Djava.awt.headless=true"
-                        ),
-                        java.util.List.of("diff-m2:/root/.m2")
-                );
-            }
-            case GRADLE -> {
-                boolean hasWrapper = Files.exists(srcDir.resolve("gradlew"));
-                String gradleCmd = hasWrapper ? "chmod +x ./gradlew && ./gradlew" : "gradle";
-                return new BuildPlan(
-                        "gradle:8.9-jdk17",
-                        java.util.List.of(
-                                gradleCmd + " assemble --no-daemon --console=plain",
-                                gradleCmd + " test --no-daemon --console=plain || true",
-                                gradleCmd + " jacocoTestReport --no-daemon --console=plain || true"
-                        ),
-                        java.util.Map.of(
-                                "GRADLE_OPTS", "-Xmx768m -Djava.awt.headless=true"
-                        ),
-                        java.util.List.of("diff-gradle:/home/gradle/.gradle")
-                );
-            }
-            case NODE -> {
-                String installer =
-                        Files.exists(srcDir.resolve("pnpm-lock.yaml")) ? "corepack enable && pnpm i -f" :
-                                Files.exists(srcDir.resolve("yarn.lock"))      ? "corepack enable && yarn --frozen-lockfile" :
-                                        "npm ci";
-                return new BuildPlan(
-                        "node:20",
-                        java.util.List.of(
-                                installer,
-                                "npm run build || true",
-                                "npm test -- --coverage || true"
-                        ),
-                        java.util.Map.of("CI","true"),
-                        java.util.List.of("diff-npm:/root/.npm")
-                );
-            }
-            case PYTHON -> {
-                return new BuildPlan(
-                        "python:3.11",
-                        java.util.List.of(
-                                "[ -f requirements.txt ] && pip install -r requirements.txt || true",
-                                "pip install pytest coverage build || true",
-                                "python -m build || true",
-                                "pytest --maxfail=1 --disable-warnings --cov=. --cov-report=xml || true"
-                        ),
-                        java.util.Map.of(),
-                        java.util.List.of("diff-pip:/root/.cache/pip")
-                );
-            }
-            case GO -> {
-                return new BuildPlan(
-                        "golang:1.22",
-                        java.util.List.of(
-                                "go mod download",
-                                "go build ./... || true",
-                                "go test ./... -coverprofile=coverage.out || true"
-                        ),
-                        java.util.Map.of(),
-                        java.util.List.of("diff-go:/go/pkg/mod")
-                );
-            }
-            default -> {
-                return new BuildPlan(
-                        "alpine:3.20",
-                        java.util.List.of("echo 'No build tool detected'"),
-                        java.util.Map.of(),
-                        java.util.List.of()
-                );
-            }
-        }
-    }
+//    private BuildPlan makeBuildPlanForBuildOnly(BuildType t, Path srcDir) {
+//        switch (t) {
+//            case MAVEN -> {
+//                return new BuildPlan(
+//                        "maven:3.9-eclipse-temurin-17",
+//                        java.util.List.of(
+//                                "mvn -B -q -DskipTests=true -DskipITs package",
+//                                "mvn -B -q -DskipTests=false -Dsurefire.skipAfterFailureCount=1 -Dsurefire.forkCount=1 -Dsurefire.reuseForks=true test || true",
+//                                "mvn -B -q jacoco:report || true"
+//                        ),
+//                        // 테스트 포크 안정화 & 메모리 절약
+//                        java.util.Map.of(
+//                                "MAVEN_OPTS", "-Xmx768m -XX:+UseSerialGC -Djava.awt.headless=true"
+//                        ),
+//                        java.util.List.of("diff-m2:/root/.m2")
+//                );
+//            }
+//            case GRADLE -> {
+//                boolean hasWrapper = Files.exists(srcDir.resolve("gradlew"));
+//                String gradleCmd = hasWrapper ? "chmod +x ./gradlew && ./gradlew" : "gradle";
+//                return new BuildPlan(
+//                        "gradle:8.9-jdk17",
+//                        java.util.List.of(
+//                                gradleCmd + " assemble --no-daemon --console=plain",
+//                                gradleCmd + " test --no-daemon --console=plain || true",
+//                                gradleCmd + " jacocoTestReport --no-daemon --console=plain || true"
+//                        ),
+//                        java.util.Map.of(
+//                                "GRADLE_OPTS", "-Xmx768m -Djava.awt.headless=true"
+//                        ),
+//                        java.util.List.of("diff-gradle:/home/gradle/.gradle")
+//                );
+//            }
+//            case NODE -> {
+//                String installer =
+//                        Files.exists(srcDir.resolve("pnpm-lock.yaml")) ? "corepack enable && pnpm i -f" :
+//                                Files.exists(srcDir.resolve("yarn.lock"))      ? "corepack enable && yarn --frozen-lockfile" :
+//                                        "npm ci";
+//                return new BuildPlan(
+//                        "node:20",
+//                        java.util.List.of(
+//                                installer,
+//                                "npm run build || true",
+//                                "npm test -- --coverage || true"
+//                        ),
+//                        java.util.Map.of("CI","true"),
+//                        java.util.List.of("diff-npm:/root/.npm")
+//                );
+//            }
+//            case PYTHON -> {
+//                return new BuildPlan(
+//                        "python:3.11",
+//                        java.util.List.of(
+//                                "[ -f requirements.txt ] && pip install -r requirements.txt || true",
+//                                "pip install pytest coverage build || true",
+//                                "python -m build || true",
+//                                "pytest --maxfail=1 --disable-warnings --cov=. --cov-report=xml || true"
+//                        ),
+//                        java.util.Map.of(),
+//                        java.util.List.of("diff-pip:/root/.cache/pip")
+//                );
+//            }
+//            case GO -> {
+//                return new BuildPlan(
+//                        "golang:1.22",
+//                        java.util.List.of(
+//                                "go mod download",
+//                                "go build ./... || true",
+//                                "go test ./... -coverprofile=coverage.out || true"
+//                        ),
+//                        java.util.Map.of(),
+//                        java.util.List.of("diff-go:/go/pkg/mod")
+//                );
+//            }
+//            default -> {
+//                return new BuildPlan(
+//                        "alpine:3.20",
+//                        java.util.List.of("echo 'No build tool detected'"),
+//                        java.util.Map.of(),
+//                        java.util.List.of()
+//                );
+//            }
+//        }
+//    }
 
     // Docker 실행기
-    private static class ExecResult { int exitCode; String log; ExecResult(int c, String l){exitCode=c;log=l;} }
-    private ExecResult runDocker(String dockerBin, String image, Path workDir, java.util.Map<String,String> env,
-                                 java.util.List<String> commands, java.util.List<String> volumes, long timeoutSeconds) throws Exception {
-        String joined = String.join(" && ", commands);
+//    private static class ExecResult { int exitCode; String log; ExecResult(int c, String l){exitCode=c;log=l;} }
 
-        java.util.List<String> cmd = new java.util.ArrayList<>(java.util.List.of(
-                dockerBin, "run", "--rm",
-                "-v", workDir.toAbsolutePath() + ":/work",
-                "-w", "/work"
-        ));
-        for (String v : volumes) { cmd.addAll(java.util.List.of("-v", v)); }
-        env.forEach((k,v) -> { cmd.add("-e"); cmd.add(k + "=" + v); });
-        cmd.add(image);
-        cmd.add("bash"); cmd.add("-lc"); cmd.add(joined);
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-
-        StringBuilder out = new StringBuilder();
-        try (var br = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
-            var es = java.util.concurrent.Executors.newSingleThreadExecutor();
-            var copy = es.submit(() -> br.lines().forEach(l -> out.append(l).append('\n')));
-            boolean finished = p.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
-            if (!finished) {
-                p.destroyForcibly();
-                copy.cancel(true);
-                es.shutdownNow();
-                return new ExecResult(124, "Timeout after " + timeoutSeconds + "s\n" + out);
-            }
-            copy.get(2, java.util.concurrent.TimeUnit.SECONDS);
-            es.shutdown();
-        }
-        return new ExecResult(p.exitValue(), out.toString());
-    }
-
-    // 빌드 산출물 포함 ZIP 생성 (캐시/의존성 디렉토리는 제외)
-    private void zipDirectorySelective(Path root, Path zipOut) throws IOException {
-        java.util.Set<String> EXCLUDES = java.util.Set.of(
-                ".git/", ".idea/", ".vscode/", "node_modules/", ".gradle/", "build-cache/",
-                "target/surefire-reports/temp/", "__pycache__/", ".m2/", ".venv/", "out/", "bin/"
-        );
-        // 포함 우선 디렉토리
-        java.util.Set<String> INCLUDE_HINTS = java.util.Set.of(
-                "target/", "build/", "coverage/", "build/reports/", "dist/"
-        );
-
-        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipOut))) {
-            final int rootLen = root.toAbsolutePath().toString().length() + 1;
-            java.nio.file.Files.walk(root)
-                    .filter(Files::isRegularFile)
-                    .forEach(p -> {
-                        String rel = p.toAbsolutePath().toString().substring(rootLen).replace("\\","/");
-                        // 제외 규칙
-                        for (String ex : EXCLUDES) {
-                            if (rel.startsWith(ex) || rel.contains("/" + ex)) return;
-                        }
-                        // 너무 큰 산출물 제외
-                        try {
-                            long size = Files.size(p);
-                            if (size > 50L * 1024 * 1024) return;
-                        } catch (IOException ignore) {}
-
-                        // 엔트리 추가
-                        try {
-                            java.util.zip.ZipEntry ze = new java.util.zip.ZipEntry(rel);
-                            zos.putNextEntry(ze);
-                            Files.copy(p, zos);
-                            zos.closeEntry();
-                        } catch (IOException e) {
-                            // 로그
-                            System.out.println("zip skip error: " + rel + " - " + e.getMessage());
-                        }
-                    });
-        }
-    }
-
-    private String tail(String s, int max) {
-        if (s == null) return "";
-        return (s.length() <= max) ? s : s.substring(s.length() - max);
-    }
+//    private ExecResult runDocker(String dockerBin, String image, Path workDir, java.util.Map<String,String> env,
+//                                 java.util.List<String> commands, java.util.List<String> volumes, long timeoutSeconds) throws Exception {
+//        String joined = String.join(" && ", commands);
+//
+//        java.util.List<String> cmd = new java.util.ArrayList<>(java.util.List.of(
+//                dockerBin, "run", "--rm",
+//                "-v", workDir.toAbsolutePath() + ":/work",
+//                "-w", "/work"
+//        ));
+//        for (String v : volumes) { cmd.addAll(java.util.List.of("-v", v)); }
+//        env.forEach((k,v) -> { cmd.add("-e"); cmd.add(k + "=" + v); });
+//        cmd.add(image);
+//        cmd.add("bash"); cmd.add("-lc"); cmd.add(joined);
+//
+//        ProcessBuilder pb = new ProcessBuilder(cmd);
+//        pb.redirectErrorStream(true);
+//        Process p = pb.start();
+//
+//        StringBuilder out = new StringBuilder();
+//        try (var br = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+//            var es = java.util.concurrent.Executors.newSingleThreadExecutor();
+//            var copy = es.submit(() -> br.lines().forEach(l -> out.append(l).append('\n')));
+//            boolean finished = p.waitFor(timeoutSeconds, java.util.concurrent.TimeUnit.SECONDS);
+//            if (!finished) {
+//                p.destroyForcibly();
+//                copy.cancel(true);
+//                es.shutdownNow();
+//                return new ExecResult(124, "Timeout after " + timeoutSeconds + "s\n" + out);
+//            }
+//            copy.get(2, java.util.concurrent.TimeUnit.SECONDS);
+//            es.shutdown();
+//        }
+//        return new ExecResult(p.exitValue(), out.toString());
+//    }
+//
+//    // 빌드 산출물 포함 ZIP 생성 (캐시/의존성 디렉토리는 제외)
+//    private void zipDirectorySelective(Path root, Path zipOut) throws IOException {
+//        java.util.Set<String> EXCLUDES = java.util.Set.of(
+//                ".git/", ".idea/", ".vscode/", "node_modules/", ".gradle/", "build-cache/",
+//                "target/surefire-reports/temp/", "__pycache__/", ".m2/", ".venv/", "out/", "bin/"
+//        );
+//        // 포함 우선 디렉토리
+//        java.util.Set<String> INCLUDE_HINTS = java.util.Set.of(
+//                "target/", "build/", "coverage/", "build/reports/", "dist/"
+//        );
+//
+//        try (java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(Files.newOutputStream(zipOut))) {
+//            final int rootLen = root.toAbsolutePath().toString().length() + 1;
+//            java.nio.file.Files.walk(root)
+//                    .filter(Files::isRegularFile)
+//                    .forEach(p -> {
+//                        String rel = p.toAbsolutePath().toString().substring(rootLen).replace("\\","/");
+//                        // 제외 규칙
+//                        for (String ex : EXCLUDES) {
+//                            if (rel.startsWith(ex) || rel.contains("/" + ex)) return;
+//                        }
+//                        // 너무 큰 산출물 제외
+//                        try {
+//                            long size = Files.size(p);
+//                            if (size > 50L * 1024 * 1024) return;
+//                        } catch (IOException ignore) {}
+//
+//                        // 엔트리 추가
+//                        try {
+//                            java.util.zip.ZipEntry ze = new java.util.zip.ZipEntry(rel);
+//                            zos.putNextEntry(ze);
+//                            Files.copy(p, zos);
+//                            zos.closeEntry();
+//                        } catch (IOException e) {
+//                            // 로그
+//                            System.out.println("zip skip error: " + rel + " - " + e.getMessage());
+//                        }
+//                    });
+//        }
+//    }
+//
+//    private String tail(String s, int max) {
+//        if (s == null) return "";
+//        return (s.length() <= max) ? s : s.substring(s.length() - max);
+//    }
 
 }

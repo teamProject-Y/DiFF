@@ -210,10 +210,12 @@ public class SonarService {
                 .collect(java.util.stream.Collectors.joining(","));
 
         java.util.List<String> cmd = new java.util.ArrayList<>();
+
         cmd.add(mvn);
         cmd.add("-B");
         cmd.add("--no-transfer-progress");
-        cmd.add("-Dmaven.repo.local=" + m2.getAbsolutePath());
+//        cmd.add("-Dmaven.repo.local=" + m2.getAbsolutePath());
+        cmd.add("-Dmaven.repo.local=/tmp/.m2");
         cmd.add("org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
         cmd.add("-Dsonar.host.url=" + sonarHost);
         cmd.add("-Dsonar.projectKey=" + projectKey);
