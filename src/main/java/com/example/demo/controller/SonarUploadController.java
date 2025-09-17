@@ -14,6 +14,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,11 +40,16 @@ public class SonarUploadController {
     @PostMapping("/upload")
     public ResponseEntity<Map<String, Object>> upload(
             @RequestPart("file") MultipartFile zipFile,
-            @RequestPart("meta") String metaJson) {
+            @RequestPart("meta") String metaJson) throws IOException {
 
         System.out.println("===== 📂 [Post] /upload =====");
 
-        String jobId = orchestrator.enqueue(zipFile, metaJson);
+        Path saved = java.nio.file.Files.createTempFile("upload-", ".zip");
+        zipFile.transferTo(saved.toFile());
+
+        // 파일 경로를 넘기는 enqueue
+        String jobId = orchestrator.enqueueFile(saved.toString(), metaJson);
+
         return ResponseEntity.accepted().body(Map.of(
                 "status", "queued",
                 "jobId", jobId
@@ -89,39 +95,39 @@ public class SonarUploadController {
 //        }
     }
 
-    private void grantProjectAdminPermission(String projectKey) {
-//        String sonarBaseUrl = http://localhost:9000;
-        String apiEndpoint = sonarHost + "/api/permissions/add_user";
-
-        String login = "admin";
-        String password = "teamprojectY1!";
-
-        try {
-            String urlWithParams = apiEndpoint
-                    + "?login=" + URLEncoder.encode(login, StandardCharsets.UTF_8)
-                    + "&permission=admin"
-                    + "&projectKey=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
-
-            HttpURLConnection connection = (HttpURLConnection) new URL(urlWithParams).openConnection();
-            connection.setRequestMethod("POST");
-            String basicAuth = "Basic " + Base64.getEncoder()
-                    .encodeToString((login + ":" + password).getBytes(StandardCharsets.UTF_8));
-            connection.setRequestProperty("Authorization", basicAuth);
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 204) {
-                System.out.println("📊 프로젝트 관리자 권한 부여 완료: " + projectKey);
-            } else {
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
-                String response = in.lines().collect(Collectors.joining());
-                in.close();
-                System.out.println("📊 권한 부여 실패: " + response);
-            }
-
-        } catch (IOException e) {
-            System.out.println("📊 권한 부여 중 예외 발생: " + e.getMessage());
-        }
-    }
+//    private void grantProjectAdminPermission(String projectKey) {
+////        String sonarBaseUrl = http://localhost:9000;
+//        String apiEndpoint = sonarHost + "/api/permissions/add_user";
+//
+//        String login = "admin";
+//        String password = "teamprojectY1!";
+//
+//        try {
+//            String urlWithParams = apiEndpoint
+//                    + "?login=" + URLEncoder.encode(login, StandardCharsets.UTF_8)
+//                    + "&permission=admin"
+//                    + "&projectKey=" + URLEncoder.encode(projectKey, StandardCharsets.UTF_8);
+//
+//            HttpURLConnection connection = (HttpURLConnection) new URL(urlWithParams).openConnection();
+//            connection.setRequestMethod("POST");
+//            String basicAuth = "Basic " + Base64.getEncoder()
+//                    .encodeToString((login + ":" + password).getBytes(StandardCharsets.UTF_8));
+//            connection.setRequestProperty("Authorization", basicAuth);
+//
+//            int responseCode = connection.getResponseCode();
+//            if (responseCode == 204) {
+//                System.out.println("📊 프로젝트 관리자 권한 부여 완료: " + projectKey);
+//            } else {
+//                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+//                String response = in.lines().collect(Collectors.joining());
+//                in.close();
+//                System.out.println("📊 권한 부여 실패: " + response);
+//            }
+//
+//        } catch (IOException e) {
+//            System.out.println("📊 권한 부여 중 예외 발생: " + e.getMessage());
+//        }
+//    }
 
     @GetMapping("/upload/debug")
     public ResponseEntity<Map<String, Object>> debug() {

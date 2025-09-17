@@ -42,33 +42,33 @@ public class SonarService {
     @Value("${sonar.organization}") private String sonarOrg;      // e.g. yullc
 
     /** ZIP 업로드 → 해제 → 빌드(테스트+JaCoCo) → sonar-project.properties 생성 */
-    public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException, InterruptedException {
-        Path tempDir = Files.createTempDirectory("source-");
-        File targetDir = tempDir.toFile();
-
-        // 1) ZIP 저장 및 해제
-        File tempZip = File.createTempFile("upload-", ".zip");
-        zipFile.transferTo(tempZip);
-        unzip(tempZip, targetDir);
-
-        // 2) GitHub zipball wrapper(repo-<sha>) 폴더 보정
-        File[] children = targetDir.listFiles(File::isDirectory);
-        if (children != null && children.length == 1) {
-            File wrapper = children[0];
-            if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
-                System.out.println("⚠️ zipball wrapper 감지 → baseDir 교체: " + wrapper.getAbsolutePath());
-                targetDir = wrapper;
-            }
-        }
-
-        // 3) 빌드(테스트+JaCoCo 리포트 생성)
-        runBuild(targetDir);
-
-        // 4) 정적 설정 파일 생성(민감/동적 값은 파일에 쓰지 않음)
-        createSonarPropertiesFile(targetDir, projectKey);
-
-        return targetDir.getAbsolutePath();
-    }
+//    public String extractAndPrepare(MultipartFile zipFile, String projectKey) throws IOException, InterruptedException {
+//        Path tempDir = Files.createTempDirectory("source-");
+//        File targetDir = tempDir.toFile();
+//
+//        // 1) ZIP 저장 및 해제
+//        File tempZip = File.createTempFile("upload-", ".zip");
+//        zipFile.transferTo(tempZip);
+//        unzip(tempZip, targetDir);
+//
+//        // 2) GitHub zipball wrapper(repo-<sha>) 폴더 보정
+//        File[] children = targetDir.listFiles(File::isDirectory);
+//        if (children != null && children.length == 1) {
+//            File wrapper = children[0];
+//            if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
+//                System.out.println("⚠️ zipball wrapper 감지 → baseDir 교체: " + wrapper.getAbsolutePath());
+//                targetDir = wrapper;
+//            }
+//        }
+//
+//        // 3) 빌드(테스트+JaCoCo 리포트 생성)
+//        runBuild(targetDir);
+//
+//        // 4) 정적 설정 파일 생성(민감/동적 값은 파일에 쓰지 않음)
+//        createSonarPropertiesFile(targetDir, projectKey);
+//
+//        return targetDir.getAbsolutePath();
+//    }
 
     /** 빌드 루트(pom/gradle) 탐색 */
     private File findProjectRoot(File start, int maxDepth) {
@@ -505,5 +505,30 @@ public class SonarService {
             else if (f.getName().endsWith(ext)) return true;
         }
         return false;
+    }
+
+    public String extractAndPrepare(File zipFileOnDisk, String projectKey) throws IOException, InterruptedException {
+        Path tempDir = Files.createTempDirectory("source-");
+        File targetDir = tempDir.toFile();
+
+        // 바로 압축 해제 (이미 디스크에 있는 zip)
+        unzip(zipFileOnDisk, targetDir);
+
+        // zipball wrapper 보정
+        File[] children = targetDir.listFiles(File::isDirectory);
+        if (children != null && children.length == 1) {
+            File wrapper = children[0];
+            if (wrapper.getName().matches(".+-[0-9a-f]{5,}.*")) {
+                targetDir = wrapper;
+            }
+        }
+
+        // 빌드
+        runBuild(targetDir);
+
+        // sonar-project.properties 생성
+        createSonarPropertiesFile(targetDir, projectKey);
+
+        return targetDir.getAbsolutePath();
     }
 }
