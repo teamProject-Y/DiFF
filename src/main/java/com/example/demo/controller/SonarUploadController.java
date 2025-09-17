@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.service.AnalysisOrchestrator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,8 +40,13 @@ public class SonarUploadController {
         return ResponseEntity.accepted().body(Map.of("status", "queued", "jobId", jobId));
     }
 
-    // 디버그 핑퐁 (이미 있으면 생략)
-    @GetMapping("/upload/debug")
+    // 디버그
+//    @GetMapping("/upload/debug")
+//    public AnalysisOrchestrator.DebugInfo debug() {
+//        return orchestrator.getDebug();
+//    }
+
+    @GetMapping(value = "/upload/debug", produces = MediaType.APPLICATION_JSON_VALUE)
     public AnalysisOrchestrator.DebugInfo debug() {
         return orchestrator.getDebug();
     }

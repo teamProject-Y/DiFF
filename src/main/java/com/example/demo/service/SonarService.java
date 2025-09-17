@@ -94,11 +94,10 @@ public class SonarService {
         return null;
     }
 
-    /** mvnw/gradlew로 깨끗하게 빌드 + 테스트 + JaCoCo XML 생성 */
     private void runBuild(File dir) throws IOException, InterruptedException {
         File root = findProjectRoot(dir, 3);
         if (root == null) {
-            System.out.println("⚠️ Maven/Gradle 프로젝트 아님 → 빌드 스킵");
+            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵");
             return;
         }
 
@@ -108,9 +107,9 @@ public class SonarService {
         File mvnw = new File(root, "mvnw");
         File gradlew = new File(root, "gradlew");
 
-        // 프리빌트 감지(산출물 이미 포함된 ZIP일 수 있음)
-        if (new File(root, "target/classes").exists() || new File(root, "build/classes/java/main").exists()) {
-            System.out.println("🔎 Prebuilt artifacts 감지 → 빌드 스킵: " + root.getAbsolutePath());
+        if (new File(root, "target/classes").exists()
+                || new File(root, "build/classes/java/main").exists()) {
+            System.out.println("🔎 Prebuilt artifacts detected → build step skip");
             return;
         }
 
@@ -119,64 +118,43 @@ public class SonarService {
 
         String cmd;
         if (pom.exists()) {
-            String mvn = mvnw.exists() ? "./mvnw" : "mvn";
-            String repoLocal = "/data/.m2";
-            // 테스트 실행 + JaCoCo 보고서 생성
-            cmd = String.join(" ",
-                    mvn, "-B", "-e",
-                    "-Dmaven.repo.local=" + repoLocal,
-                    "clean",
-                    "org.jacoco:jacoco-maven-plugin:prepare-agent",
-                    "verify",
-                    "org.jacoco:jacoco-maven-plugin:report"
-            );
+            String mvnCmd = mvnw.exists() ? "./mvnw" : "mvn";
+
+            String repoArg = "";
+
+            cmd = mvnCmd + repoArg + " -B -e clean verify";
         } else if (gradle.exists() || gradleKts.exists()) {
             String g = gradlew.exists() ? "./gradlew" : "gradle";
-            cmd = String.join(" ", g, "clean", "test", "jacocoTestReport", "--no-daemon", "--console=plain");
+            cmd = g + " assemble --no-daemon --console=plain -x test";
         } else {
-            System.out.println("⚠️ 빌드 도구 없음 → 스킵");
+            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵");
             return;
         }
 
-        System.out.println("▶ Build cmd: " + cmd);
-        System.out.println("▶ Workdir  : " + root.getAbsolutePath());
+        System.out.println("▶ 실행할 빌드 명령어: " + cmd);
+        System.out.println("▶ 작업 디렉터리: " + root.getAbsolutePath());
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
         pb.directory(root);
         pb.redirectErrorStream(true);
-        // PATH 보정(컨테이너 환경 대비)
-        Map<String, String> env = pb.environment();
-        env.put("PATH", env.getOrDefault("PATH", "") + ":/usr/local/bin:/usr/bin:/bin");
+        Map<String,String> env = pb.environment();
+        env.put("PATH", env.getOrDefault("PATH","") + ":/usr/local/bin:/usr/bin:/bin");
 
         StringBuilder all = new StringBuilder(16 * 1024);
         Process p = pb.start();
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
-            while ((line = r.readLine()) != null) {
+            while ((line = br.readLine()) != null) {
                 all.append(line).append('\n');
                 if (line.contains("[ERROR]")) System.err.println("▶ [Build][ERROR] " + line);
                 else System.out.println("▶ [Build] " + line);
             }
         }
 
-        boolean finished = p.waitFor(20, TimeUnit.MINUTES);
-        if (!finished) {
-            p.destroyForcibly();
-            throw new RuntimeException("❌ 빌드 타임아웃(20m)\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
-        }
-        if (p.exitValue() != 0) {
-            throw new RuntimeException("❌ 빌드 실패(exit=" + p.exitValue() + ")\n===== LOG (tail) =====\n" + tailLines(all.toString(), 200));
-        }
-
-        File mavenClasses = new File(root, "target/classes");
-        File gradleClasses = new File(root, "build/classes/java/main");
-        if (mavenClasses.exists()) {
-            System.out.println("✅ Maven build OK → " + mavenClasses.getAbsolutePath());
-        } else if (gradleClasses.exists()) {
-            System.out.println("✅ Gradle build OK → " + gradleClasses.getAbsolutePath());
-        } else {
-            System.out.println("⚠️ classes 폴더 미발견(빌드는 성공)");
-        }
+        boolean ok = p.waitFor(20, java.util.concurrent.TimeUnit.MINUTES);
+        if (!ok) { p.destroyForcibly(); throw new RuntimeException("❌ 빌드 타임아웃"); }
+        if (p.exitValue() != 0) throw new RuntimeException("❌ 빌드 실패\n" + all);
+        System.out.println("✅ build success");
     }
 
     private void chmodX(File f) {
@@ -190,11 +168,11 @@ public class SonarService {
         } catch (Exception ignore) {}
     }
 
-    private String tailLines(String text, int lines) {
-        String[] arr = text.split("\n");
-        int from = Math.max(0, arr.length - lines);
-        return String.join("\n", Arrays.copyOfRange(arr, from, arr.length));
-    }
+//    private String tailLines(String text, int lines) {
+//        String[] arr = text.split("\n");
+//        int from = Math.max(0, arr.length - lines);
+//        return String.join("\n", Arrays.copyOfRange(arr, from, arr.length));
+//    }
 
     private void unzip(File zipFile, File destDir) throws IOException {
         try (ZipFile zip = new ZipFile(zipFile)) {
@@ -219,26 +197,45 @@ public class SonarService {
         File work = new File(dir);
         String mvn = new File(work, "mvnw").exists() ? "./mvnw" : "mvn";
 
-        List<String> cmd = new ArrayList<>();
+        // 1) Maven 로컬 저장소를 작업 디렉터리 밑으로(쓰기권한 보장)
+        File m2 = new File(work, ".m2");
+        if (!m2.isDirectory() && !m2.mkdirs()) {
+            throw new IOException("Cannot create local maven repo: " + m2.getAbsolutePath());
+        }
+
+        // 2) jacoco.xml들 모두 수집(멀티모듈 대응). 없으면 빈 문자열.
+        String jacocoPaths = java.nio.file.Files.walk(work.toPath())
+                .filter(p -> p.getFileName().toString().equals("jacoco.xml"))
+                .map(p -> work.toPath().relativize(p).toString()) // 상대경로로 넘기면 깔끔
+                .collect(java.util.stream.Collectors.joining(","));
+
+        java.util.List<String> cmd = new java.util.ArrayList<>();
         cmd.add(mvn);
         cmd.add("-B");
+        cmd.add("--no-transfer-progress");
+        cmd.add("-Dmaven.repo.local=" + m2.getAbsolutePath());
         cmd.add("org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
         cmd.add("-Dsonar.host.url=" + sonarHost);
-        cmd.add("-Dsonar.organization=" + sonarOrg);
         cmd.add("-Dsonar.projectKey=" + projectKey);
-        cmd.add("-Dsonar.token=" + sonarToken);
-
-        // 커버리지 리포트가 있으면 연결
-        File jacoco = Paths.get(dir, "target", "site", "jacoco", "jacoco.xml").toFile();
-        if (jacoco.isFile()) {
-            cmd.add("-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml");
+        if (sonarOrg != null && !sonarOrg.isBlank()) {
+            cmd.add("-Dsonar.organization=" + sonarOrg); // SonarCloud만 해당
+        }
+        if (!jacocoPaths.isBlank()) {
+            cmd.add("-Dsonar.coverage.jacoco.xmlReportPaths=" + jacocoPaths);
         }
 
         String joined = String.join(" ", cmd);
         System.out.println("▶ Sonar cmd: " + joined);
+
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", joined);
         pb.directory(work);
         pb.redirectErrorStream(true);
+
+        // 3) 토큰은 환경변수로(플러그인이 SONAR_TOKEN 읽음)
+        java.util.Map<String,String> env = pb.environment();
+        env.put("SONAR_TOKEN", sonarToken);   // 최신 권장
+        env.put("SONAR_LOGIN", sonarToken);   // 구버전 호환(있어도 문제 없음)
+
         Process p = pb.start();
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line; while ((line = r.readLine()) != null) System.out.println("▶ [Sonar] " + line);
