@@ -102,16 +102,16 @@ public class UsrMemberController {
 
         if (updated == -1) {
             return ResponseEntity.badRequest()
-                    .body(ResultData.from("F-8", "이미 사용 중인 닉네임입니다"));
+                    .body(ResultData.from("F-8", "This nickname is already in use."));
         }
 
         if (updated == 0) {
             return ResponseEntity.badRequest()
-                    .body(ResultData.from("F-7", "회원정보 수정에 실패했습니다"));
+                    .body(ResultData.from("F-7", "Failed to edit profile."));
         }
 
         return ResponseEntity.ok(
-                ResultData.from("S-1", "회원정보가 성공적으로 수정되었습니다")
+                ResultData.from("S-1", "Success to edit profile.")
         );
     }
 

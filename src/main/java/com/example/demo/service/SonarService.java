@@ -120,9 +120,12 @@ public class SonarService {
         String cmd;
         if (pom.exists()) {
             String mvn = mvnw.exists() ? "./mvnw" : "mvn";
+            String repoLocal = "/data/.m2";
             // 테스트 실행 + JaCoCo 보고서 생성
             cmd = String.join(" ",
-                    mvn, "-B", "-e", "clean",
+                    mvn, "-B", "-e",
+                    "-Dmaven.repo.local=" + repoLocal,
+                    "clean",
                     "org.jacoco:jacoco-maven-plugin:prepare-agent",
                     "verify",
                     "org.jacoco:jacoco-maven-plugin:report"

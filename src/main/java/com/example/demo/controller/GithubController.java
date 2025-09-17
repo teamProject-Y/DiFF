@@ -735,69 +735,98 @@ public class GithubController {
     }
 
     // /upload 로 파일 멀티파트 전송
+//    private void postZipFileToUpload(Path zipPath, Map<String, Object> meta) throws Exception {
+//        MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
+//        parts.add("file", new FileSystemResource(zipPath));
+//        parts.add("meta", new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(meta));
+//
+//        String resp = WebClient.create("http://api.diff.io.kr")
+//                .post()
+//                .uri("/upload")
+//                .contentType(MediaType.MULTIPART_FORM_DATA)
+//                .bodyValue(parts)
+//                .retrieve()
+//                .bodyToMono(String.class)
+//                .block();
+//
+//        System.out.println("postZipFileToUpload response: " + resp);
+//    }
     private void postZipFileToUpload(Path zipPath, Map<String, Object> meta) throws Exception {
         MultiValueMap<String, Object> parts = new LinkedMultiValueMap<>();
         parts.add("file", new FileSystemResource(zipPath));
         parts.add("meta", new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(meta));
 
-        String resp = WebClient.create("http://api.diff.io.kr")
-                .post()
+        WebClient client = WebClient.builder()
+                .baseUrl("http://api.diff.io.kr")
+                .build();
+
+        String resp = client.post()
                 .uri("/upload")
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(parts)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+                .exchangeToMono(res -> {
+                    int code = res.statusCode().value();
+                    if (code == 202 || res.statusCode().is2xxSuccessful()) {
+                        // 서버가 202로 jobId JSON을 돌려주면 그대로 반환
+                        return res.bodyToMono(String.class).defaultIfEmpty("{\"status\":\"accepted\"}");
+                    } else {
+                        return res.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(body -> reactor.core.publisher.Mono.error(
+                                        new RuntimeException("upload failed: HTTP " + code + " " + body)));
+                    }
+                })
+                .block(java.time.Duration.ofSeconds(60)); // 과도한 대기는 방지
 
         System.out.println("postZipFileToUpload response: " + resp);
     }
 
     // ZIP → 언팩 → Docker 빌드 → 산출물 포함 새 ZIP 생성
-    private Path buildZipForUpload(Path inputZip, Long repositoryId, String sha) throws Exception {
-        final String dockerBin = Optional.ofNullable(System.getenv("DOCKER_BIN")).orElse("docker");
-        final long timeoutSeconds = Optional.ofNullable(System.getenv("BUILD_TIMEOUT_SECONDS"))
-                .map(Long::parseLong).orElse(900L);
-
-        // 워크스페이스
-        Path workspace = Files.createTempDirectory("diff-ws-" + repositoryId + "-" + sha + "-");
-        Path srcDir = workspace.resolve("src");
-        unzipGitHubZip(inputZip, srcDir);
-
-        // 빌드 타입 감지 → 플랜 구성 → Docker 빌드/테스트/커버리지(옵션)
-        BuildType bt = detectBuildType(srcDir);
-        BuildPlan plan = makeBuildPlanForBuildOnly(bt, srcDir);
-        ExecResult buildRes = runDocker(dockerBin, plan.image, srcDir, plan.env, plan.commands, plan.volumes, timeoutSeconds);
-
-        // log
-        System.out.println("[build] exit=" + buildRes.exitCode);
-        System.out.println("[build] tail:\n" + tail(buildRes.log, 1500));
-
-        Path[] evidences = {
-                srcDir.resolve("target/classes"),
-                srcDir.resolve("target/site/jacoco/jacoco.xml"),
-                srcDir.resolve("build/classes"),
-                srcDir.resolve("build/reports/jacoco/test/jacocoTestReport.xml"),
-                srcDir.resolve("coverage/lcov.info"),
-                srcDir.resolve("dist"),
-        };
-        for (Path p : evidences) {
-            try {
-                if (Files.exists(p)) {
-                    long sz = Files.isDirectory(p) ? -1L : Files.size(p);
-                    System.out.println("[build] artifact found: " + p + " size=" + sz);
-                }
-            } catch (Exception ignore) {}
-        }
-
-        if (buildRes.exitCode != 0) {
-            throw new IllegalStateException("Build failed (type=" + bt + "):\n" + tail(buildRes.log, 4000));
-        }
-
-        // 빌드 산출물 포함 새 ZIP 만들기 (소스 + target/build + coverage 등, 캐시는 제외)
-        Path builtZip = workspace.resolve("built-" + repositoryId + "-" + sha + ".zip");
-        zipDirectorySelective(srcDir, builtZip);
-        return builtZip; // 호출부에서 업로드 후 삭제 권장
-    }
+//    private Path buildZipForUpload(Path inputZip, Long repositoryId, String sha) throws Exception {
+//        final String dockerBin = Optional.ofNullable(System.getenv("DOCKER_BIN")).orElse("docker");
+//        final long timeoutSeconds = Optional.ofNullable(System.getenv("BUILD_TIMEOUT_SECONDS"))
+//                .map(Long::parseLong).orElse(900L);
+//
+//        // 워크스페이스
+//        Path workspace = Files.createTempDirectory("diff-ws-" + repositoryId + "-" + sha + "-");
+//        Path srcDir = workspace.resolve("src");
+//        unzipGitHubZip(inputZip, srcDir);
+//
+//        // 빌드 타입 감지 → 플랜 구성 → Docker 빌드/테스트/커버리지(옵션)
+//        BuildType bt = detectBuildType(srcDir);
+//        BuildPlan plan = makeBuildPlanForBuildOnly(bt, srcDir);
+//        ExecResult buildRes = runDocker(dockerBin, plan.image, srcDir, plan.env, plan.commands, plan.volumes, timeoutSeconds);
+//
+//        // log
+//        System.out.println("[build] exit=" + buildRes.exitCode);
+//        System.out.println("[build] tail:\n" + tail(buildRes.log, 1500));
+//
+//        Path[] evidences = {
+//                srcDir.resolve("target/classes"),
+//                srcDir.resolve("target/site/jacoco/jacoco.xml"),
+//                srcDir.resolve("build/classes"),
+//                srcDir.resolve("build/reports/jacoco/test/jacocoTestReport.xml"),
+//                srcDir.resolve("coverage/lcov.info"),
+//                srcDir.resolve("dist"),
+//        };
+//        for (Path p : evidences) {
+//            try {
+//                if (Files.exists(p)) {
+//                    long sz = Files.isDirectory(p) ? -1L : Files.size(p);
+//                    System.out.println("[build] artifact found: " + p + " size=" + sz);
+//                }
+//            } catch (Exception ignore) {}
+//        }
+//
+//        if (buildRes.exitCode != 0) {
+//            throw new IllegalStateException("Build failed (type=" + bt + "):\n" + tail(buildRes.log, 4000));
+//        }
+//
+//        // 빌드 산출물 포함 새 ZIP 만들기 (소스 + target/build + coverage 등, 캐시는 제외)
+//        Path builtZip = workspace.resolve("built-" + repositoryId + "-" + sha + ".zip");
+//        zipDirectorySelective(srcDir, builtZip);
+//        return builtZip; // 호출부에서 업로드 후 삭제 권장
+//    }
 
     // ZIP 언팩 (GitHub zipball 최상위 디렉토리 strip)
     private void unzipGitHubZip(Path zip, Path dest) throws IOException {

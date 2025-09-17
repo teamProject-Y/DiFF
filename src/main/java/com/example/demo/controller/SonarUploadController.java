@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.service.AnalysisOrchestrator;
 import com.example.demo.service.SonarService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +27,11 @@ public class SonarUploadController {
     @Value("${sonar.host}")
     private String sonarHost;
 
-    @Autowired
-    private SonarService sonarService;
+    private final AnalysisOrchestrator orchestrator;
+
+    public SonarUploadController(AnalysisOrchestrator orchestrator) {
+        this.orchestrator = orchestrator;
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSource(
@@ -36,44 +40,50 @@ public class SonarUploadController {
 
         System.out.println("===== 📂 [Post] /upload =====");
 
-        try {
-            // JSON → Map 변환
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> param = mapper.readValue(metaJson, Map.class);
+        String jobId = orchestrator.enqueue(zipFile, metaJson);
+        return ResponseEntity.accepted().body(Map.of(
+                "status", "queued",
+                "jobId", jobId
+        ));
 
-            System.out.println("📂 uploadSource param = " + param);
-
-            Long memberId = ((Number) param.get("memberId")).longValue();
-            Long repositoryId = ((Number) param.get("repositoryId")).longValue();
-            Long draftId = ((Number) param.get("draftId")).longValue();
-            Long diffId = ((Number) param.get("diffId")).longValue();
-            String lastChecksum = (String) param.get("lastChecksum");
-
-            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
-            System.err.println("📂 projectKey: " + projectKey);
-
-            // 압축 해제
-            String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
-            System.out.println("📂 압축 해제 위치: " + extractedPath);
-
-            // 분석 실행
-            sonarService.runSonarScanner(extractedPath, projectKey);
-            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
-
-            // 결과 조회
-            String result = sonarService.getAnalysisResult(projectKey);
-            System.out.println("📂 분석 결과: " + result);
-
-            grantProjectAdminPermission(projectKey);
-            Thread.sleep(2000);
-            sonarService.deleteProject(projectKey);
-
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
-        }
+//        try {
+//            // JSON → Map 변환
+//            ObjectMapper mapper = new ObjectMapper();
+//            Map<String, Object> param = mapper.readValue(metaJson, Map.class);
+//
+//            System.out.println("📂 uploadSource param = " + param);
+//
+//            Long memberId = ((Number) param.get("memberId")).longValue();
+//            Long repositoryId = ((Number) param.get("repositoryId")).longValue();
+//            Long draftId = ((Number) param.get("draftId")).longValue();
+//            Long diffId = ((Number) param.get("diffId")).longValue();
+//            String lastChecksum = (String) param.get("lastChecksum");
+//
+//            String projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
+//            System.err.println("📂 projectKey: " + projectKey);
+//
+//            // 압축 해제
+//            String extractedPath = sonarService.extractAndPrepare(zipFile, projectKey);
+//            System.out.println("📂 압축 해제 위치: " + extractedPath);
+//
+//            // 분석 실행
+//            sonarService.runSonarScanner(extractedPath, projectKey);
+//            sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
+//
+//            // 결과 조회
+//            String result = sonarService.getAnalysisResult(projectKey);
+//            System.out.println("📂 분석 결과: " + result);
+//
+//            grantProjectAdminPermission(projectKey);
+//            Thread.sleep(2000);
+//            sonarService.deleteProject(projectKey);
+//
+//            return ResponseEntity.ok(result);
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
+//        }
     }
 
     private void grantProjectAdminPermission(String projectKey) {
