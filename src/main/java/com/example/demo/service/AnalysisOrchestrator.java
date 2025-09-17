@@ -31,6 +31,7 @@ public class AnalysisOrchestrator {
         public Instant startedAt;
         public Instant finishedAt;
         public String error;
+
         public static DebugInfo idle() {
             DebugInfo d = new DebugInfo();
             d.jobId = "";
@@ -40,8 +41,8 @@ public class AnalysisOrchestrator {
         }
     }
 
-    public DebugInfo getDebug() { return debug.get(); }
-    public String getLastJobId() { return lastJobId.get(); }
+//    public DebugInfo getDebug() { return debug.get(); }
+//    public String getLastJobId() { return lastJobId.get(); }
 
     public AnalysisOrchestrator(SonarService sonarService,
                                 ThreadPoolTaskExecutor analysisExecutor) {

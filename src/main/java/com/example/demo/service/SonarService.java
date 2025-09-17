@@ -14,7 +14,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
+import static com.example.demo.controller.SonarUploadController.DEBUG;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -106,30 +106,33 @@ public class SonarService {
         File gradleKts = new File(root, "build.gradle.kts");
         File mvnw = new File(root, "mvnw");
         File gradlew = new File(root, "gradlew");
-
-        if (new File(root, "target/classes").exists()
-                || new File(root, "build/classes/java/main").exists()) {
-            System.out.println("🔎 Prebuilt artifacts detected → build step skip");
-            return;
-        }
-
-        chmodX(mvnw);
-        chmodX(gradlew);
+        chmodX(mvnw); chmodX(gradlew);
 
         String cmd;
         if (pom.exists()) {
-            String mvnCmd = mvnw.exists() ? "./mvnw" : "mvn";
-
-            String repoArg = "";
-
-            cmd = mvnCmd + repoArg + " -B -e clean verify";
+            String mvn = mvnw.exists() ? "./mvnw" : "mvn";
+            cmd = String.join(" ",
+                    mvn, "-B", "-e",
+                    "-T", "1",                            // 단일 스레드
+                    "-Dmaven.repo.local=/tmp/.m2",        // 로컬 캐시
+                    "-DskipTests=true", "-Dmaven.test.skip=true",
+                    "clean", "verify"
+            );
         } else if (gradle.exists() || gradleKts.exists()) {
             String g = gradlew.exists() ? "./gradlew" : "gradle";
-            cmd = g + " assemble --no-daemon --console=plain -x test";
+            cmd = String.join(" ",
+                    g, "assemble", "--no-daemon", "--console=plain", "-x", "test"
+            );
         } else {
-            System.out.println("⚠️ Maven/Gradle 프로젝트 아님. 빌드 스킵");
+            System.out.println("⚠️ 빌드 도구 없음. 스킵");
             return;
         }
+
+        DEBUG.put("status","RUNNING");
+        DEBUG.put("step","BUILD");
+        DEBUG.put("buildCmd", cmd);
+        DEBUG.put("workdir", root.getAbsolutePath());
+        DEBUG.put("updatedAt", java.time.Instant.now().toString());
 
         System.out.println("▶ 실행할 빌드 명령어: " + cmd);
         System.out.println("▶ 작업 디렉터리: " + root.getAbsolutePath());
@@ -137,24 +140,37 @@ public class SonarService {
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
         pb.directory(root);
         pb.redirectErrorStream(true);
+
+        // 🔻 메모리 낮추기
         Map<String,String> env = pb.environment();
         env.put("PATH", env.getOrDefault("PATH","") + ":/usr/local/bin:/usr/bin:/bin");
+        env.put("MAVEN_OPTS", "-Xmx128m -XX:CICompilerCount=1 -Djava.awt.headless=true");
+        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=1 -Dfile.encoding=UTF-8");
 
         StringBuilder all = new StringBuilder(16 * 1024);
-        Process p = pb.start();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line;
-            while ((line = br.readLine()) != null) {
+        Process process = pb.start();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            String line; while ((line = r.readLine()) != null) {
                 all.append(line).append('\n');
-                if (line.contains("[ERROR]")) System.err.println("▶ [Build][ERROR] " + line);
-                else System.out.println("▶ [Build] " + line);
+                System.out.println("▶ [Build] " + line);
             }
         }
 
-        boolean ok = p.waitFor(20, java.util.concurrent.TimeUnit.MINUTES);
-        if (!ok) { p.destroyForcibly(); throw new RuntimeException("❌ 빌드 타임아웃"); }
-        if (p.exitValue() != 0) throw new RuntimeException("❌ 빌드 실패\n" + all);
-        System.out.println("✅ build success");
+        boolean finished = process.waitFor(20, java.util.concurrent.TimeUnit.MINUTES);
+        if (!finished) {
+            process.destroyForcibly();
+            DEBUG.put("status","FAILED"); DEBUG.put("step","BUILD_TIMEOUT");
+            DEBUG.put("error","build timeout");
+            DEBUG.put("updatedAt", java.time.Instant.now().toString());
+            throw new RuntimeException("❌ 빌드 타임아웃");
+        }
+        int exit = process.exitValue();
+        if (exit != 0) {
+            DEBUG.put("status","FAILED"); DEBUG.put("step","BUILD_ERROR");
+            DEBUG.put("error","exit="+exit);
+            DEBUG.put("updatedAt", java.time.Instant.now().toString());
+            throw new RuntimeException("❌ 빌드 실패 exit=" + exit);
+        }
     }
 
     private void chmodX(File f) {
@@ -192,58 +208,63 @@ public class SonarService {
         }
     }
 
-    /** Sonar 분석: Maven 플러그인으로 실행(별도 CLI 설치 불필요) */
     public void runSonarScanner(String dir, String projectKey) throws IOException, InterruptedException {
         File work = new File(dir);
         String mvn = new File(work, "mvnw").exists() ? "./mvnw" : "mvn";
 
-        // 1) Maven 로컬 저장소를 작업 디렉터리 밑으로(쓰기권한 보장)
-        File m2 = new File(work, ".m2");
-        if (!m2.isDirectory() && !m2.mkdirs()) {
-            throw new IOException("Cannot create local maven repo: " + m2.getAbsolutePath());
-        }
-
-        // 2) jacoco.xml들 모두 수집(멀티모듈 대응). 없으면 빈 문자열.
-        String jacocoPaths = java.nio.file.Files.walk(work.toPath())
-                .filter(p -> p.getFileName().toString().equals("jacoco.xml"))
-                .map(p -> work.toPath().relativize(p).toString()) // 상대경로로 넘기면 깔끔
-                .collect(java.util.stream.Collectors.joining(","));
-
-        java.util.List<String> cmd = new java.util.ArrayList<>();
-
+        List<String> cmd = new ArrayList<>();
         cmd.add(mvn);
         cmd.add("-B");
-        cmd.add("--no-transfer-progress");
-//        cmd.add("-Dmaven.repo.local=" + m2.getAbsolutePath());
+        cmd.add("-e");
+        cmd.add("-T"); cmd.add("1");
         cmd.add("-Dmaven.repo.local=/tmp/.m2");
         cmd.add("org.sonarsource.scanner.maven:sonar-maven-plugin:sonar");
         cmd.add("-Dsonar.host.url=" + sonarHost);
+        cmd.add("-Dsonar.organization=" + sonarOrg);
         cmd.add("-Dsonar.projectKey=" + projectKey);
-        if (sonarOrg != null && !sonarOrg.isBlank()) {
-            cmd.add("-Dsonar.organization=" + sonarOrg); // SonarCloud만 해당
-        }
-        if (!jacocoPaths.isBlank()) {
-            cmd.add("-Dsonar.coverage.jacoco.xmlReportPaths=" + jacocoPaths);
+        cmd.add("-Dsonar.token=" + sonarToken);
+
+        File jacoco = Paths.get(dir, "target","site","jacoco","jacoco.xml").toFile();
+        if (jacoco.isFile()) {
+            cmd.add("-Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml");
         }
 
         String joined = String.join(" ", cmd);
+        DEBUG.put("status","RUNNING");
+        DEBUG.put("step","SONAR");
+        DEBUG.put("buildCmd", joined);
+        DEBUG.put("workdir", work.getAbsolutePath());
+        DEBUG.put("updatedAt", java.time.Instant.now().toString());
         System.out.println("▶ Sonar cmd: " + joined);
 
         ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", joined);
         pb.directory(work);
         pb.redirectErrorStream(true);
 
-        // 3) 토큰은 환경변수로(플러그인이 SONAR_TOKEN 읽음)
-        java.util.Map<String,String> env = pb.environment();
-        env.put("SONAR_TOKEN", sonarToken);   // 최신 권장
-        env.put("SONAR_LOGIN", sonarToken);   // 구버전 호환(있어도 문제 없음)
+        Map<String,String> env = pb.environment();
+        env.put("MAVEN_OPTS", "-Xmx128m -XX:CICompilerCount=1 -Djava.awt.headless=true");
+        env.put("JAVA_TOOL_OPTIONS", "-Xmx128m -XX:CICompilerCount=1 -Dfile.encoding=UTF-8");
 
         Process p = pb.start();
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line; while ((line = r.readLine()) != null) System.out.println("▶ [Sonar] " + line);
         }
-        if (!p.waitFor(30, TimeUnit.MINUTES)) { p.destroyForcibly(); throw new RuntimeException("❌ Sonar timeout(30m)"); }
-        if (p.exitValue() != 0) throw new RuntimeException("❌ Sonar 실패(exit=" + p.exitValue() + ")");
+        if (!p.waitFor(30, java.util.concurrent.TimeUnit.MINUTES)) {
+            p.destroyForcibly();
+            DEBUG.put("status","FAILED"); DEBUG.put("step","SONAR_TIMEOUT");
+            DEBUG.put("error","sonar timeout");
+            DEBUG.put("updatedAt", java.time.Instant.now().toString());
+            throw new RuntimeException("❌ Sonar timeout");
+        }
+        if (p.exitValue() != 0) {
+            DEBUG.put("status","FAILED"); DEBUG.put("step","SONAR_ERROR");
+            DEBUG.put("error","exit="+p.exitValue());
+            DEBUG.put("updatedAt", java.time.Instant.now().toString());
+            throw new RuntimeException("❌ Sonar 실패(exit=" + p.exitValue() + ")");
+        }
+        DEBUG.put("status","SUCCESS"); DEBUG.put("step","DONE");
+        DEBUG.put("error", null);
+        DEBUG.put("updatedAt", java.time.Instant.now().toString());
     }
 
     /** 분석 결과 수집(간단 폴링) */

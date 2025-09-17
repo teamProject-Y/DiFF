@@ -48,7 +48,7 @@ public class SonarUploadController {
     }
 
     // SonarUploadController 클래스 안 (필드 영역 어딘가)
-    private static final java.util.Map<String, Object> DEBUG = new java.util.LinkedHashMap<>();
+    public static final java.util.Map<String, Object> DEBUG = new java.util.LinkedHashMap<>();
     static {
         DEBUG.put("jobId", null);
         DEBUG.put("status", "IDLE");
