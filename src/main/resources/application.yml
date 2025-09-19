@@ -3,7 +3,12 @@ server:
   address: 0.0.0.0
   port: ${PORT:8080}
   tomcat:
-    max-swallow-size: 1
+    # ✅ 업로드 중 스트림 조기 종료(EOF) 막기 위해 제한 해제
+    max-swallow-size: -1
+    # ✅ 폼 포스트 최대 크기 제한 해제 (Tomcat 레벨)
+    max-http-form-post-size: -1
+  # ✅ 업로드 오래 걸릴 때 타임아웃 늘리기 (5분)
+  connection-timeout: 300000
 
 management:
   endpoints:
@@ -26,8 +31,16 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 1TB
-      max-request-size: 1TB
+      # ✅ 스프링 레벨 업로드 한도 크게
+      max-file-size: 2GB
+      max-request-size: 2GB
+      # ✅ 업로드 즉시 디스크로 내려서 메모리 폭주 방지
+      file-size-threshold: 0
+
+  # ✅ 비동기 요청(업로드 처리 등) 타임아웃 늘리기
+  mvc:
+    async:
+      request-timeout: 300s
 
   security:
     oauth2:
@@ -39,12 +52,10 @@ spring:
             scope: user:email
             redirect-uri: "https://api.diff.io.kr/login/oauth2/code/github"
             client-name: GitHub
-
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
             redirect-uri: "https://api.diff.io.kr/login/oauth2/code/google"
-
         provider:
           github:
             authorization-uri: https://github.com/login/oauth/authorize
@@ -76,15 +87,8 @@ logging:
   level:
     root: WARN
     com.example.demo: INFO
-    com.example.demo.controller.GithubController: INFO
-    org.springframework.web: DEBUG
-    org.springframework.web.cors: DEBUG
-    org.springframework.security: DEBUG
-    org.springframework.security.web: DEBUG
-    org.springframework.security.web.access: DEBUG
-    org.springframework.security.oauth2.client: DEBUG
-    org.springframework.security.oauth2.core.endpoint: DEBUG
-    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
 
 sonarqube:
   host: ${SONARQUBE_HOST}
