@@ -35,6 +35,21 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             return;
         }
 
+        if ("/upload".equals(request.getRequestURI()) && "POST".equalsIgnoreCase(request.getMethod())) {
+            long start = System.currentTimeMillis();
+            String len = request.getHeader("Content-Length");
+            String type = request.getHeader("Content-Type");
+            System.out.printf(">> /upload start t=%d, CL=%s, CT=%s%n", start, len, type);
+            try {
+                filterChain.doFilter(request, response);
+            } finally {
+                long ms = System.currentTimeMillis() - start;
+                System.out.printf("<< /upload end   ms=%d, status=%d%n", ms, response.getStatus());
+            }
+        } else {
+            filterChain.doFilter(request, response);
+        }
+
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             // 토큰에서 사용자 정보 직접 꺼냄
             Long memberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
