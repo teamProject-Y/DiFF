@@ -27,8 +27,8 @@ public class SonarUploadController {
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSource(
-            @RequestParam("file") MultipartFile zipFile,
-            @RequestParam("meta") String metaJson) {
+            @RequestPart("file") MultipartFile zipFile,
+            @RequestPart("meta") String metaJson) {
 
         System.out.println("===== 📂 [Post] /upload =====");
 
