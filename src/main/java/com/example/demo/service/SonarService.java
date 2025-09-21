@@ -32,8 +32,10 @@ import java.util.zip.ZipFile;
 
 @Service
 public class SonarService {
+
     @Autowired
     private AnalysisRepository analysisRepository;
+
     @Autowired
     private DraftRepository draftRepository;
 
@@ -133,13 +135,21 @@ public class SonarService {
         );
 
         ProcessBuilder pb = new ProcessBuilder(
-                scannerAbs,
-                "-Dsonar.projectKey=" + projectKey,
-                "-Dsonar.host.url=" + sonarHost,
-                "-Dsonar.token=" + sonarToken
+                "/bin/bash", "-lc",
+                "sonar-scanner " +
+                        "-Dsonar.projectKey=" + projectKey + " " +
+                        "-Dsonar.host.url="   + sonarHost  + " " +
+                        "-Dsonar.token="      + sonarToken
         );
-        pb.directory(wd);
+        pb.directory(new File(dir));
         pb.redirectErrorStream(true);
+
+// PATH에 스캐너 위치가 들어가도록 (안전빵)
+        pb.environment().put("PATH",
+                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-" +
+                        System.getenv().getOrDefault("SONAR_SCANNER_VERSION","5.0.1.3006") + "-linux/bin"
+        );
+
 
         // PATH 보정
         java.util.Map<String, String> env = pb.environment();
