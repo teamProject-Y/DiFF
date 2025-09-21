@@ -16,6 +16,11 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,11 +35,12 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain r2Chain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/r2/**")                 // 이 체인은 /r2/** 에만 적용
+                .securityMatcher("/r2/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 적용
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/r2/**").permitAll()  // 전부 허용
+                        .requestMatchers("/r2/**").permitAll()
                 )
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint(restAuthenticationEntryPoint())
@@ -51,6 +57,7 @@ public class SecurityConfig {
                                         GoogleOAuth2UserService googleOAuth2UserService) throws Exception {
 
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 적용
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -118,6 +125,26 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowCredentials(true);
+        cfg.setAllowedOrigins(List.of(
+                "https://diff.io.kr",
+                "https://diff-front.fly.dev",
+                "http://13.124.33.233:3000",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+        ));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setExposedHeaders(List.of("Authorization", "REFRESH_TOKEN"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
+    }
+
+    @Bean
     public AuthenticationEntryPoint restAuthenticationEntryPoint() {
         return (request, response, authException) -> {
             response.setContentType("application/json");
@@ -136,28 +163,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        var cfg = new org.springframework.web.cors.CorsConfiguration();
-        cfg.setAllowCredentials(true);
-        cfg.addAllowedOrigin("http://13.124.33.233:3000");
-        cfg.addAllowedOrigin("http://localhost:3000");
-        cfg.addAllowedOrigin("http://127.0.0.1:3000");
-        cfg.addAllowedHeader("*");
-        cfg.addAllowedMethod("*");
-        cfg.addExposedHeader("Authorization");
-        cfg.addExposedHeader("REFRESH_TOKEN");
-        cfg.addAllowedHeader("REFRESH_TOKEN");
-
-        var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg);
-        return source;
-    }
-
-    @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> {
             System.out.println("🟢 WebSecurityCustomizer: ignoring /r2/**");
-            web.ignoring().requestMatchers("/r2/**"); // <-- 필터 자체를 우회
+            web.ignoring().requestMatchers("/r2/**"); // 필터 자체를 우회
         };
     }
 }
