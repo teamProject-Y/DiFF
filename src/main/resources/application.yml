@@ -13,8 +13,8 @@ management:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration-time: 3600000
-  refresh-token-expiration-time: 86400000
+  access-token-expiration-time: ${JWT_EXPIRATION_TIME}
+  refresh-token-expiration-time: ${JWT_REFRESH_TIME}
 
 spring:
   datasource:
