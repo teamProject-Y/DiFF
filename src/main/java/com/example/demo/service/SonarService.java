@@ -79,41 +79,148 @@ public class SonarService {
     }
 
     public void runSonarScanner(String dir, String projectKey) throws IOException, InterruptedException {
-        ProcessBuilder pb = new ProcessBuilder(
-                "/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner",
+        final String scannerAbs = "/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner";
+
+        // ── 0) 기본 환경 로그
+        System.out.println("=== [SONAR DIAG] START ===============================");
+        System.out.println("user.name            = " + System.getProperty("user.name"));
+        System.out.println("java.version         = " + System.getProperty("java.version"));
+        System.out.println("java.home            = " + System.getProperty("java.home"));
+        System.out.println("os.name              = " + System.getProperty("os.name") + " " + System.getProperty("os.arch"));
+        System.out.println("WORK DIR (arg)       = " + dir);
+        System.out.println("sonar.host.url       = " + sonarHost);
+        System.out.println("token.len            = " + (sonarToken == null ? 0 : sonarToken.length()));
+
+        // ── 1) 실행 파일/쉘/작업 디렉토리 점검
+        File scanner = new File(scannerAbs);
+        System.out.println("scanner.exists       = " + scanner.exists());
+        System.out.println("scanner.canExecute   = " + scanner.canExecute());
+        System.out.println("scanner.path         = " + scanner.getAbsolutePath());
+
+        File sh = new File("/bin/sh");
+        System.out.println("/bin/sh exists       = " + sh.exists() + ", canExec=" + sh.canExecute());
+
+        File wd = new File(dir);
+        System.out.println("wd.exists            = " + wd.exists() + ", isDir=" + wd.isDirectory());
+        if (wd.exists()) {
+            String[] list = wd.list();
+            System.out.println("wd.list sample       = " + (list == null ? "null" :
+                    java.util.Arrays.stream(list).limit(10).reduce((a,b) -> a + ", " + b).orElse("(empty)")));
+        }
+
+        // sonar-scanner 스크립트의 shebang 확인 (첫 줄)
+        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(scanner))) {
+            String shebang = br.readLine();
+            System.out.println("scanner shebang      = " + shebang);
+        } catch (Exception ignore) {
+            System.out.println("scanner shebang      = <read fail>");
+        }
+
+        // which 확인(시스템 PATH 상 위치)
+        runQuick("which sonar-scanner");
+
+        // 링크/권한 자세히
+        runQuick("ls -l " + scannerAbs);
+        runQuick("ls -l /usr/local/bin/sonar-scanner");
+        runQuick("readlink -f /usr/local/bin/sonar-scanner");
+
+        // ── 2) 실행 준비
+        String cmdStr = String.join(" ",
+                scannerAbs,
                 "-Dsonar.projectKey=" + projectKey,
                 "-Dsonar.host.url=" + sonarHost,
                 "-Dsonar.token=" + sonarToken
         );
-        pb.directory(new File(dir));
+
+        ProcessBuilder pb = new ProcessBuilder(
+                scannerAbs,
+                "-Dsonar.projectKey=" + projectKey,
+                "-Dsonar.host.url=" + sonarHost,
+                "-Dsonar.token=" + sonarToken
+        );
+        pb.directory(wd);
         pb.redirectErrorStream(true);
 
-        Map<String, String> env = pb.environment();
-        env.put("PATH",
-                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
-                        + "/opt/sonar-scanner-5.0.1.3006-linux/bin");
+        // PATH 보정
+        java.util.Map<String, String> env = pb.environment();
+        String newPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-5.0.1.3006-linux/bin";
+        env.put("PATH", newPath);
 
-        System.out.println("▶ exec CWD=" + pb.directory().getAbsolutePath());
-        System.out.println("▶ exec CMD=" + String.join(" ", pb.command()));
-        System.out.println("▶ exec PATH=" + env.get("PATH"));
+        System.out.println("▶ exec CWD  = " + pb.directory().getAbsolutePath());
+        System.out.println("▶ exec CMD  = " + cmdStr);
+        System.out.println("▶ exec PATH = " + env.get("PATH"));
 
-        Process process = pb.start();
+        // ── 3) 실행 + 출력 수집
+        Process process = null;
+        try {
+            process = pb.start();
+        } catch (IOException ioe) {
+            System.out.println("❌ pb.start() IOException: " + ioe.getMessage());
+            System.out.println("   HINT: error=2(ENOENT)이면 보통 해석기/경로 이슈. /bin/bash -lc 경유 실행을 시도하세요.");
+            // 디버깅 대안: bash 경유로 재시도 (주석 해제해 테스트)
+            // return runViaBash(dir, projectKey);
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+            throw ioe; // 현재는 그대로 던짐
+        }
+
+        try (java.io.BufferedReader reader =
+                     new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println("▶ " + line);
+                System.out.println("▶ [scanner] " + line);
             }
         }
 
         int exit = process.waitFor();
-        System.out.println("🛰️ sonar-scanner exitCode=" + exit);
+        System.out.println("🛰️ sonar-scanner exitCode = " + exit);
+        System.out.println("=== [SONAR DIAG] END =================================");
 
         if (exit != 0) {
             throw new RuntimeException("❌ sonar-scanner failed. exit=" + exit);
         }
     }
 
+    /** 간단 명령 실행해서 결과 보여주는 유틸 (디버깅용) */
+    private void runQuick(String cmd) {
+        try {
+            Process p = new ProcessBuilder("/bin/bash", "-lc", cmd)
+                    .redirectErrorStream(true).start();
+            try (java.io.BufferedReader r =
+                         new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+                String line;
+                System.out.println("[$] " + cmd);
+                while ((line = r.readLine()) != null) System.out.println("    " + line);
+            }
+            p.waitFor();
+        } catch (Exception e) {
+            System.out.println("[$] " + cmd + " -> fail: " + e.getMessage());
+        }
+    }
+
+    /** 필요시 bash 경유 재시도 버전 (원하면 주석 해제해서 사용) */
+    @SuppressWarnings("unused")
+    private boolean runViaBash(String dir, String projectKey) throws IOException, InterruptedException {
+        String cmd = String.join(" ",
+                "sonar-scanner",
+                "-Dsonar.projectKey=" + projectKey,
+                "-Dsonar.host.url=" + sonarHost,
+                "-Dsonar.token=" + sonarToken
+        );
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
+        pb.directory(new File(dir));
+        pb.redirectErrorStream(true);
+        pb.environment().put("PATH",
+                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-5.0.1.3006-linux/bin");
+
+        System.out.println("▶ [bash retry] CMD=" + String.join(" ", pb.command()));
+        Process p = pb.start();
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+            for (String line; (line = r.readLine()) != null; ) System.out.println("▶ [bash] " + line);
+        }
+        int exit = p.waitFor();
+        System.out.println("🛰️ [bash retry] exitCode=" + exit);
+        return exit == 0;
+    }
 
 
     public String getAnalysisResult(String projectKey) throws InterruptedException {
