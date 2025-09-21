@@ -90,6 +90,15 @@ sonarqube:
   host: ${SONARQUBE_HOST}
   token: ${SONARQUBE_TOKEN}
 
+cloud:
+  aws:
+    s3:
+      endpoint: ${R2_endpoint}
+      bucket: diff
+      access-key: ${R2_accessKey}
+      secret-key: ${R2_secretKey}
+      region: auto
+
 openai:
   api:
     key: ${OPENAI_KEY}
