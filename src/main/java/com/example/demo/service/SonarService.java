@@ -89,8 +89,13 @@ public class SonarService {
         pb.redirectErrorStream(true);
 
         Map<String, String> env = pb.environment();
-        env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
-                + "/opt/sonar-scanner-5.0.1.3006-linux/bin");
+        env.put("PATH",
+                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
+                        + "/opt/sonar-scanner-5.0.1.3006-linux/bin");
+
+        System.out.println("▶ exec CWD=" + pb.directory().getAbsolutePath());
+        System.out.println("▶ exec CMD=" + String.join(" ", pb.command()));
+        System.out.println("▶ exec PATH=" + env.get("PATH"));
 
         Process process = pb.start();
 
