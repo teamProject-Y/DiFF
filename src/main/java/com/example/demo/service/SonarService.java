@@ -88,6 +88,10 @@ public class SonarService {
         pb.directory(new File(dir));
         pb.redirectErrorStream(true);
 
+        Map<String, String> env = pb.environment();
+        env.put("PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
+                + "/opt/sonar-scanner-5.0.1.3006-linux/bin");
+
         Process process = pb.start();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
@@ -104,6 +108,7 @@ public class SonarService {
             throw new RuntimeException("❌ sonar-scanner failed. exit=" + exit);
         }
     }
+
 
 
     public String getAnalysisResult(String projectKey) throws InterruptedException {
