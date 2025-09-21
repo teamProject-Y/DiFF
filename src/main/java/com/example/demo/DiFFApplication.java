@@ -17,7 +17,7 @@ public class DiFFApplication {
                 "SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD",
                 "JWT_SECRET", "JWT_ACCESS_TOKEN_EXPIRATION_TIME", "JWT_REFRESH_TOKEN_EXPIRATION_TIME",
                 "SONARQUBE_HOST", "SONARQUBE_TOKEN",
-                "R2_endpoint", "R2_accessKey", "R2_secretKey"
+                "R2_ENDPOINT", "R2_ACCESS_KEY", "R2_SECRET_KEY"
         );
 
         SpringApplication.run(DiFFApplication.class, args);
