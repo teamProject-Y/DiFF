@@ -36,8 +36,6 @@ public class SonarService {
     private AnalysisRepository analysisRepository;
     @Autowired
     private DraftRepository draftRepository;
-    @Autowired
-    private R2Service r2Service;
 
     @Value("${sonarqube.host}")
     private String sonarHost;
@@ -80,19 +78,9 @@ public class SonarService {
         }
     }
 
-    /**
-     * sonar-scanner 실행
-     */
     public void runSonarScanner(String dir, String projectKey) throws IOException, InterruptedException {
-        System.out.println("🛰️ runSonarScanner in: " + dir);
-        System.out.println("🛰️ sonarHost=" + sonarHost + ", token.len=" + (sonarToken == null ? 0 : sonarToken.length()));
-
-        // 1. sonar-project.properties 자동 생성
-        createSonarPropertiesFile(new File(dir), projectKey);
-
-        // 2. sonar-scanner 실행
         ProcessBuilder pb = new ProcessBuilder(
-                "sonar-scanner",
+                "/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner",
                 "-Dsonar.projectKey=" + projectKey,
                 "-Dsonar.host.url=" + sonarHost,
                 "-Dsonar.token=" + sonarToken
@@ -102,111 +90,145 @@ public class SonarService {
 
         Process process = pb.start();
 
-        // 3. 로그 출력
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println("▶ [scanner] " + line);
+                System.out.println("▶ " + line);
             }
         }
 
-        // 4. 종료 코드 확인
         int exit = process.waitFor();
         System.out.println("🛰️ sonar-scanner exitCode=" + exit);
 
         if (exit != 0) {
-            throw new RuntimeException("sonar-scanner failed. exit=" + exit);
+            throw new RuntimeException("❌ sonar-scanner failed. exit=" + exit);
         }
     }
 
 
-    /**
-     * SonarQube API에서 분석 결과 조회
-     */
     public String getAnalysisResult(String projectKey) throws InterruptedException {
+        System.out.println("getAnalysisResult sonar token : " + sonarToken);
+
         RestTemplate restTemplate = new RestTemplate();
+
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(sonarToken, "");
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         String statusUrl = sonarHost + "/api/ce/component?component=" + projectKey;
-        int maxRetries = 10;
-        int delayMillis = 3000;
+        int maxRetries = 5;
+        int delayMillis = 2000;
 
-        // SUCCESS 나올 때까지 대기
+        // 1. 분석이 끝날 때까지 기다리기
         for (int i = 0; i < maxRetries; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(statusUrl, HttpMethod.GET, entity, String.class);
-                if (response.getBody() != null && response.getBody().contains("\"status\":\"SUCCESS\"")) {
+                String body = response.getBody();
+                if (body != null && body.contains("\"status\":\"SUCCESS\"")) {
+                    System.out.println("SonarQube 분석 완료 감지됨");
                     break;
+                } else {
+                    System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
+                    Thread.sleep(delayMillis);
                 }
-                Thread.sleep(delayMillis);
             } catch (Exception e) {
+                System.out.println("상태 확인 실패: " + e.getMessage());
                 Thread.sleep(delayMillis);
             }
         }
 
-        // 실제 결과 요청
+        // 2. 실제 측정 결과 가져오기
         String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
                 + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity,ncloc_language_distribution";
-
+        System.out.println("measuresUrl : " + measuresUrl);
         for (int i = 0; i < 10; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
+                System.out.println("분석 결과 가져오기 성공");
                 return response.getBody();
             } catch (HttpClientErrorException.NotFound e) {
+                System.out.println("분석 결과 대기 중... " + (i + 1) + "/10");
                 Thread.sleep(delayMillis);
             }
         }
-        throw new RuntimeException("❌ SonarQube 결과 못 가져옴: " + projectKey);
+
+        throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
     }
 
-    /**
-     * 분석 결과 DB 저장
-     */
-    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId, Long diffId,
-                                 String checksum, String projectKey) throws Exception {
-        String resultJson = getAnalysisResult(projectKey);
-        if (resultJson == null || !resultJson.trim().startsWith("{")) return;
+    public void analysisInsertDB(Long repositoryId,
+                                 Long memberId,
+                                 Long draftId,
+                                 Long diffId,
+                                 String checksum,
+                                 String projectKey ) throws IOException, InterruptedException {
+        try {
+            // 분석 결과 가져오기
+            String resultJson = getAnalysisResult(projectKey);
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(resultJson).get("component");
-        String projectKeyFromJson = root.get("key").asText();
-        String projectName = root.get("name").asText();
-        JsonNode measures = root.get("measures");
+            if (resultJson == null || !resultJson.trim().startsWith("{")) {
+                System.out.println("❌ 분석 결과 JSON 아님! resultJson = " + resultJson);
+                return;
+            }
 
-        Map<String, String> metricMap = new HashMap<>();
-        for (JsonNode measure : measures) {
-            metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
-        }
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(resultJson);
+            JsonNode component = root.get("component");
 
-        Draft draft = draftRepository.getDraftById(draftId);
-        if (draft == null) return;
-        if (checksum == null) checksum = draft.getChecksum();
+            String projectKeyFromJson = component.get("key").asText();
+            String projectName = component.get("name").asText();
+            JsonNode measures = component.get("measures");
 
-        Analysis analysis = Analysis.builder()
-                .repositoryId(repositoryId)
-                .memberId(memberId)
-                .articleId(draftId)
-                .diffId(diffId)
-                .checksum(checksum)
-                .projectKey(projectKeyFromJson)
-                .projectName(projectName)
-                .coverage(Ut.parseDoubleOrZero(metricMap.get("coverage")))
-                .bugs(Ut.parseIntOrZero(metricMap.get("bugs")))
-                .complexity(Ut.parseIntOrZero(metricMap.get("complexity")))
-                .codeSmells(Ut.parseIntOrZero(metricMap.get("code_smells")))
-                .duplicatedLinesDensity(Ut.parseDoubleOrZero(metricMap.get("duplicated_lines_density")))
-                .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
-                .build();
+            Map<String, String> metricMap = new HashMap<>();
+            for (JsonNode measure : measures) {
+                metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
+            }
 
-        analysisRepository.insert(analysis);
-        Long analyzeId = analysis.getId();
+            // Draft 조회 (안전 확인용)
+            Draft draft = draftRepository.getDraftById(draftId);
+            if (draft == null) {
+                System.out.println("❌ draftId=" + draftId + " 에 해당 Draft 없음!");
+                return;
+            }
 
-        String langRaw = metricMap.get("ncloc_language_distribution");
-        if (langRaw != null) {
-            List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
-            langs.forEach(analysisRepository::insertLanguage);
+            if (checksum == null) {
+                checksum = draft.getChecksum();
+            }
+            System.out.println("🔑 draftId=" + draftId + " 의 checksum=" + checksum);
+
+            // Analysis 저장
+            Analysis analysis = Analysis.builder()
+                    .repositoryId(repositoryId)
+                    .memberId(memberId)
+                    .articleId(draftId)
+                    .diffId(diffId)
+                    .checksum(checksum)
+                    .projectKey(projectKeyFromJson)
+                    .projectName(projectName)
+                    .coverage(Ut.parseDoubleOrZero(metricMap.get("coverage")))
+                    .bugs(Ut.parseIntOrZero(metricMap.get("bugs")))
+                    .complexity(Ut.parseIntOrZero(metricMap.get("complexity")))
+                    .codeSmells(Ut.parseIntOrZero(metricMap.get("code_smells")))
+                    .duplicatedLinesDensity(Ut.parseDoubleOrZero(metricMap.get("duplicated_lines_density")))
+                    .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
+                    .build();
+
+            analysisRepository.insert(analysis);
+            Long analyzeId = analysis.getId();
+            System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
+
+            // 언어 분포 저장
+            String langRaw = metricMap.get("ncloc_language_distribution");
+            if (langRaw != null) {
+                List<AnalysisLanguage> languages = parseLanguageDistribution(langRaw, analyzeId);
+                for (AnalysisLanguage lang : languages) {
+                    analysisRepository.insertLanguage(lang);
+                }
+                System.out.println("✅ 언어 분포 저장 완료 - " + languages.size() + "개 언어");
+            }
+
+        } catch (Exception e) {
+            System.out.println("❌ analysisInsertDB 분석 결과 저장 실패: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
