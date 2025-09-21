@@ -3,8 +3,7 @@ server:
   address: 0.0.0.0
   port: ${PORT:8080}
   tomcat:
-    max-swallow-size: -1
-    connection-timeout: 600000
+    max-swallow-size: 500MB
 
 management:
   endpoints:
@@ -27,10 +26,8 @@ spring:
   servlet:
     multipart:
       enabled: true
-      max-file-size: 1GB
-      max-request-size: 1GB
-      file-size-threshold: 10MB
-      location: /tmp/uploads
+      max-file-size: 500MB
+      max-request-size: 500MB
 
   security:
     oauth2:
