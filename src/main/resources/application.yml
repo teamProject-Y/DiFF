@@ -13,8 +13,8 @@ management:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration-time: ${JWT_EXPIRATION_TIME}
-  refresh-token-expiration-time: ${JWT_REFRESH_TIME}
+  access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME}
+  refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
 
 spring:
   datasource:
