@@ -14,7 +14,7 @@ public class DiFFApplication {
         // 1) 중요 ENV 즉시 덤프 (마스킹)
         dumpEnv(
                 "PORT",
-                "DB_URL", "DB_USER", "DB_PASSWORD",
+                "SPRING_DATASOURCE_URL", "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD",
                 "JWT_SECRET", "JWT_ACCESS_TOKEN_EXPIRATION_TIME", "JWT_REFRESH_TOKEN_EXPIRATION_TIME",
                 "SONARQUBE_HOST", "SONARQUBE_TOKEN",
                 "R2_endpoint", "R2_accessKey", "R2_secretKey"

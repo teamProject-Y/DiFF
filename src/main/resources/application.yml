@@ -59,8 +59,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -93,10 +93,10 @@ sonarqube:
 cloud:
   aws:
     s3:
-      endpoint: ${R2_endpoint}
+      endpoint: ${R2_ENDPOINT}
       bucket: diff
-      access-key: ${R2_accessKey}
-      secret-key: ${R2_secretKey}
+      access-key: ${R2_ACCESS_KEY}
+      secret-key: ${R2_SECRET_KEY}
       region: auto
 
 openai:
