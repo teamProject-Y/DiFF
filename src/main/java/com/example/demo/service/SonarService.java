@@ -32,12 +32,12 @@ import java.util.zip.ZipFile;
 
 @Service
 public class SonarService {
-
     @Autowired
     private AnalysisRepository analysisRepository;
-
     @Autowired
     private DraftRepository draftRepository;
+    @Autowired
+    private R2Service r2Service;
 
     @Value("${sonarqube.host}")
     private String sonarHost;
@@ -80,282 +80,133 @@ public class SonarService {
         }
     }
 
+    /**
+     * sonar-scanner 실행
+     */
     public void runSonarScanner(String dir, String projectKey) throws IOException, InterruptedException {
-        final String scannerAbs = "/opt/sonar-scanner-5.0.1.3006-linux/bin/sonar-scanner";
+        System.out.println("🛰️ runSonarScanner in: " + dir);
+        System.out.println("🛰️ sonarHost=" + sonarHost + ", token.len=" + (sonarToken == null ? 0 : sonarToken.length()));
 
-        // ── 0) 기본 환경 로그
-        System.out.println("=== [SONAR DIAG] START ===============================");
-        System.out.println("user.name            = " + System.getProperty("user.name"));
-        System.out.println("java.version         = " + System.getProperty("java.version"));
-        System.out.println("java.home            = " + System.getProperty("java.home"));
-        System.out.println("os.name              = " + System.getProperty("os.name") + " " + System.getProperty("os.arch"));
-        System.out.println("WORK DIR (arg)       = " + dir);
-        System.out.println("sonar.host.url       = " + sonarHost);
-        System.out.println("token.len            = " + (sonarToken == null ? 0 : sonarToken.length()));
+        // 1. sonar-project.properties 자동 생성
+        createSonarPropertiesFile(new File(dir), projectKey);
 
-        // ── 1) 실행 파일/쉘/작업 디렉토리 점검
-        File scanner = new File(scannerAbs);
-        System.out.println("scanner.exists       = " + scanner.exists());
-        System.out.println("scanner.canExecute   = " + scanner.canExecute());
-        System.out.println("scanner.path         = " + scanner.getAbsolutePath());
-
-        File sh = new File("/bin/sh");
-        System.out.println("/bin/sh exists       = " + sh.exists() + ", canExec=" + sh.canExecute());
-
-        File wd = new File(dir);
-        System.out.println("wd.exists            = " + wd.exists() + ", isDir=" + wd.isDirectory());
-        if (wd.exists()) {
-            String[] list = wd.list();
-            System.out.println("wd.list sample       = " + (list == null ? "null" :
-                    java.util.Arrays.stream(list).limit(10).reduce((a,b) -> a + ", " + b).orElse("(empty)")));
-        }
-
-        // sonar-scanner 스크립트의 shebang 확인 (첫 줄)
-        try (java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(scanner))) {
-            String shebang = br.readLine();
-            System.out.println("scanner shebang      = " + shebang);
-        } catch (Exception ignore) {
-            System.out.println("scanner shebang      = <read fail>");
-        }
-
-        // which 확인(시스템 PATH 상 위치)
-        runQuick("which sonar-scanner");
-
-        // 링크/권한 자세히
-        runQuick("ls -l " + scannerAbs);
-        runQuick("ls -l /usr/local/bin/sonar-scanner");
-        runQuick("readlink -f /usr/local/bin/sonar-scanner");
-
-        // ── 2) 실행 준비
-        String cmdStr = String.join(" ",
-                scannerAbs,
+        // 2. sonar-scanner 실행
+        ProcessBuilder pb = new ProcessBuilder(
+                "sonar-scanner",
                 "-Dsonar.projectKey=" + projectKey,
                 "-Dsonar.host.url=" + sonarHost,
                 "-Dsonar.token=" + sonarToken
         );
-
-        ProcessBuilder pb = new ProcessBuilder(
-                "/bin/bash", "-lc",
-                "sonar-scanner " +
-                        "-Dsonar.projectKey=" + projectKey + " " +
-                        "-Dsonar.host.url="   + sonarHost  + " " +
-                        "-Dsonar.token="      + sonarToken
-        );
         pb.directory(new File(dir));
         pb.redirectErrorStream(true);
 
-// PATH에 스캐너 위치가 들어가도록 (안전빵)
-        pb.environment().put("PATH",
-                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-" +
-                        System.getenv().getOrDefault("SONAR_SCANNER_VERSION","5.0.1.3006") + "-linux/bin"
-        );
+        Process process = pb.start();
 
-
-        // PATH 보정
-        java.util.Map<String, String> env = pb.environment();
-        String newPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-5.0.1.3006-linux/bin";
-        env.put("PATH", newPath);
-
-        System.out.println("▶ exec CWD  = " + pb.directory().getAbsolutePath());
-        System.out.println("▶ exec CMD  = " + cmdStr);
-        System.out.println("▶ exec PATH = " + env.get("PATH"));
-
-        // ── 3) 실행 + 출력 수집
-        Process process = null;
-        try {
-            process = pb.start();
-        } catch (IOException ioe) {
-            System.out.println("❌ pb.start() IOException: " + ioe.getMessage());
-            System.out.println("   HINT: error=2(ENOENT)이면 보통 해석기/경로 이슈. /bin/bash -lc 경유 실행을 시도하세요.");
-            // 디버깅 대안: bash 경유로 재시도 (주석 해제해 테스트)
-            // return runViaBash(dir, projectKey);
-
-            throw ioe; // 현재는 그대로 던짐
-        }
-
-        try (java.io.BufferedReader reader =
-                     new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+        // 3. 로그 출력
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 System.out.println("▶ [scanner] " + line);
             }
         }
 
+        // 4. 종료 코드 확인
         int exit = process.waitFor();
-        System.out.println("🛰️ sonar-scanner exitCode = " + exit);
-        System.out.println("=== [SONAR DIAG] END =================================");
+        System.out.println("🛰️ sonar-scanner exitCode=" + exit);
 
         if (exit != 0) {
-            throw new RuntimeException("❌ sonar-scanner failed. exit=" + exit);
+            throw new RuntimeException("sonar-scanner failed. exit=" + exit);
         }
     }
 
-    /** 간단 명령 실행해서 결과 보여주는 유틸 (디버깅용) */
-    private void runQuick(String cmd) {
-        try {
-            Process p = new ProcessBuilder("/bin/bash", "-lc", cmd)
-                    .redirectErrorStream(true).start();
-            try (java.io.BufferedReader r =
-                         new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
-                String line;
-                System.out.println("[$] " + cmd);
-                while ((line = r.readLine()) != null) System.out.println("    " + line);
-            }
-            p.waitFor();
-        } catch (Exception e) {
-            System.out.println("[$] " + cmd + " -> fail: " + e.getMessage());
-        }
-    }
 
-    /** 필요시 bash 경유 재시도 버전 (원하면 주석 해제해서 사용) */
-    @SuppressWarnings("unused")
-    private boolean runViaBash(String dir, String projectKey) throws IOException, InterruptedException {
-        String cmd = String.join(" ",
-                "sonar-scanner",
-                "-Dsonar.projectKey=" + projectKey,
-                "-Dsonar.host.url=" + sonarHost,
-                "-Dsonar.token=" + sonarToken
-        );
-        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-lc", cmd);
-        pb.directory(new File(dir));
-        pb.redirectErrorStream(true);
-        pb.environment().put("PATH",
-                "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/sonar-scanner-5.0.1.3006-linux/bin");
-
-        System.out.println("▶ [bash retry] CMD=" + String.join(" ", pb.command()));
-        Process p = pb.start();
-        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
-            for (String line; (line = r.readLine()) != null; ) System.out.println("▶ [bash] " + line);
-        }
-        int exit = p.waitFor();
-        System.out.println("🛰️ [bash retry] exitCode=" + exit);
-        return exit == 0;
-    }
-
-
+    /**
+     * SonarQube API에서 분석 결과 조회
+     */
     public String getAnalysisResult(String projectKey) throws InterruptedException {
-        System.out.println("getAnalysisResult sonar token : " + sonarToken);
-
         RestTemplate restTemplate = new RestTemplate();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(sonarToken, "");
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         String statusUrl = sonarHost + "/api/ce/component?component=" + projectKey;
-        int maxRetries = 5;
-        int delayMillis = 2000;
+        int maxRetries = 10;
+        int delayMillis = 3000;
 
-        // 1. 분석이 끝날 때까지 기다리기
+        // SUCCESS 나올 때까지 대기
         for (int i = 0; i < maxRetries; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(statusUrl, HttpMethod.GET, entity, String.class);
-                String body = response.getBody();
-                if (body != null && body.contains("\"status\":\"SUCCESS\"")) {
-                    System.out.println("SonarQube 분석 완료 감지됨");
+                if (response.getBody() != null && response.getBody().contains("\"status\":\"SUCCESS\"")) {
                     break;
-                } else {
-                    System.out.println("분석 대기 중... " + (i + 1) + "/" + maxRetries);
-                    Thread.sleep(delayMillis);
                 }
+                Thread.sleep(delayMillis);
             } catch (Exception e) {
-                System.out.println("상태 확인 실패: " + e.getMessage());
                 Thread.sleep(delayMillis);
             }
         }
 
-        // 2. 실제 측정 결과 가져오기
+        // 실제 결과 요청
         String measuresUrl = sonarHost + "/api/measures/component?component=" + projectKey
                 + "&metricKeys=bugs,vulnerabilities,code_smells,coverage,duplicated_lines_density,complexity,ncloc_language_distribution";
-        System.out.println("measuresUrl : " + measuresUrl);
+
         for (int i = 0; i < 10; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
-                System.out.println("분석 결과 가져오기 성공");
                 return response.getBody();
             } catch (HttpClientErrorException.NotFound e) {
-                System.out.println("분석 결과 대기 중... " + (i + 1) + "/10");
                 Thread.sleep(delayMillis);
             }
         }
-
-        throw new RuntimeException("분석 결과를 가져오지 못했습니다: " + projectKey);
+        throw new RuntimeException("❌ SonarQube 결과 못 가져옴: " + projectKey);
     }
 
-    public void analysisInsertDB(Long repositoryId,
-                                 Long memberId,
-                                 Long draftId,
-                                 Long diffId,
-                                 String checksum,
-                                 String projectKey ) throws IOException, InterruptedException {
-        try {
-            // 분석 결과 가져오기
-            String resultJson = getAnalysisResult(projectKey);
+    /**
+     * 분석 결과 DB 저장
+     */
+    public void analysisInsertDB(Long repositoryId, Long memberId, Long draftId, Long diffId,
+                                 String checksum, String projectKey) throws Exception {
+        String resultJson = getAnalysisResult(projectKey);
+        if (resultJson == null || !resultJson.trim().startsWith("{")) return;
 
-            if (resultJson == null || !resultJson.trim().startsWith("{")) {
-                System.out.println("❌ 분석 결과 JSON 아님! resultJson = " + resultJson);
-                return;
-            }
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(resultJson).get("component");
+        String projectKeyFromJson = root.get("key").asText();
+        String projectName = root.get("name").asText();
+        JsonNode measures = root.get("measures");
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(resultJson);
-            JsonNode component = root.get("component");
+        Map<String, String> metricMap = new HashMap<>();
+        for (JsonNode measure : measures) {
+            metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
+        }
 
-            String projectKeyFromJson = component.get("key").asText();
-            String projectName = component.get("name").asText();
-            JsonNode measures = component.get("measures");
+        Draft draft = draftRepository.getDraftById(draftId);
+        if (draft == null) return;
+        if (checksum == null) checksum = draft.getChecksum();
 
-            Map<String, String> metricMap = new HashMap<>();
-            for (JsonNode measure : measures) {
-                metricMap.put(measure.get("metric").asText(), measure.get("value").asText());
-            }
+        Analysis analysis = Analysis.builder()
+                .repositoryId(repositoryId)
+                .memberId(memberId)
+                .articleId(draftId)
+                .diffId(diffId)
+                .checksum(checksum)
+                .projectKey(projectKeyFromJson)
+                .projectName(projectName)
+                .coverage(Ut.parseDoubleOrZero(metricMap.get("coverage")))
+                .bugs(Ut.parseIntOrZero(metricMap.get("bugs")))
+                .complexity(Ut.parseIntOrZero(metricMap.get("complexity")))
+                .codeSmells(Ut.parseIntOrZero(metricMap.get("code_smells")))
+                .duplicatedLinesDensity(Ut.parseDoubleOrZero(metricMap.get("duplicated_lines_density")))
+                .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
+                .build();
 
-            // Draft 조회 (안전 확인용)
-            Draft draft = draftRepository.getDraftById(draftId);
-            if (draft == null) {
-                System.out.println("❌ draftId=" + draftId + " 에 해당 Draft 없음!");
-                return;
-            }
+        analysisRepository.insert(analysis);
+        Long analyzeId = analysis.getId();
 
-            if (checksum == null) {
-                checksum = draft.getChecksum();
-            }
-            System.out.println("🔑 draftId=" + draftId + " 의 checksum=" + checksum);
-
-            // Analysis 저장
-            Analysis analysis = Analysis.builder()
-                    .repositoryId(repositoryId)
-                    .memberId(memberId)
-                    .articleId(draftId)
-                    .diffId(diffId)
-                    .checksum(checksum)
-                    .projectKey(projectKeyFromJson)
-                    .projectName(projectName)
-                    .coverage(Ut.parseDoubleOrZero(metricMap.get("coverage")))
-                    .bugs(Ut.parseIntOrZero(metricMap.get("bugs")))
-                    .complexity(Ut.parseIntOrZero(metricMap.get("complexity")))
-                    .codeSmells(Ut.parseIntOrZero(metricMap.get("code_smells")))
-                    .duplicatedLinesDensity(Ut.parseDoubleOrZero(metricMap.get("duplicated_lines_density")))
-                    .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
-                    .build();
-
-            analysisRepository.insert(analysis);
-            Long analyzeId = analysis.getId();
-            System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
-
-            // 언어 분포 저장
-            String langRaw = metricMap.get("ncloc_language_distribution");
-            if (langRaw != null) {
-                List<AnalysisLanguage> languages = parseLanguageDistribution(langRaw, analyzeId);
-                for (AnalysisLanguage lang : languages) {
-                    analysisRepository.insertLanguage(lang);
-                }
-                System.out.println("✅ 언어 분포 저장 완료 - " + languages.size() + "개 언어");
-            }
-
-        } catch (Exception e) {
-            System.out.println("❌ analysisInsertDB 분석 결과 저장 실패: " + e.getMessage());
-            e.printStackTrace();
+        String langRaw = metricMap.get("ncloc_language_distribution");
+        if (langRaw != null) {
+            List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
+            langs.forEach(analysisRepository::insertLanguage);
         }
     }
 
