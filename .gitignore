@@ -38,8 +38,6 @@ build/
 ### Dependencies ###
 node_modules/
 .next/
-**/application.yml
-src/main/resources/application.yml
 .DiFF
 .env.env
 .env

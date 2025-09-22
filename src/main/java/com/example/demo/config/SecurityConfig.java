@@ -5,6 +5,7 @@ import com.example.demo.service.GoogleOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -15,8 +16,11 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.firewall.HttpFirewall;
-import org.springframework.security.web.firewall.StrictHttpFirewall;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,37 +30,39 @@ public class SecurityConfig {
     private final JwtTokenFilter jwtTokenFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
+    // #### 1) R2 전용 체인: /r2/** 전체 허용 ####
     @Bean
-    public HttpFirewall allowSemicolonFirewall() {
-        StrictHttpFirewall firewall = new StrictHttpFirewall();
-        firewall.setAllowSemicolon(true);
-        return firewall;
-    }
-
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer(HttpFirewall firewall) {
-        return web -> web.httpFirewall(firewall);
-    }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http,
-                                           GitHubOAuth2UserService githubOAuth2UserService,
-                                           GoogleOAuth2UserService googleOAuth2UserService) throws Exception {
+    @Order(1)
+    public SecurityFilterChain r2Chain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .securityMatcher("/r2/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 적용
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/r2/**").permitAll()
+                )
+                .exceptionHandling(eh -> eh
+                        .authenticationEntryPoint(restAuthenticationEntryPoint())
+                        .accessDeniedHandler(restAccessDeniedHandler())
+                );
+        return http.build();
+    }
+
+    // #### 2) 기본 체인: 나머지 엔드포인트 ####
+    @Bean
+    @Order(2)
+    public SecurityFilterChain appChain(HttpSecurity http,
+                                        GitHubOAuth2UserService githubOAuth2UserService,
+                                        GoogleOAuth2UserService googleOAuth2UserService) throws Exception {
+
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ CORS 적용
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(hb -> hb.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
-
-                        .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
-                        .requestMatchers("/.well-known/**", "/actuator/health").permitAll()
-
                         .requestMatchers("/error").permitAll()
-
-                        // 완전 공개 (누구나 접근 가능)
                         .requestMatchers(
                                 "/", "/api/DiFF/home/main",
                                 "/resource/**", "/css/**", "/js/**", "/images/**",
@@ -84,16 +90,12 @@ public class SecurityConfig {
                                 // 알림
                                 "/api/DiFF/notify/**"
                         ).permitAll()
-
-                        // GET 요청은 모두 허용
                         .requestMatchers(HttpMethod.GET,
                                 "/api/DiFF/attachment/**",
                                 "/api/DiFF/reply/**",
                                 "/api/DiFF/article/**",
                                 "/api/DiFF/github/**"
                         ).permitAll()
-
-                        // 그 외는 인증 필요
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
@@ -104,24 +106,42 @@ public class SecurityConfig {
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(request -> {
-                                    String registrationId = request.getClientRegistration().getRegistrationId();
-                                    if ("github".equals(registrationId)) {
-                                        return githubOAuth2UserService.loadUser(request);
-                                    } else if ("google".equals(registrationId)) {
-                                        return googleOAuth2UserService.loadUser(request);
-                                    }
-                                    throw new OAuth2AuthenticationException("Unsupported provider: " + registrationId);
+                                    String rid = request.getClientRegistration().getRegistrationId();
+                                    if ("github".equals(rid)) return githubOAuth2UserService.loadUser(request);
+                                    if ("google".equals(rid)) return googleOAuth2UserService.loadUser(request);
+                                    throw new OAuth2AuthenticationException("Unsupported provider: " + rid);
                                 })
                         )
                         .successHandler(oAuth2SuccessHandler)
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("https://diff.io.kr/DiFF/home/main")
+                        .logoutSuccessUrl("http://13.124.33.233:3000/DiFF/home/main")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                 );
+
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowCredentials(true);
+        cfg.setAllowedOrigins(List.of(
+                "https://diff.io.kr",
+                "https://diff-front.fly.dev",
+                "http://13.124.33.233:3000",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+        ));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setExposedHeaders(List.of("Authorization", "REFRESH_TOKEN"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 
     @Bean
@@ -143,36 +163,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        var cfg = new org.springframework.web.cors.CorsConfiguration();
-        cfg.setAllowCredentials(true);
-
-        // 허용할 프론트 주소들
-        cfg.addAllowedOrigin("https://diff-front.fly.dev");
-        cfg.addAllowedOrigin("https://diff.io.kr");
-
-        // 로컬 개발용
-        cfg.addAllowedOrigin("http://localhost:3000");
-        cfg.addAllowedOrigin("http://127.0.0.1:3000");
-
-        // 여러 fly.dev 서브도메인 테스트할 때
-        cfg.addAllowedOriginPattern("https://*.fly.dev");
-
-        // 테스트 시 전체 허용
-        cfg.addAllowedOriginPattern("*");
-
-        cfg.addAllowedHeader("*");
-        cfg.addAllowedMethod("*");
-
-        // 토큰 헤더도 노출
-        cfg.addExposedHeader("Authorization");
-        cfg.addExposedHeader("REFRESH_TOKEN");
-        cfg.addAllowedHeader("REFRESH_TOKEN");
-
-        var source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg);
-        return source;
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> {
+            System.out.println("🟢 WebSecurityCustomizer: ignoring /r2/**");
+            web.ignoring().requestMatchers("/r2/**"); // 필터 자체를 우회
+        };
     }
-
-
 }
