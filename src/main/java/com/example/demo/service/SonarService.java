@@ -201,17 +201,25 @@ public class SonarService {
                 .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
                 .build();
 
+        // 각 항목 점수 저장
         analysisRepository.insert(analysis);
         Long analyzeId = analysis.getId();
         System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
+
+        // 총점 저장
+        analysis.setId(analyzeId);
+        analysisRepository.updateTotalScore(analysis);
+        System.out.println("✅ 총점 계산 완료 - analyzeId: " + analysis.getTotalScore());
+
+        // 언어 분포 저장
         String langRaw = metricMap.get("ncloc_language_distribution");
+      
         if (langRaw != null) {
             List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
             langs.forEach(analysisRepository::insertLanguage);
         }
         System.out.println("✅ 언어 분포 저장 완료 - " + langRaw + "개 언어");
     }
-
 
     public List<AnalysisLanguage> parseLanguageDistribution(String raw, Long analyzeId) {
         System.out.println("parseLanguageDistribution 잔입 raw: " + raw);
@@ -231,17 +239,6 @@ public class SonarService {
         }
         return result;
     }
-
-    private Double parseDouble(String value) {
-        try { return value == null ? null : Double.parseDouble(value); }
-        catch (NumberFormatException e) { return null; }
-    }
-
-    private Integer parseInt(String value) {
-        try { return value == null ? null : Integer.parseInt(value); }
-        catch (NumberFormatException e) { return null; }
-    }
-
 
     public void deleteProject(String projectKey) {
         try {
@@ -271,23 +268,6 @@ public class SonarService {
             e.printStackTrace();
         }
     }
-
-    private void deleteDirectoryRecursively(File dir) {
-        if (dir == null || !dir.exists()) return;
-
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectoryRecursively(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-        dir.delete();
-    }
-
 
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
@@ -395,52 +375,6 @@ public class SonarService {
             }
         }
         return bins.stream().distinct().collect(Collectors.toList());
-    }
-
-
-    private String findClassFolder(File projectDir) {
-        File[] classDirs = {
-                new File(projectDir, "target/classes"),
-                new File(projectDir, "build/classes/java/main")
-        };
-
-        for (File dir : classDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                return dir.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-    private String findJavaSourceFolder(File projectDir) {
-        return findDirectoryContainingExtension(projectDir, ".java");
-    }
-
-    private String findDirectoryContainingExtension(File dir, String extension) {
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-
-        boolean containsTargetFile = false;
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith(extension)) {
-                containsTargetFile = true;
-            }
-        }
-        if (containsTargetFile) {
-            return dir.getAbsolutePath();
-        }
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String found = findDirectoryContainingExtension(file, extension);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-
-        return null;
     }
 
     private List<String> detectAllValidSourceFolders(File baseDir) {
