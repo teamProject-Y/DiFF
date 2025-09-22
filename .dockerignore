@@ -39,8 +39,6 @@ nbdist
 ### Dependencies ###
 **/node_modules
 **/.next
-**/**/application.yml
-**/src/main/resources/application.yml
 **/.DiFF
 
 # flyctl launch added from .idea/.gitignore
