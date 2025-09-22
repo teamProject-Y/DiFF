@@ -12,7 +12,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "https://diff-front.fly.dev",
                         "https://diff.io.kr",
-                        "http://13.124.33.233:3000",
                         "http://localhost:3000",
                         "http://127.0.0.1:3000"
                 )
