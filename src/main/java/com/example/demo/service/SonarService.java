@@ -153,6 +153,7 @@ public class SonarService {
         for (int i = 0; i < 10; i++) {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(measuresUrl, HttpMethod.GET, entity, String.class);
+                System.out.println("분석 결과 가져오기 성공");
                 return response.getBody();
             } catch (HttpClientErrorException.NotFound e) {
                 Thread.sleep(delayMillis);
@@ -202,12 +203,13 @@ public class SonarService {
 
         analysisRepository.insert(analysis);
         Long analyzeId = analysis.getId();
-
+        System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
         String langRaw = metricMap.get("ncloc_language_distribution");
         if (langRaw != null) {
             List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
             langs.forEach(analysisRepository::insertLanguage);
         }
+        System.out.println("✅ 언어 분포 저장 완료 - " + langRaw + "개 언어");
     }
 
 
