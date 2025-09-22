@@ -159,23 +159,4 @@ public class R2Controller {
                 });
     }
 
-    // 필요 시 사용 (SUCCESS까지 대기)
-//    @SuppressWarnings("unused")
-//    private void waitUntilSuccess(String projectKey, java.io.OutputStreamWriter writer) throws Exception {
-//        long deadline = System.currentTimeMillis() + 10 * 60_000; // 10분
-//        String status;
-//        do {
-//            status = sonarService.getTaskStatus(projectKey); // QUEUED/RUNNING/SUCCESS/FAILED
-//            if ("FAILED".equals(status)) {
-//                writer.write("ERROR Sonar analysis failed\n"); writer.flush();
-//                throw new IllegalStateException("Sonar FAILED");
-//            }
-//            if (!"SUCCESS".equals(status)) Thread.sleep(2_000);
-//        } while (!"SUCCESS".equals(status) && System.currentTimeMillis() < deadline);
-//        if (!"SUCCESS".equals(status)) {
-//            writer.write("ERROR Sonar analysis timeout\n"); writer.flush();
-//            throw new IllegalStateException("Sonar TIMEOUT");
-//        }
-//    }
-
 }

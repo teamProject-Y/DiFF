@@ -33,6 +33,7 @@ public class SonarUploadController {
 
     @Autowired
     private Rq rq;
+
     @Autowired
     private AnalysisService analysisService;
 
@@ -75,9 +76,7 @@ public class SonarUploadController {
 
             sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
             System.out.println("✅Controller DB Insert 완료");
-
-
-
+          
             grantProjectAdminPermission(projectKey);
             Thread.sleep(2000);
             sonarService.deleteProject(projectKey);
