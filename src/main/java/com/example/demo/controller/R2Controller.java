@@ -84,6 +84,8 @@ public class R2Controller {
                 .header("Cache-Control", "no-cache, no-store, must-revalidate")
                 .header("Pragma", "no-cache")
                 .header("Expires", "0")
+                .header("X-Accel-Buffering", "no")
+                .header("Connection", "keep-alive")
                 .body(out -> {
                     var writer = new java.io.OutputStreamWriter(out, java.nio.charset.StandardCharsets.UTF_8);
 
@@ -91,7 +93,7 @@ public class R2Controller {
                     String key = null;
                     String projectKey = null;
 
-                    // ❶ 5초 heartbeat로 프록시 유휴 타임아웃 방지
+                    // ⏱ 촘촘한 하트비트(2초)
                     final var timer = new java.util.Timer(true);
                     final var hb = new java.util.TimerTask() {
                         @Override public void run() {
@@ -108,37 +110,39 @@ public class R2Controller {
                         key = (String) req.get("key");
                         projectKey = "M-" + memberId + "_R-" + repositoryId + "_A-" + draftId + "_C-" + lastChecksum;
 
-                        // 시작 신호 + heartbeat 시작
                         writer.write("START\n"); writer.flush();
-                        timer.scheduleAtFixedRate(hb, 5_000, 5_000);
+                        timer.scheduleAtFixedRate(hb, 2_000, 2_000);
 
-                        // ❷ 임시 디렉토리 + 다운로드/압축해제
+                        // (선택) 키 존재 조기 확인
+                        // if (!r2Service.exists(key)) {
+                        //     writer.write(("ERROR R2 key not found: " + key + "\n")); writer.flush();
+                        //     return;
+                        // }
+
+                        // 1) unzip
                         tempDir = Files.createTempDirectory("diff_");
                         String extractedDir = r2Service.downloadAndUnzip(key, tempDir.toString());
                         writer.write("UNZIPPED\n"); writer.flush();
 
-                        // ❸ Sonar 분석 (동기 실행)
+                        // 2) Sonar 분석
                         sonarService.runSonarScanner(extractedDir, projectKey);
                         writer.write("SCANNED\n"); writer.flush();
 
-                        // (선택) 환경에 따라 runSonarScanner가 비동기 트리거라면
-                        // 여기서 SUCCESS까지 짧게 폴링하는 함수를 넣을 수 있음.
+                        // (환경에 따라 필요 시) 완료까지 대기
                         // waitUntilSuccess(projectKey, writer);
 
-                        // ❹ 결과 조회 + DB 저장
+                        // 3) 결과 조회 + DB 저장
                         String result = sonarService.getAnalysisResult(projectKey);
                         sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
                         writer.write("SAVED\n"); writer.flush();
 
-                        // ❺ 최종 완료 신호 + 결과 본문
+                        // 4) 최종 완료 신호 + 결과 본문
                         writer.write("DONE\n"); writer.flush();
                         writer.write(result + "\n"); writer.flush();
 
                     } catch (Exception e) {
-                        writer.write(("ERROR " + e.getMessage() + "\n"));
-                        writer.flush();
+                        try { writer.write(("ERROR " + e.getMessage() + "\n")); writer.flush(); } catch (Exception ignore) {}
                     } finally {
-                        // 정리는 마지막에 한 번만
                         timer.cancel();
                         try {
                             if (projectKey != null) {
@@ -155,28 +159,23 @@ public class R2Controller {
                 });
     }
 
-    // 필요시: Sonar 작업 완료까지 대기하는 헬퍼(선택)
-    // private void waitUntilSuccess(String projectKey, java.io.OutputStreamWriter writer) {
-    //     long deadline = System.currentTimeMillis() + 10 * 60_000; // 최대 10분
-    //     try {
-    //         String status;
-    //         do {
-    //             status = sonarService.getTaskStatus(projectKey); // 직접 구현: QUEUED/RUNNING/SUCCESS/FAILED
-    //             if ("FAILED".equals(status)) {
-    //                 writer.write("ERROR Sonar analysis failed\n"); writer.flush();
-    //                 throw new RuntimeException("Sonar FAILED");
-    //             }
-    //             if (!"SUCCESS".equals(status)) {
-    //                 Thread.sleep(2000);
-    //             }
-    //         } while (!"SUCCESS".equals(status) && System.currentTimeMillis() < deadline);
-    //         if (!"SUCCESS".equals(status)) {
-    //             writer.write("ERROR Sonar analysis timeout\n"); writer.flush();
-    //             throw new RuntimeException("Sonar TIMEOUT");
-    //         }
-    //     } catch (Exception e) {
-    //         throw new RuntimeException(e);
-    //     }
-    // }
+    // 필요 시 사용 (SUCCESS까지 대기)
+//    @SuppressWarnings("unused")
+//    private void waitUntilSuccess(String projectKey, java.io.OutputStreamWriter writer) throws Exception {
+//        long deadline = System.currentTimeMillis() + 10 * 60_000; // 10분
+//        String status;
+//        do {
+//            status = sonarService.getTaskStatus(projectKey); // QUEUED/RUNNING/SUCCESS/FAILED
+//            if ("FAILED".equals(status)) {
+//                writer.write("ERROR Sonar analysis failed\n"); writer.flush();
+//                throw new IllegalStateException("Sonar FAILED");
+//            }
+//            if (!"SUCCESS".equals(status)) Thread.sleep(2_000);
+//        } while (!"SUCCESS".equals(status) && System.currentTimeMillis() < deadline);
+//        if (!"SUCCESS".equals(status)) {
+//            writer.write("ERROR Sonar analysis timeout\n"); writer.flush();
+//            throw new IllegalStateException("Sonar TIMEOUT");
+//        }
+//    }
 
 }
