@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.config.JwtTokenProvider;
+import com.example.demo.service.AnalysisService;
 import com.example.demo.service.SonarService;
 import com.example.demo.vo.Rq;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,8 @@ public class SonarUploadController {
 
     @Autowired
     private Rq rq;
+    @Autowired
+    private AnalysisService analysisService;
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadSource(
@@ -69,8 +72,12 @@ public class SonarUploadController {
             // 4. 결과 조회
             String result = sonarService.getAnalysisResult(projectKey);
             System.out.println("✅Con분석 결과: " + result);
+
             sonarService.analysisInsertDB(repositoryId, memberId, draftId, diffId, lastChecksum, projectKey);
             System.out.println("✅Controller DB Insert 완료");
+
+
+
             grantProjectAdminPermission(projectKey);
             Thread.sleep(2000);
             sonarService.deleteProject(projectKey);

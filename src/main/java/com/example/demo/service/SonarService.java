@@ -201,17 +201,25 @@ public class SonarService {
                 .vulnerabilities(Ut.parseIntOrZero(metricMap.get("vulnerabilities")))
                 .build();
 
+        // 각 항목 점수 저장
         analysisRepository.insert(analysis);
         Long analyzeId = analysis.getId();
         System.out.println("✅ 분석 결과 저장 완료 - analyzeId: " + analyzeId);
+
+        // 총점 저장
+        analysis.setId(analyzeId);
+        analysisRepository.updateTotalScore(analysis);
+        System.out.println("✅ 총점 계산 완료 - analyzeId: " + analysis.getTotalScore());
+
+        // 언어 분포 저장
         String langRaw = metricMap.get("ncloc_language_distribution");
+
         if (langRaw != null) {
             List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
             langs.forEach(analysisRepository::insertLanguage);
         }
         System.out.println("✅ 언어 분포 저장 완료 - " + langRaw + "개 언어");
     }
-
 
     public List<AnalysisLanguage> parseLanguageDistribution(String raw, Long analyzeId) {
         System.out.println("parseLanguageDistribution 잔입 raw: " + raw);
@@ -241,7 +249,6 @@ public class SonarService {
         try { return value == null ? null : Integer.parseInt(value); }
         catch (NumberFormatException e) { return null; }
     }
-
 
     public void deleteProject(String projectKey) {
         try {
