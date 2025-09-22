@@ -240,16 +240,6 @@ public class SonarService {
         return result;
     }
 
-    private Double parseDouble(String value) {
-        try { return value == null ? null : Double.parseDouble(value); }
-        catch (NumberFormatException e) { return null; }
-    }
-
-    private Integer parseInt(String value) {
-        try { return value == null ? null : Integer.parseInt(value); }
-        catch (NumberFormatException e) { return null; }
-    }
-
     public void deleteProject(String projectKey) {
         try {
             String sonarBaseUrl = "https://sonar.diff.io.kr";
@@ -278,23 +268,6 @@ public class SonarService {
             e.printStackTrace();
         }
     }
-
-    private void deleteDirectoryRecursively(File dir) {
-        if (dir == null || !dir.exists()) return;
-
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    deleteDirectoryRecursively(file);
-                } else {
-                    file.delete();
-                }
-            }
-        }
-        dir.delete();
-    }
-
 
     private void createSonarPropertiesFile(File projectDir, String projectKey) throws IOException {
         File propertiesFile = new File(projectDir, "sonar-project.properties");
@@ -402,52 +375,6 @@ public class SonarService {
             }
         }
         return bins.stream().distinct().collect(Collectors.toList());
-    }
-
-
-    private String findClassFolder(File projectDir) {
-        File[] classDirs = {
-                new File(projectDir, "target/classes"),
-                new File(projectDir, "build/classes/java/main")
-        };
-
-        for (File dir : classDirs) {
-            if (dir.exists() && dir.isDirectory()) {
-                return dir.getAbsolutePath();
-            }
-        }
-
-        return null;
-    }
-
-    private String findJavaSourceFolder(File projectDir) {
-        return findDirectoryContainingExtension(projectDir, ".java");
-    }
-
-    private String findDirectoryContainingExtension(File dir, String extension) {
-        File[] files = dir.listFiles();
-        if (files == null) return null;
-
-        boolean containsTargetFile = false;
-        for (File file : files) {
-            if (file.isFile() && file.getName().endsWith(extension)) {
-                containsTargetFile = true;
-            }
-        }
-        if (containsTargetFile) {
-            return dir.getAbsolutePath();
-        }
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                String found = findDirectoryContainingExtension(file, extension);
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-
-        return null;
     }
 
     private List<String> detectAllValidSourceFolders(File baseDir) {
