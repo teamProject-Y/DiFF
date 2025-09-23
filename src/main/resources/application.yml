@@ -17,6 +17,10 @@ jwt:
   refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
 
 spring:
+  mvc:
+    async:
+      request-timeout: 15m
+
   datasource:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
     url: ${SPRING_DATASOURCE_URL}
