@@ -35,8 +35,6 @@
         ) RE ON A.id = RE.articleId
         WHERE
             A.repositoryId = #{repositoryId}
-          AND (#{keyword} IS NULL OR A.title LIKE CONCAT('%', #{keyword}, '%'))
-          AND (#{searchItem} = 0 OR A.memberId = #{searchItem})
           AND (A.isPublic = 1 OR A.memberId = #{loginedMemberId})
         ORDER BY A.id DESC
     </select>

@@ -40,10 +40,7 @@ public class UsrArticleController {
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
 
-        int itemsInAPage = 10;
-        int limitFrom = (page - 1) * itemsInAPage;
-
-        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
+        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, loginedMemberId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
@@ -202,7 +199,6 @@ public class UsrArticleController {
         }
 
         int affectedRow = articleService.modifyArticle(article);
-
 
         if (affectedRow == 0) {
             return ResultData.from("F-4", "수정 실패", 0);
