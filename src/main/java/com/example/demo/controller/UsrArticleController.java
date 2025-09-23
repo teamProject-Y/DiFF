@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class UsrArticleController {
 
     @Autowired
-    private Rq rq;
-
-    @Autowired
     private ArticleService articleService;
 
     @Autowired
@@ -33,20 +30,17 @@ public class UsrArticleController {
 
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> showList( HttpServletRequest req,
-            @RequestParam(defaultValue = "repositoryId") Long repositoryId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int searchItem) {
+                                                         @RequestParam(defaultValue = "repositoryId") Long repositoryId,
+                                                         @RequestParam(defaultValue = "1") int page,
+                                                         @RequestParam(required = false) String keyword,
+                                                         @RequestParam(defaultValue = "0") int searchItem) {
 
         System.out.println("===== 📑 [Get] /api/DiFF/article/list =====");
 
         Rq rq = (Rq) req.getAttribute("rq");
         Long loginedMemberId = rq.getLoginedMemberId();
 
-        int itemsInAPage = 10;
-        int limitFrom = (page - 1) * itemsInAPage;
-
-        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
+        List<Article> articles = articleService.getArticles(repositoryId, keyword, searchItem, loginedMemberId);
 
         Map<String, Object> result = new HashMap<>();
         result.put("articles", articles);
@@ -205,7 +199,6 @@ public class UsrArticleController {
         }
 
         int affectedRow = articleService.modifyArticle(article);
-
 
         if (affectedRow == 0) {
             return ResultData.from("F-4", "수정 실패", 0);
