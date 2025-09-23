@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class UsrArticleController {
 
     @Autowired
-    private Rq rq;
-
-    @Autowired
     private ArticleService articleService;
 
     @Autowired

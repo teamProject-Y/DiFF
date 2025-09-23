@@ -1,5 +1,5 @@
 app = 'diff'                # 앱 이름
-primary_region = 'nrt'      # 기본 리전 (지금 도쿄로 잘 잡혔네요)
+primary_region = 'nrt'      # 기본 리전
 
 [http_service]
 internal_port = 8080      # 컨테이너에서 열릴 포트 (Spring Boot 기본값 8080)

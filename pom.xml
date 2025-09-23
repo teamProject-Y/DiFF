@@ -25,6 +25,13 @@
         <lombok.version>1.18.26</lombok.version>
     </properties>
 
+    <pluginRepositories>
+        <pluginRepository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
+
     <dependencies>
         <!-- Spring Boot 기본 -->
         <dependency>
@@ -182,6 +189,15 @@
 
     <build>
         <plugins>
+
+            <!-- (권장) Surefire 명시: JDK17 환경 안정화 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+
+
             <!-- Sonar -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
