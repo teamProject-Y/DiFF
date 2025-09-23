@@ -4,28 +4,28 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.FirebaseMessaging;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class FirebaseConfig {
 
     @Bean
-    public FirebaseApp firebaseApp(@Value("${fcm.key}") String firebaseKey) throws IOException {
-        try (InputStream serviceAccount =
-                     new ByteArrayInputStream(firebaseKey.getBytes(StandardCharsets.UTF_8))) {
-            GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
+    public FirebaseApp firebaseApp() throws IOException {
+        if (FirebaseApp.getApps().isEmpty()) {
+            FileInputStream serviceAccount =
+                    new FileInputStream("src/main/resources/firebase/serviceAccountKey.json");
 
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(credentials)
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
                     .build();
+
             return FirebaseApp.initializeApp(options);
+        } else {
+            return FirebaseApp.getInstance();
         }
     }
 
