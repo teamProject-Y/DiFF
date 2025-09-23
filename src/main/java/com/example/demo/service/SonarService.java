@@ -213,7 +213,7 @@ public class SonarService {
 
         // 언어 분포 저장
         String langRaw = metricMap.get("ncloc_language_distribution");
-
+      
         if (langRaw != null) {
             List<AnalysisLanguage> langs = parseLanguageDistribution(langRaw, analyzeId);
             langs.forEach(analysisRepository::insertLanguage);
