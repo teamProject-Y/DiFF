@@ -22,41 +22,44 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String accessToken = getTokenFromRequest(request);
         String path = request.getRequestURI();
+        String accessToken = getTokenFromRequest(request);
 
-        // 로그인/회원가입은 토큰 검사 생략
-        if (path.equals("/api/DiFF/member/doJoin") || path.equals("/api/DiFF/member/login") || path.equals("/upload")
-        || path.equals("/.well-known/**") || path.equals("/actuator/**")) {
-            filterChain.doFilter(request, response);
+        // R2 전체, 로그인/회원가입, 업로드는 토큰 검사 생략
+        if (path.startsWith("/r2/")
+                || path.equals("/api/DiFF/member/doJoin")
+                || path.equals("/api/DiFF/member/login")
+                || path.equals("/upload")) {
+            System.out.println("🟢 [JwtTokenFilter] bypass: " + path);
+            chain.doFilter(request, response);
             return;
         }
 
         if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            // 토큰에서 사용자 정보 직접 꺼냄
             Long memberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
             String email = jwtTokenProvider.getMemberEmailFromToken(accessToken);
             String nickName = jwtTokenProvider.getNickNameFromToken(accessToken);
+            System.out.println("✅ [JwtTokenFilter] token valid, memberId=" + memberId);
 
             CustomUserDetails userDetails = new CustomUserDetails(memberId, nickName, email);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            var auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } else {
+            System.out.println("❌ [JwtTokenFilter] token missing/invalid, path=" + path);
         }
 
-        filterChain.doFilter(request, response);
+        chain.doFilter(request, response);
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        String bearer = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
         }
         return null;
     }

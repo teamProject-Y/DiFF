@@ -39,7 +39,6 @@
           AND (#{searchItem} = 0 OR A.memberId = #{searchItem})
           AND (A.isPublic = 1 OR A.memberId = #{loginedMemberId})
         ORDER BY A.id DESC
-            LIMIT #{limitFrom}, #{itemsInAPage}
     </select>
 
     <insert id="writeArticle" parameterType="com.example.demo.vo.Article"

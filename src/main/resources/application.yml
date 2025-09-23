@@ -1,4 +1,5 @@
 server:
+  forward-headers-strategy: framework
   address: 0.0.0.0
   port: ${PORT:8080}
   tomcat:
@@ -12,15 +13,19 @@ management:
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration-time: 3600000
-  refresh-token-expiration-time: 86400000
+  access-token-expiration-time: ${JWT_ACCESS_TOKEN_EXPIRATION_TIME}
+  refresh-token-expiration-time: ${JWT_REFRESH_TOKEN_EXPIRATION_TIME}
 
 spring:
+  mvc:
+    async:
+      request-timeout: 15m
+
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
 
   servlet:
     multipart:
@@ -36,12 +41,13 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
-            redirect-uri: "{baseUrl}/login/oauth2/code/github"
+            redirect-uri: "https://api.diff.io.kr/login/oauth2/code/github"
             client-name: GitHub
 
           google:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "https://api.diff.io.kr/login/oauth2/code/google"
 
         provider:
           github:
@@ -57,8 +63,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -87,6 +93,15 @@ logging:
 sonarqube:
   host: ${SONARQUBE_HOST}
   token: ${SONARQUBE_TOKEN}
+
+cloud:
+  aws:
+    s3:
+      endpoint: ${R2_ENDPOINT}
+      bucket: diff
+      access-key: ${R2_ACCESS_KEY}
+      secret-key: ${R2_SECRET_KEY}
+      region: auto
 
 openai:
   api:
