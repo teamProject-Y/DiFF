@@ -36,7 +36,7 @@
         WHERE
             A.repositoryId = #{repositoryId}
           AND (A.isPublic = 1 OR A.memberId = #{loginedMemberId})
-        ORDER BY A.id DESC
+        ORDER BY A.regDate DESC
     </select>
 
     <insert id="writeArticle" parameterType="com.example.demo.vo.Article"
