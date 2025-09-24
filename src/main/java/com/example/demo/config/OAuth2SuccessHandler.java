@@ -107,7 +107,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
 
-        String redirectUrl = "http://localhost:3000/DiFF/home/main"
+        String redirectUrl = "http://diff.io.kr/DiFF/home/main"
                 + "?access_token=" + accessToken
                 + "&refresh_token=" + refreshToken;
         response.sendRedirect(redirectUrl);
