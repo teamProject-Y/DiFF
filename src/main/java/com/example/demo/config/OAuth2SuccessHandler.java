@@ -19,22 +19,16 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 @Component
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Autowired
-    private @Lazy MemberService memberService;
-
-    @Autowired
-    private OAuthAccountService oAuthAccountService;
-
+    @Autowired private @Lazy MemberService memberService;
+    @Autowired private OAuthAccountService oAuthAccountService;
     private final JwtTokenProvider jwtTokenProvider;
-
-    @Autowired
-    private Rq rq;
-
+    @Autowired private Rq rq;
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
@@ -93,14 +87,16 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        OAuthAccount oAuthAccount = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
-        if (oAuthAccount == null) {
-            throw new RuntimeException("❌ 해당 OAuth 계정을 찾을 수 없습니다.");
-        }
-
-        Member member = memberService.getByOauthIdAndProvider(oauthId, provider);
+        Member member = memberService.getByProviderAndOauthId(oauthId, provider);
         if (member == null) {
-            throw new RuntimeException("❌ 해당 OAuth ID와 Provider에 해당하는 회원이 없습니다.");
+            String email = oauthUser.getAttribute("email");
+            String name  = oauthUser.getAttribute("name");
+            if (name == null || name.isBlank()) {
+                int at = (email != null ? email.indexOf('@') : -1);
+                name = (at > 0 ? email.substring(0, at) : "user_" + UUID.randomUUID().toString().substring(0, 8));
+            }
+            if (name.length() > 20) name = name.substring(0, 20);
+            member = memberService.processOAuthLogin(provider, oauthId, email, name);
         }
 
         rq.login(member);
@@ -111,7 +107,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
 
-        String redirectUrl = "http://diff.io.kr/DiFF/home/main"
+        String redirectUrl = "http://localhost:3000/DiFF/home/main"
                 + "?access_token=" + accessToken
                 + "&refresh_token=" + refreshToken;
         response.sendRedirect(redirectUrl);
