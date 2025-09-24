@@ -42,7 +42,6 @@
         )
     </insert>
 
-    <!-- AnalysisLanguage 저장 -->
     <insert id="insertLanguage" parameterType="com.example.demo.vo.AnalysisLanguage">
         INSERT INTO analysisLanguage (
             analyzeId, language, `lines`

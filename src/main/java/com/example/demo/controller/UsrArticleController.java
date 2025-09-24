@@ -30,10 +30,10 @@ public class UsrArticleController {
 
     @GetMapping("/list")
     public ResponseEntity<Map<String, Object>> showList( HttpServletRequest req,
-            @RequestParam(defaultValue = "repositoryId") Long repositoryId,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int searchItem) {
+                                                         @RequestParam(defaultValue = "repositoryId") Long repositoryId,
+                                                         @RequestParam(defaultValue = "1") int page,
+                                                         @RequestParam(required = false) String keyword,
+                                                         @RequestParam(defaultValue = "0") int searchItem) {
 
         System.out.println("===== 📑 [Get] /api/DiFF/article/list =====");
 
