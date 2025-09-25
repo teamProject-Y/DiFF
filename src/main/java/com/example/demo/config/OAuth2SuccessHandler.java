@@ -51,6 +51,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String mode = (String) request.getSession().getAttribute("OAUTH_MODE");
         Long linkTargetMemberId = (Long) request.getSession().getAttribute("LINK_TARGET_MEMBER_ID");
 
+        // ===== 링크 모드(기존 코드 유지) =====
         if ("link".equalsIgnoreCase(mode) && linkTargetMemberId != null) {
             OAuthAccount existing = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
 
@@ -79,7 +80,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             String accessToken = jwtTokenProvider.generateAccessToken(linked.getId(), linked.getNickName(), linked.getEmail());
             String refreshToken = jwtTokenProvider.generateRefreshToken(linked.getId(), linked.getNickName(), linked.getEmail());
 
-            String redirectUrl = "http://localhost:3000/DiFF/home/main"
+            String redirectUrl = "https://diff.io.kr/DiFF/home/main"
                     + "?access_token=" + accessToken
                     + "&refresh_token=" + refreshToken
                     + "&linked=" + provider;
@@ -87,6 +88,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
+        // ===== 일반 OAuth 로그인: 예외 대신 '없으면 생성' 스니펫 삽입 (★여기 추가) =====
         Member member = memberService.getByProviderAndOauthId(oauthId, provider);
         if (member == null) {
             String email = oauthUser.getAttribute("email");
@@ -96,9 +98,11 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 name = (at > 0 ? email.substring(0, at) : "user_" + UUID.randomUUID().toString().substring(0, 8));
             }
             if (name.length() > 20) name = name.substring(0, 20);
+            // ← 백업 프로비저닝 (최초 로그인도 통과)
             member = memberService.processOAuthLogin(provider, oauthId, email, name);
         }
 
+        // (이 아래는 기존 로직 유지)
         rq.login(member);
         rq.setLoginedMember(member);
 
