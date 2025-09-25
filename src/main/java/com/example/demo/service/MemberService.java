@@ -63,7 +63,6 @@ public class MemberService {
         return memberId;
     }
 
-
     public void verifyEmail(String token) {
         System.out.println("📌 verifyEmail() 실행됨, token=" + token);
 
@@ -199,9 +198,9 @@ public class MemberService {
             System.out.println("🆕 새 resetToken 발급: " + token);
         }
 
-        String link = "http://diff.io.kr:3000/DiFF/member/resetPw?token=" + member.getResetToken();
+        String link = "https://diff.io.kr/DiFF/member/resetPw?token=" + member.getResetToken();
         mailService.sendMail(email, "비밀번호 재설정",
-                "비밀번호를 바꾸려면 클릭: " + link + "\n\n만료 시간: " + member.getResetTokenExpiry());
+                "비밀번호를 바꾸려면 클릭하세요: " + link + "\n\n만료 시간: " + member.getResetTokenExpiry());
     }
 
     public void updatePassword(String token, String newPw) {
