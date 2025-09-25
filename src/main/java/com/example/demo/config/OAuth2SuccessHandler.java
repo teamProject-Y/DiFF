@@ -26,9 +26,13 @@ import java.util.UUID;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     @Autowired private @Lazy MemberService memberService;
+
     @Autowired private OAuthAccountService oAuthAccountService;
+
     private final JwtTokenProvider jwtTokenProvider;
+
     @Autowired private Rq rq;
+
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     @Override
@@ -46,7 +50,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 oauthToken.getAuthorizedClientRegistrationId(),
                 oauthToken.getName()
         );
-        String providerAccessToken = client.getAccessToken().getTokenValue();
+
+        String providerAccessToken = (client != null && client.getAccessToken() != null)
+                ? client.getAccessToken().getTokenValue()
+                : null;
 
         String mode = (String) request.getSession().getAttribute("OAUTH_MODE");
         Long linkTargetMemberId = (Long) request.getSession().getAttribute("LINK_TARGET_MEMBER_ID");
@@ -65,7 +72,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 oAuthAccountService.attachToMember(existing.getId(), linkTargetMemberId);
             }
 
-            oAuthAccountService.upsertAccessToken(linkTargetMemberId, provider, oauthId, providerAccessToken, "Bearer");
+            if (providerAccessToken != null) {
+                oAuthAccountService.upsertAccessToken(linkTargetMemberId, provider, oauthId, providerAccessToken, "Bearer");
+            }
 
             Member linked = memberService.getMemberById(linkTargetMemberId);
             if (linked == null) {
@@ -87,7 +96,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        Member member = memberService.getByProviderAndOauthId(oauthId, provider);
+        Member member = memberService.getByProviderAndOauthId(provider, oauthId);
+
         if (member == null) {
             String email = oauthUser.getAttribute("email");
             String name  = oauthUser.getAttribute("name");
@@ -96,7 +106,17 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 name = (at > 0 ? email.substring(0, at) : "user_" + UUID.randomUUID().toString().substring(0, 8));
             }
             if (name.length() > 20) name = name.substring(0, 20);
+
             member = memberService.processOAuthLogin(provider, oauthId, email, name);
+            if (member == null) {
+                response.sendError(500, "회원 생성 실패");
+                return;
+            }
+        }
+
+        if (member == null) {
+            response.sendError(401, "소셜 로그인 처리 실패");
+            return;
         }
 
         rq.login(member);
@@ -107,7 +127,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtTokenProvider.generateAccessToken(member.getId(), member.getNickName(), member.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(member.getId(), member.getNickName(), member.getEmail());
 
-        String redirectUrl = "http://localhost:3000/DiFF/home/main"
+        String redirectUrl = "https://diff.io.kr/DiFF/home/main"
                 + "?access_token=" + accessToken
                 + "&refresh_token=" + refreshToken;
         response.sendRedirect(redirectUrl);

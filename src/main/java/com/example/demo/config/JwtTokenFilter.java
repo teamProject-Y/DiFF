@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -21,43 +20,61 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
 
+    /** 공개/정적/소셜 경로는 아예 필터 스킵 */
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest req) throws ServletException {
+        String uri = req.getRequestURI();
+        String method = req.getMethod();
+
+        // CORS preflight
+        if ("OPTIONS".equalsIgnoreCase(method)) return true;
+
+        // 인증 없이 접근해야 하는 경로
+        if (uri.startsWith("/api/DiFF/auth/")) return true;
+        if (uri.startsWith("/oauth2/") || uri.startsWith("/login/")) return true;
+
+        // 정적/에러/기타
+        if (uri.equals("/error")) return true;
+        if (uri.equals("/favicon.ico")) return true;
+        if (uri.startsWith("/resource/") || uri.startsWith("/css/")
+                || uri.startsWith("/js/") || uri.startsWith("/images/")) return true;
+
+        if (uri.startsWith("/r2/")) return true;
+
+        return false;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        System.out.println("[JwtTokenFilter] shouldNotFilter=" + shouldNotFilter(request) +
-                " " + request.getMethod() + " " + request.getRequestURI());
-
-        String path = request.getRequestURI();
-        String accessToken = getTokenFromRequest(request);
-
-        // R2 전체, 로그인/회원가입, 업로드는 토큰 검사 생략
-        if (path.startsWith("/r2/")
-                || path.startsWith("/api/DiFF/auth/login")
-                || path.startsWith("/api/DiFF/auth/join")
-                || path.startsWith("/api/DiFF/auth/refresh")
-                || path.startsWith("/api/DiFF/auth/link/**")
-                || path.startsWith("/oauth2/**")
-                || path.startsWith("/error")
-                || path.equals("/upload")) {
-            System.out.println("🟢 [JwtTokenFilter] bypass: " + path);
+        if (shouldNotFilter(request)) {
             chain.doFilter(request, response);
             return;
         }
 
-        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            Long memberId = jwtTokenProvider.getMemberIdFromToken(accessToken);
-            String email = jwtTokenProvider.getMemberEmailFromToken(accessToken);
-            String nickName = jwtTokenProvider.getNickNameFromToken(accessToken);
-            System.out.println("✅ [JwtTokenFilter] token valid, memberId=" + memberId);
+        String token = getTokenFromRequest(request);
 
-            CustomUserDetails userDetails = new CustomUserDetails(memberId, nickName, email);
-            var auth = new UsernamePasswordAuthenticationToken(
-                    userDetails, null, userDetails.getAuthorities());
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        } else {
-            System.out.println("❌ [JwtTokenFilter] token missing/invalid, path=" + path);
+        if (token == null) {
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // 헤더가 있을 때만 검증
+        try {
+            if (jwtTokenProvider.validateToken(token)) {
+                Long memberId = jwtTokenProvider.getMemberIdFromToken(token);
+                String email = jwtTokenProvider.getMemberEmailFromToken(token);
+                String nickName = jwtTokenProvider.getNickNameFromToken(token);
+
+                CustomUserDetails userDetails = new CustomUserDetails(memberId, nickName, email);
+                var auth = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {}
+        } catch (Exception ex) {
+            System.out.println("JWT parse/validate failed");
         }
 
         chain.doFilter(request, response);
