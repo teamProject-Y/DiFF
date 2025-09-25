@@ -30,8 +30,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         // R2 전체, 로그인/회원가입, 업로드는 토큰 검사 생략
         if (path.startsWith("/r2/")
-                || path.equals("/api/DiFF/member/doJoin")
-                || path.equals("/api/DiFF/member/login")
+                || path.startsWith("/api/DiFF/auth/login")
+                || path.startsWith("/api/DiFF/auth/join")
+                || path.startsWith("/api/DiFF/auth/refresh")
+                || path.startsWith("/api/DiFF/auth/link/**")
+                || path.startsWith("/oauth2/**")
+                || path.startsWith("/error")
                 || path.equals("/upload")) {
             System.out.println("🟢 [JwtTokenFilter] bypass: " + path);
             chain.doFilter(request, response);
