@@ -10,7 +10,7 @@ public interface ArticleRepository {
 
     int getLastInsertId();
 
-     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage, Long loginedMemberId);
+     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, Long loginedMemberId);
 
     List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId);
 
