@@ -25,6 +25,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        System.out.println("[JwtTokenFilter] shouldNotFilter=" + shouldNotFilter(request) +
+                " " + request.getMethod() + " " + request.getRequestURI());
+
         String path = request.getRequestURI();
         String accessToken = getTokenFromRequest(request);
 
