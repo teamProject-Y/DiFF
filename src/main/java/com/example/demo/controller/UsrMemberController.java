@@ -51,6 +51,7 @@ public class UsrMemberController {
         Member member;
         if (nickName != null) {
             member = memberService.getMemberByNickName(nickName);
+            member = memberService.updateMemberForPrint(member);
             if (member == null) {
                 System.out.println("👤ℹ️ 해당 닉네임을 가진 회원이 없습니다: " + nickName);
             }
