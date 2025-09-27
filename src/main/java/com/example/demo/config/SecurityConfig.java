@@ -30,7 +30,6 @@ public class SecurityConfig {
     private final JwtTokenFilter jwtTokenFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
-    // #### 1) R2 전용 체인: /r2/** 전체 허용 ####
     @Bean
     @Order(1)
     public SecurityFilterChain r2Chain(HttpSecurity http) throws Exception {
@@ -49,7 +48,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // #### 2) 기본 체인: 나머지 엔드포인트 ####
     @Bean
     @Order(2)
     public SecurityFilterChain appChain(HttpSecurity http,
