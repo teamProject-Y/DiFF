@@ -356,7 +356,8 @@ public class SonarService {
                 String[] candidates = {
                         "target/classes","target/test-classes",
                         "build/classes/java/main","build/classes/java/test",
-                        "build/classes/kotlin/main","build/classes/kotlin/test"
+                        "build/classes/kotlin/main","build/classes/kotlin/test",
+                        "out/production/classes","out/test/classes"
                 };
                 for (String rel : candidates) {
                     File c = new File(dir, rel);
