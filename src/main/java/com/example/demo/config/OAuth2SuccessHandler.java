@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import com.example.demo.service.GitHubOAuth2UserService;
 import com.example.demo.service.MemberService;
 import com.example.demo.service.OAuthAccountService;
 import com.example.demo.vo.Member;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
@@ -17,9 +19,10 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Component
@@ -31,7 +34,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Autowired private Rq rq;
     private final OAuth2AuthorizedClientService authorizedClientService;
 
-    @Override
+    @Autowired
+    private GitHubOAuth2UserService gitHubOAuth2UserService;
+
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         OAuth2User oauthUser = (OAuth2User) authentication.getPrincipal();
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
@@ -48,54 +53,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         );
         String providerAccessToken = client.getAccessToken().getTokenValue();
 
-        String mode = (String) request.getSession().getAttribute("OAUTH_MODE");
-        Long linkTargetMemberId = (Long) request.getSession().getAttribute("LINK_TARGET_MEMBER_ID");
-
-        if ("link".equalsIgnoreCase(mode) && linkTargetMemberId != null) {
-            OAuthAccount existing = oAuthAccountService.findByProviderAndOauthId(provider, oauthId);
-
-            if (existing != null && existing.getMemberId() != null && !existing.getMemberId().equals(linkTargetMemberId)) {
-                response.sendError(409, "이미 다른 계정과 연동된 소셜 계정입니다.");
-                return;
-            }
-
-            if (existing == null) {
-                oAuthAccountService.create(linkTargetMemberId, provider, oauthId);
-            } else if (existing.getMemberId() == null) {
-                oAuthAccountService.attachToMember(existing.getId(), linkTargetMemberId);
-            }
-
-            oAuthAccountService.upsertAccessToken(linkTargetMemberId, provider, oauthId, providerAccessToken, "Bearer");
-
-            Member linked = memberService.getMemberById(linkTargetMemberId);
-            if (linked == null) {
-                response.sendError(404, "연동 대상 회원을 찾을 수 없습니다.");
-                return;
-            }
-
-            request.getSession().removeAttribute("OAUTH_MODE");
-            request.getSession().removeAttribute("LINK_TARGET_MEMBER_ID");
-
-            String accessToken = jwtTokenProvider.generateAccessToken(linked.getId(), linked.getNickName(), linked.getEmail());
-            String refreshToken = jwtTokenProvider.generateRefreshToken(linked.getId(), linked.getNickName(), linked.getEmail());
-
-            String redirectUrl = "http://localhost:3000/DiFF/home/main"
-                    + "?access_token=" + accessToken
-                    + "&refresh_token=" + refreshToken
-                    + "&linked=" + provider;
-            response.sendRedirect(redirectUrl);
-            return;
-        }
-
+        // 신규/기존 회원 처리
         Member member = memberService.getByProviderAndOauthId(oauthId, provider);
         if (member == null) {
             String email = oauthUser.getAttribute("email");
+
+            // GitHub의 경우 이메일이 null일 수 있으므로 GitHubOAuth2UserService 호출
+            if ((email == null || email.isBlank()) && "github".equalsIgnoreCase(provider)) {
+                email = gitHubOAuth2UserService.fetchPrimaryEmail(providerAccessToken);
+            }
+
+            if (email == null || email.isBlank()) {
+                response.sendError(400, "GitHub 계정에서 이메일을 가져올 수 없습니다. GitHub 설정에서 primary 이메일을 등록하거나 공개하세요.");
+                return;
+            }
+
             String name  = oauthUser.getAttribute("name");
             if (name == null || name.isBlank()) {
                 int at = (email != null ? email.indexOf('@') : -1);
                 name = (at > 0 ? email.substring(0, at) : "user_" + UUID.randomUUID().toString().substring(0, 8));
             }
             if (name.length() > 20) name = name.substring(0, 20);
+
             member = memberService.processOAuthLogin(provider, oauthId, email, name);
         }
 
@@ -113,3 +92,4 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.sendRedirect(redirectUrl);
     }
 }
+

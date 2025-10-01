@@ -27,20 +27,21 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
 
     @Autowired
     private Rq rq;
+    @Autowired
+    private OAuthAccountRepository oAuthAccountRepository;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-
-        System.out.println("GitHub 로그인 진입 \uD83C\uDF37\uD83C\uDF37");
-
         OAuth2User oauthUser = super.loadUser(userRequest);
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String oauthId = oauthUser.getName();
         String username = oauthUser.getAttribute("login");
+
+        // email 가져오기 (GitHub은 별도 API 필요할 수 있음)
         String email = fetchPrimaryEmail(userRequest);
 
         memberService.processOAuthLogin(provider, oauthId, email, username);
-        Member member = memberService.getByProviderAndOauthId(oauthId,provider);
+        Member member = memberService.getByProviderAndOauthId(oauthId, provider);
         if (member != null) {
             rq.login(member);
         }
@@ -48,8 +49,17 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
         return oauthUser;
     }
 
-    private String fetchPrimaryEmail(OAuth2UserRequest userRequest) {
-        String accessToken = userRequest.getAccessToken().getTokenValue();
+    /**
+     * OAuth2UserRequest 기반으로 이메일 조회
+     */
+    public String fetchPrimaryEmail(OAuth2UserRequest userRequest) {
+        return fetchPrimaryEmail(userRequest.getAccessToken().getTokenValue());
+    }
+
+    /**
+     * AccessToken 문자열 기반으로 이메일 조회
+     */
+    public String fetchPrimaryEmail(String accessToken) {
         String emailApiUrl = "https://api.github.com/user/emails";
 
         HttpHeaders headers = new HttpHeaders();
@@ -65,14 +75,13 @@ public class GitHubOAuth2UserService extends DefaultOAuth2UserService
                 new ParameterizedTypeReference<>() {}
         );
 
-        if (response.getStatusCode() == HttpStatus.OK) {
+        if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
             for (Map<String, Object> emailEntry : response.getBody()) {
                 if (Boolean.TRUE.equals(emailEntry.get("primary")) && Boolean.TRUE.equals(emailEntry.get("verified"))) {
                     return (String) emailEntry.get("email");
                 }
             }
         }
-
         return null;
     }
 }
