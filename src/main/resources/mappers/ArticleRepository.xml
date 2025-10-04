@@ -202,5 +202,10 @@
         WHERE id = #{articleId}
     </select>
 
-
+    <select id="getRecentArticles" resultType="com.example.demo.vo.Article">
+        SELECT *
+        FROM article
+        ORDER BY regDate DESC
+            LIMIT #{count}
+    </select>
 </mapper>
