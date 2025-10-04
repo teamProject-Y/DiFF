@@ -203,9 +203,26 @@
     </select>
 
     <select id="getRecentArticles" resultType="com.example.demo.vo.Article">
-        SELECT *
-        FROM article
-        ORDER BY regDate DESC
+        SELECT
+            a.*,
+            m.nickName AS extra__writer,
+            m.profileUrl AS extra__profileUrl,
+            COALESCE(r.likes, 0) AS extra__sumReaction,
+            COALESCE(re.replies, 0) AS extra__sumReplies
+        FROM article a
+                 LEFT JOIN member m ON a.memberId = m.id
+                 LEFT JOIN (
+            SELECT relId, COUNT(*) AS likes
+            FROM reaction
+            WHERE relType = 'article'
+            GROUP BY relId
+        ) r ON a.id = r.relId
+                 LEFT JOIN (
+            SELECT articleId, COUNT(*) AS replies
+            FROM reply
+            GROUP BY articleId
+        ) re ON a.id = re.articleId
+        ORDER BY a.regDate DESC
             LIMIT #{count}
     </select>
 </mapper>
