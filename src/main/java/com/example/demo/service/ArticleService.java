@@ -129,11 +129,9 @@ public class ArticleService {
     public List<Article> getArticles(Long repositoryId,
                                      String keyword,
                                      int searchItem,
-                                     int limitFrom,
-                                     int itemsInAPage,
                                      Long loginedMemberId) {
 
-        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, loginedMemberId);
 
         for (Article article : articles) {
 
