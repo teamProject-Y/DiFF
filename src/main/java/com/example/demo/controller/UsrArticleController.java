@@ -86,6 +86,24 @@ public class UsrArticleController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/recent")
+    public ResponseEntity<Map<String, Object>> getRecentArticles(HttpServletRequest req,
+                                                                 @RequestParam(defaultValue = "100") Integer count) {
+        System.out.println("\n===== 🆕 [GET] /api/DiFF/article/recent =====");
+
+        Rq rq = (Rq) req.getAttribute("rq");
+        Long loginedMemberId = rq != null ? rq.getLoginedMemberId() : null;
+
+        List<Article> articles = articleService.getRecentArticles(count, loginedMemberId);
+
+        System.out.println("🆕 recent 결과 수 = " + (articles != null ? articles.size() : 0));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("articles", articles);
+
+        return ResponseEntity.ok(result);
+    }
+
     @PostMapping("/doWrite")
     @ResponseBody
     public ResultData<Long> doWrite(HttpServletRequest req,

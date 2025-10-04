@@ -2,15 +2,21 @@ package com.example.demo.repository;
 
 import com.example.demo.vo.Article;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ArticleRepository {
 
     int getLastInsertId();
 
-     List<Article> getArticles(Long repositoryId, String keyword, int searchItem, Long loginedMemberId);
+    int getArticlesCnt(Long repositoryId,String keyword, int searchItem, Long loginedMemberId);
+
+    List<Article> getArticles(Long repositoryId, String keyword, int searchItem, int limitFrom, int itemsInAPage, Long loginedMemberId);
+
+    int getArticleCnt();
 
     List<Article> getTrendingArticles(Integer count, Integer days, Long loginedMemberId);
 
@@ -35,4 +41,6 @@ public interface ArticleRepository {
     Long getArticleCountsByMemberId(Long id);
 
     Long getWriterIdByArticleId(Long articleId);
+
+    List<Article> getRecentArticles(int count, Long loginedMemberId);
 }

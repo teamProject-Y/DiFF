@@ -129,9 +129,11 @@ public class ArticleService {
     public List<Article> getArticles(Long repositoryId,
                                      String keyword,
                                      int searchItem,
+                                     int limitFrom,
+                                     int itemsInAPage,
                                      Long loginedMemberId) {
 
-        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, loginedMemberId);
+        List<Article> articles = articleRepository.getArticles(repositoryId, keyword, searchItem, limitFrom, itemsInAPage, loginedMemberId);
 
         for (Article article : articles) {
 
@@ -233,4 +235,7 @@ public class ArticleService {
         return articleRepository.getWriterIdByArticleId(articleId);
     }
 
+    public List<Article> getRecentArticles(int count, Long loginedMemberId) {
+        return articleRepository.getRecentArticles(count, loginedMemberId);
+    }
 }
